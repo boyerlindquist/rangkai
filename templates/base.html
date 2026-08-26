@@ -5,8 +5,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Smart Wedding Engine — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
-  <title>{% block title %}Smart Wedding Engine{% endblock %}</title>
+  <meta name="description" content="Rangkai — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
+  <title>{% block title %}Rangkai{% endblock %}</title>
 
   <!-- Theme Initialization (Prevents flicker) -->
   <script>
@@ -46,7 +46,7 @@
     <!-- Mobile Header -->
     <div class="mobile-header">
       <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
-      <span style="color: var(--wp-gold-main); font-weight: 500; font-size: 0.9rem;">Wedding Planner</span>
+      <span style="color: var(--wp-gold-main); font-weight: 500; font-size: 0.9rem;">Rangkai</span>
       <span></span>
     </div>
 
@@ -57,7 +57,7 @@
     <aside class="sidebar" id="sidebar" :class="{ 'collapsed': collapsed }">
       <div class="sidebar-brand">
         <div class="brand-info">
-          <h2 class="brand-text">Wedding Planner</h2>
+          <h2 class="brand-text">Rangkai</h2>
           {% if wedding %}
           <div class="couple-names">
             {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
