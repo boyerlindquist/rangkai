@@ -59,7 +59,8 @@
   </div>
   <div class="card-body">
     {% for cat in categories %}
-    <div x-data="{ open: false }" class="accordion-item" style="border: none; border-bottom: 1px solid var(--wp-border-light); border-radius: 0; margin-bottom: 0;">
+    {% with cat_form=category_forms|default:''  %}
+    <div x-data="{ open: false, showAddForm: false }" class="accordion-item" style="border: none; border-bottom: 1px solid var(--wp-border-light); border-radius: 0; margin-bottom: 0;">
       <div class="accordion-header" @click="open = !open">
         {% include "finances/partials/budget_category_row.html" %}
         <span class="chevron" :style="open && 'transform: rotate(180deg)'">▼</span>
@@ -89,36 +90,97 @@
             </table>
           </div>
           {% else %}
-          <p class="text-muted" style="padding: var(--wp-space-md) 0;">Belum ada item di kategori ini.</p>
+          <p class="text-muted" style="padding: var(--wp-space-sm) 0 var(--wp-space-md);">Belum ada item di kategori ini.</p>
           {% endif %}
+
+          {# ── Inline Add Item ── #}
+          <div style="margin-top: var(--wp-space-md);">
+            <button class="btn btn-outline btn-sm" @click.stop="showAddForm = !showAddForm" x-show="!showAddForm">
+              <i data-lucide="plus"></i> Tambah Item
+            </button>
+
+            <div x-show="showAddForm" x-transition x-cloak
+                 style="margin-top: var(--wp-space-md); padding: var(--wp-space-lg); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-glass-border-subtle); background: rgba(44,30,22,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--wp-space-md);">
+                <span style="font-weight: 600; font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em;">
+                  <i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i>
+                  Tambah item ke {{ cat.name }}
+                </span>
+                <button class="btn btn-ghost btn-sm" @click.stop="showAddForm = false" style="padding: 2px 8px;">✕</button>
+              </div>
+
+              <form hx-post="{% url 'finances:add_item_to_category' cat.pk %}"
+                    hx-target=".main-content"
+                    hx-select=".main-content"
+                    hx-swap="outerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="category" value="{{ cat.pk }}">
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--wp-space-md);">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Nama Item *</label>
+                    <input type="text" name="name" class="wp-input" placeholder="Nama item pengeluaran" required>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Nama Vendor</label>
+                    <input type="text" name="vendor_name" class="wp-input" placeholder="Nama vendor (opsional)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Alokasi Target (Rp)</label>
+                    <input type="number" name="allocated_amount" class="wp-input" value="0" min="0">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Actual Cost (Rp)</label>
+                    <input type="number" name="actual_cost" class="wp-input" value="0" min="0">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Sudah Dibayar (Rp)</label>
+                    <input type="number" name="paid_amount" class="wp-input" value="0" min="0">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Penanggung Jawab</label>
+                    <select name="payer" class="wp-input">
+                      <option value="groom">Pengantin Pria</option>
+                      <option value="bride">Pengantin Wanita</option>
+                      <option value="joint" selected>Tabungan Bersama</option>
+                      <option value="groom_family">Keluarga Pria</option>
+                      <option value="bride_family">Keluarga Wanita</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Status Pembayaran</label>
+                    <select name="payment_status" class="wp-input">
+                      <option value="unpaid" selected>Belum Dibayar</option>
+                      <option value="dp_paid">DP Dibayar</option>
+                      <option value="partial">Sebagian Dibayar</option>
+                      <option value="settled">Lunas</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Jatuh Tempo</label>
+                    <input type="date" name="due_date" class="wp-input">
+                  </div>
+                  <div class="form-group" style="grid-column: 1 / -1; margin-bottom:0;">
+                    <label>Catatan</label>
+                    <textarea name="notes" class="wp-input" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
+                  <button type="button" class="btn btn-ghost btn-sm" @click.stop="showAddForm = false">Batal</button>
+                  <button type="submit" class="btn btn-gold btn-sm">
+                    <i data-lucide="save"></i> Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
+    {% endwith %}
     {% endfor %}
-  </div>
-</div>
-
-<!-- Add Budget Item Form -->
-<div class="card mb-lg" x-data="{ showForm: false }">
-  <div class="card-header">
-    <h3><i data-lucide="plus"></i> Tambah Item Pengeluaran</h3>
-    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
-      <span x-text="showForm ? 'Tutup' : 'Buka Form'"></span>
-    </button>
-  </div>
-  <div class="card-body" x-show="showForm" x-transition x-cloak>
-    <form method="post" action="{% url 'finances:add_item' %}" hx-post="{% url 'finances:add_item' %}" hx-swap="outerHTML" hx-target=".main-content" hx-select=".main-content">
-      {% csrf_token %}
-      <div class="form-row">
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-        </div>
-        {% endfor %}
-      </div>
-      <button type="submit" class="btn btn-gold mt-md"><i data-lucide="save"></i> Simpan Item</button>
-    </form>
   </div>
 </div>
 

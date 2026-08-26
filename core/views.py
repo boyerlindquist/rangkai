@@ -201,19 +201,31 @@ def dashboard_view(request):
     total_paid = budget_agg['total_paid'] or 0
     budget_remaining = wedding.total_budget - total_actual
 
-    # Sankey Data
-    categories_agg = BudgetCategory.objects.filter(wedding=wedding).annotate(
-        actual_total=Sum('items__actual_cost')
-    )
-    
+    # Sankey Data — 3 layers: Total Budget → Category → Item
+    categories_with_items = BudgetCategory.objects.filter(wedding=wedding).prefetch_related('items')
+
     sankey_data = []
-    for cat in categories_agg:
-        if cat.actual_total and cat.actual_total > 0:
-            sankey_data.append(['Total Budget', cat.name, float(cat.actual_total)])
-            
+    seen_item_names = {}  # track name usage to avoid Google Sankey node collision
+
+    for cat in categories_with_items:
+        items_with_cost = [item for item in cat.items.all() if item.actual_cost and item.actual_cost > 0]
+        cat_total = sum(float(item.actual_cost) for item in items_with_cost)
+
+        if cat_total > 0:
+            # Layer 1: Total Budget → Category
+            sankey_data.append(['Total Budget', cat.name, cat_total])
+            # Layer 2: Category → each Item
+            for item in items_with_cost:
+                # Ensure unique node name — append thin spaces for duplicates
+                base_name = item.name
+                count = seen_item_names.get(base_name, 0)
+                item_node = base_name + ('\u200b' * count)  # zero-width space suffix
+                seen_item_names[base_name] = count + 1
+                sankey_data.append([cat.name, item_node, float(item.actual_cost)])
+
     if budget_remaining > 0:
         sankey_data.append(['Total Budget', 'Sisa Budget', float(budget_remaining)])
-        
+
     sankey_data_json = json.dumps(sankey_data)
 
     # Booked Vendors

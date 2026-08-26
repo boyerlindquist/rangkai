@@ -20,7 +20,8 @@
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }}
-          {% if field.help_text %}<p class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">{{ field.help_text }}</p>{% endif %}
+          {% if field.help_text %}<p class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">{{ field.help_text
+            }}</p>{% endif %}
         </div>
         {% endfor %}
         <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>

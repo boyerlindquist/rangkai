@@ -201,11 +201,11 @@
           onclick="showFeatureGuide('#guide-sankey', 'Alur Budget', 'Visualisasi flow anggaran dari Total Budget menuju ke masing-masing kategori pengeluaran aktual.')"></i>
       </h3>
     </div>
-    <div class="card-body" style="padding: 0; min-height: 350px; overflow: hidden; background: var(--wp-bg-surface); display: block;">
+    <div class="card-body" style="padding: 0; min-height: 450px; overflow: hidden; background: var(--wp-bg-surface); display: block;">
       {% if sankey_data_json and sankey_data_json != '[]' %}
-      <div id="sankey_chart" style="width: 100%; height: 350px; display: block;"></div>
+      <div id="sankey_chart" style="width: 100%; height: 450px; display: block;"></div>
       {% else %}
-      <div class="empty-state" style="padding: var(--wp-space-lg); width: 100%; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <div class="empty-state" style="padding: var(--wp-space-lg); width: 100%; height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <div class="empty-icon"><i data-lucide="wallet"></i></div>
         <p>Belum ada pengeluaran aktual untuk ditampilkan.</p>
       </div>
@@ -236,6 +236,9 @@
   google.charts.setOnLoadCallback(drawChart);
 
   function drawChart() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var labelColor = isDark ? '#FAF8F5' : '#2C1E16';
+
     var data = new google.visualization.DataTable();
     data.addColumn('string', 'Dari');
     data.addColumn('string', 'Ke');
@@ -245,20 +248,21 @@
     var chartData = {{ sankey_data_json|safe }};
     data.addRows(chartData);
 
-    // Custom palette matching theme (Gold, Sage, Terracotta)
-    var colors = ['#C0A888', '#9BACA0', '#C38B75', '#4A4A4A', '#8b7a63', '#6f8373', '#9c6f5d', '#d9c8b0'];
+    // Custom palette matching theme (Gold, Sage, Terracotta variants)
+    var colors = ['#C0A888', '#9BACA0', '#C38B75', '#8b7a63', '#6f8373', '#9c6f5d', '#d9c8b0', '#a89070', '#b5a08a', '#7a9080'];
     var options = {
       width: '100%',
-      height: 350,
+      height: 450,
       sankey: {
         node: {
           colors: colors,
-          nodePadding: 24,
+          nodePadding: 18,
+          width: 12,
           label: {
             fontName: 'Montserrat',
-            fontSize: 13,
-            color: '#1a1a1a',
-            bold: true
+            fontSize: 12,
+            color: labelColor,
+            bold: false
           }
         },
         link: {
@@ -272,8 +276,8 @@
     chart.draw(data, options);
   }
 
-  // Use ResizeObserver to detect real container dimension changes (e.g. after initial DOM/CSS load)
-  document.addEventListener("DOMContentLoaded", function() {
+  // Redraw when theme toggles
+  document.addEventListener('DOMContentLoaded', function() {
     const chartContainer = document.getElementById('sankey_chart');
     if (chartContainer) {
       let resizeTimer;
@@ -285,7 +289,6 @@
           }
         }, 150);
       });
-      // Observe the parent container which dictates the width
       resizeObserver.observe(chartContainer.parentElement);
     }
   });

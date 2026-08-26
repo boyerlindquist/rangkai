@@ -22,7 +22,7 @@
 
   <!-- Design System -->
   <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=10">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 
@@ -57,7 +57,7 @@
     <aside class="sidebar" id="sidebar" :class="{ 'collapsed': collapsed }">
       <div class="sidebar-brand">
         <div class="brand-info">
-          <h2 class="brand-text">Rangkai</h2>
+          <span class="brand-text">Rangkai</span>
           {% if wedding %}
           <div class="couple-names">
             {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}

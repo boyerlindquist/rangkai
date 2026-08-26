@@ -7,6 +7,7 @@ app_name = 'finances'
 urlpatterns = [
     path('', views.budget_dashboard, name='dashboard'),
     path('add/', views.add_budget_item, name='add_item'),
+    path('category/<int:category_pk>/add-item/', views.add_item_to_category, name='add_item_to_category'),
     path('<int:pk>/update/', views.update_budget_item, name='update_item'),
     path('<int:pk>/delete/', views.delete_budget_item, name='delete_item'),
     path('<int:pk>/toggle-status/', views.toggle_payment_status, name='toggle_status'),

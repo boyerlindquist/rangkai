@@ -1,0 +1,38 @@
+{% load humanize %}
+<div id="inline-form-{{ category.pk }}" class="fade-in" style="margin-top: var(--wp-space-md); border-top: 1px solid var(--wp-glass-border-subtle); padding-top: var(--wp-space-md);">
+  <form hx-post="{% url 'finances:add_item_to_category' category.pk %}"
+        hx-target=".main-content"
+        hx-select=".main-content"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+    {# Hidden category field pre-set to this category #}
+    <input type="hidden" name="category" value="{{ category.pk }}">
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--wp-space-md);">
+      {% for field in form %}
+        {% if field.name != 'category' %}
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: var(--wp-text-secondary); margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.04em;">
+            {{ field.label }}{% if field.field.required %} <span style="color: var(--wp-terracotta-main);">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 4px;">{{ field.errors.0 }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
+      <button type="button" class="btn btn-ghost btn-sm"
+              @click="showAddForm = false">
+        Batal
+      </button>
+      <button type="submit" class="btn btn-gold btn-sm">
+        <i data-lucide="plus"></i> Simpan Item
+      </button>
+    </div>
+  </form>
+  <script>setTimeout(() => lucide.createIcons(), 50);</script>
+</div>

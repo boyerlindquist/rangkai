@@ -50,6 +50,9 @@ def budget_dashboard(request):
     for payer in payer_breakdown:
         payer_breakdown[payer]['remaining'] = payer_breakdown[payer]['actual'] - payer_breakdown[payer]['paid']
 
+    # Build one inline form per category for the accordion add-item UX
+    category_forms = {cat.pk: BudgetItemForm(wedding=wedding, initial={'category': cat.pk}) for cat in categories}
+
     context = {
         'categories': categories,
         'total_allocated': total_allocated,
@@ -61,6 +64,7 @@ def budget_dashboard(request):
         'shares': shares,
         'payer_breakdown': payer_breakdown,
         'form': BudgetItemForm(wedding=wedding),
+        'category_forms': category_forms,
     }
     return render(request, 'finances/budget_dashboard.html', context)
 
@@ -81,6 +85,27 @@ def add_budget_item(request):
             return render(request, 'finances/partials/budget_item_form.html', {
                 'form': form,
             })
+    return redirect('finances:dashboard')
+
+
+@login_required
+@owner_required
+def add_item_to_category(request, category_pk):
+    """HTMX endpoint: Add a budget item pre-scoped to a specific category."""
+    wedding = request.wedding
+    category = get_object_or_404(BudgetCategory, pk=category_pk, wedding=wedding)
+    if request.method == 'POST':
+        form = BudgetItemForm(request.POST, wedding=wedding)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.wedding = wedding
+            item.save()
+            return redirect('finances:dashboard')
+        # On validation error, re-render the inline form
+        return render(request, 'finances/partials/inline_item_form.html', {
+            'form': form,
+            'category': category,
+        })
     return redirect('finances:dashboard')
 
 

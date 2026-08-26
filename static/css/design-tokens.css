@@ -1,158 +1,148 @@
 /* ==========================================================================
-   SMART WEDDING ENGINE — Design Tokens
-   High-End Luxury Editorial: Monochromatic Earthy Browns & Creams
+   RANGKAI — Design Tokens
+   Luxury White & Brown Glassmorphism Design System
    ========================================================================== */
 
 :root {
-  /* CANVAS & SURFACE PALETTE */
-  --wp-bg-canvas: #F6F3EE;
-  /* Warm creamy beige */
-  --wp-bg-surface: #FDFBFC;
-  /* Soft off-white */
-  --wp-bg-surface-subtle: #ECE7DF;
-  /* Light taupe */
-  --wp-bg-surface-muted: #E2DCD3;
-  /* Slightly darker taupe */
+  /* ── CANVAS & SURFACE ── */
+  --wp-bg-canvas: #FFFFFF;
+  --wp-bg-surface: #FFFFFF;
+  --wp-bg-surface-subtle: #FAF8F5;
+  --wp-bg-surface-muted: #F3EEE8;
 
-  /* HERO & CONTAINER BLOCKS — SIDEBAR is DARK in Light Mode */
-  --wp-dark-hero: #2A211D; /* Dark espresso for sidebar */
-  --wp-dark-hero-surface: #3A2E28; /* Slightly lighter for hovers */
-  --wp-sidebar-bottom: #1A1311; /* Darkest at bottom */
-  --wp-dark-border: #3A2E28;
-  --wp-sidebar-text: #FDFBFC; /* Light text on dark sidebar */
-  --wp-sidebar-text-muted: #B0A39A; /* Muted light text */
+  /* ── SIDEBAR (Dark Espresso Glass) ── */
+  --wp-dark-hero: #1C1410;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.07);
+  --wp-sidebar-bottom: #120E0B;
+  --wp-dark-border: rgba(255, 255, 255, 0.08);
+  --wp-sidebar-text: #FAF8F5;
+  --wp-sidebar-text-muted: rgba(250, 248, 245, 0.55);
 
-  /* PRIMARY / GOLD / CHAMPAGNE (Main Accent) */
-  --wp-gold-main: #9C7E5A;
-  /* Sophisticated muted gold/bronze */
-  --wp-gold-dark: #665038;
-  --wp-gold-soft: #F2EEE8;
-  --wp-gold-border: #D1C5B5;
+  /* ── PRIMARY ACCENT — Golden Bronze ── */
+  --wp-gold-main: #A0825E;
+  --wp-gold-dark: #7A6041;
+  --wp-gold-light: #C4A87C;
+  --wp-gold-soft: rgba(160, 130, 94, 0.08);
+  --wp-gold-border: rgba(160, 130, 94, 0.2);
 
-  /* SUCCESS / SAGE (Shifted to Earthy Muted Olive-Brown) */
-  --wp-sage-main: #736758;
-  /* Muted brown-olive */
-  --wp-sage-dark: #40362C;
-  --wp-sage-soft: #EAE8E4;
-  --wp-sage-border: #C4BEB5;
+  /* ── SUCCESS / SAGE ── */
+  --wp-sage-main: #6B8F71;
+  --wp-sage-dark: #3D5E42;
+  --wp-sage-soft: rgba(107, 143, 113, 0.08);
+  --wp-sage-border: rgba(107, 143, 113, 0.2);
 
-  /* ALERTS / TERRACOTTA (Shifted to Warm Rust Brown) */
-  --wp-terracotta-main: #93604C;
-  /* Burnt umber */
-  --wp-terracotta-dark: #523429;
-  --wp-terracotta-soft: #EFE9E6;
-  --wp-terracotta-border: #D6C2BB;
+  /* ── ALERT / TERRACOTTA ── */
+  --wp-terracotta-main: #B5654A;
+  --wp-terracotta-dark: #8B4332;
+  --wp-terracotta-soft: rgba(181, 101, 74, 0.08);
+  --wp-terracotta-border: rgba(181, 101, 74, 0.2);
 
-  /* HIGH-CONTRAST ACCENTS */
-  --wp-accent-contrast: #2A211D; /* Very dark espresso in light mode */
-  --wp-accent-contrast-hover: #1A1311;
-  --wp-accent-text: #FDFBFC; /* Cream text for dark accent */
+  /* ── HIGH-CONTRAST ACCENTS ── */
+  --wp-accent-contrast: #2C1E16;
+  --wp-accent-contrast-hover: #3D2B1F;
+  --wp-accent-text: #FAF8F5;
 
-  /* TYPOGRAPHY & NEUTRALS */
-  --wp-text-main: #2A211D;
-  /* Very dark espresso, replacing black */
-  --wp-text-secondary: #5E524D;
-  --wp-text-muted: #948A85;
-  --wp-text-inverse: #2A211D;
-  /* Dark text for light brown blocks */
+  /* ── TYPOGRAPHY ── */
+  --wp-text-main: #2C1E16;
+  --wp-text-secondary: #6B5B52;
+  --wp-text-muted: #A09689;
+  --wp-text-inverse: #FAF8F5;
 
-  --wp-border-light: #E3DCD5;
-  --wp-border-hover: #9C7E5A;
+  /* ── BORDERS ── */
+  --wp-border-light: rgba(44, 30, 22, 0.08);
+  --wp-border-hover: var(--wp-gold-main);
 
-  /* RADII & ELEVATIONS (Luxury favors sharp or minimal curves) */
-  --wp-radius-xs: 2px;
-  --wp-radius-sm: 2px;
-  --wp-radius-md: 4px;
-  --wp-radius-lg: 8px;
+  /* ── GLASSMORPHISM ── */
+  --wp-glass-bg: rgba(255, 255, 255, 0.80);
+  --wp-glass-bg-hover: rgba(255, 255, 255, 0.88);
+  --wp-glass-border: rgba(44, 30, 22, 0.12);
+  --wp-glass-border-subtle: rgba(44, 30, 22, 0.07);
+  --wp-glass-shadow: 0 2px 8px rgba(44, 30, 22, 0.06), 0 8px 32px rgba(44, 30, 22, 0.08);
+  --wp-glass-shadow-hover: 0 8px 24px rgba(44, 30, 22, 0.10), 0 16px 48px rgba(44, 30, 22, 0.14);
+
+
+  /* ── RADII ── */
+  --wp-radius-xs: 4px;
+  --wp-radius-sm: 8px;
+  --wp-radius-md: 16px;
+  --wp-radius-lg: 24px;
   --wp-radius-pill: 500px;
 
-  --wp-shadow-card: 0 4px 20px rgba(42, 33, 29, 0.04);
-  --wp-shadow-elevated: 0 8px 30px rgba(42, 33, 29, 0.08);
-  --wp-shadow-hero: 0 15px 40px -10px rgba(15, 10, 8, 0.3);
-  --wp-shadow-dropdown: 0 12px 35px -5px rgba(42, 33, 29, 0.12);
+  /* ── ELEVATIONS ── */
+  --wp-shadow-card: 0 1px 3px rgba(44, 30, 22, 0.04);
+  --wp-shadow-elevated: 0 12px 40px rgba(44, 30, 22, 0.08);
+  --wp-shadow-hero: 0 24px 64px -12px rgba(44, 30, 22, 0.18);
+  --wp-shadow-dropdown: 0 12px 40px -4px rgba(44, 30, 22, 0.14);
 
-  /* TRANSITIONS */
-  --wp-transition-fast: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  --wp-transition-normal: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* ── TRANSITIONS ── */
+  --wp-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --wp-transition-normal: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* SPACING SCALE */
+  /* ── SPACING ── */
   --wp-space-xs: 4px;
   --wp-space-sm: 8px;
   --wp-space-md: 16px;
-  --wp-space-lg: 28px;
-  /* Increased slightly for more breathing room */
+  --wp-space-lg: 24px;
   --wp-space-xl: 40px;
-  /* Increased for airy editorial feel */
   --wp-space-2xl: 60px;
   --wp-space-3xl: 80px;
 
-  /* SIDEBAR */
+  /* ── SIDEBAR DIMENSIONS ── */
   --wp-sidebar-width: 270px;
   --wp-sidebar-collapsed: 72px;
 }
 
 /* ==========================================================================
-   DARK MODE PALETTE (Dark Chocolate / Espresso)
+   DARK MODE
    ========================================================================== */
 [data-theme="dark"] {
-  /* CANVAS & SURFACE PALETTE (Background very dark, Cards slightly lighter) */
-  --wp-bg-canvas: #120E0D;
-  /* Very dark espresso for background */
-  --wp-bg-surface-subtle: #1E1715;
-  /* Dark espresso for background gradient end */
-  --wp-bg-surface: #29201C;
-  /* Medium dark espresso for Cards */
-  --wp-bg-surface-muted: #4A3A33; /* Slightly lighter espresso for nested cards/tables */
+  --wp-bg-canvas: #0F0C0A;
+  --wp-bg-surface: #1A1512;
+  --wp-bg-surface-subtle: #231C17;
+  --wp-bg-surface-muted: #2E251F;
 
-  /* SIDEBAR & HERO BLOCKS — SIDEBAR is LIGHT in Dark Mode */
-  --wp-dark-hero: #634D3A; /* Dark Muted Bronze for sidebar */
-  --wp-dark-hero-surface: #523F2F; /* Slightly darker for hovers */
-  --wp-sidebar-bottom: #403124; /* Darker at bottom */
-  --wp-dark-border: #403124;
-  --wp-sidebar-text: #FDFBFC; /* White text on dark bronze */
-  --wp-sidebar-text-muted: #D1C5B5; /* Muted light text */
+  --wp-dark-hero: #1A1512;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.05);
+  --wp-dark-border: rgba(255, 255, 255, 0.06);
+  --wp-sidebar-text: #FAF8F5;
+  --wp-sidebar-text-muted: rgba(250, 248, 245, 0.45);
 
-  /* HIGH-CONTRAST ACCENTS */
-  --wp-accent-contrast: #634D3A; /* Dark Muted Bronze in dark mode */
-  --wp-accent-contrast-hover: #7A5E44;
-  --wp-accent-text: #FDFBFC; /* White text for darker accent */
+  --wp-gold-main: #C4A87C;
+  --wp-gold-dark: #E2CCA5;
+  --wp-gold-soft: rgba(196, 168, 124, 0.1);
+  --wp-gold-border: rgba(196, 168, 124, 0.2);
 
-  /* PRIMARY / GOLD / CHAMPAGNE (Slightly brighter for contrast) */
-  --wp-gold-main: #C4A176;
-  --wp-gold-dark: #E3CDAF;
-  /* Light gold for text in badges */
-  --wp-gold-soft: #2D241C;
-  --wp-gold-border: #4D3F30;
+  --wp-sage-main: #8BAF8F;
+  --wp-sage-dark: #B5D4B8;
+  --wp-sage-soft: rgba(139, 175, 143, 0.1);
+  --wp-sage-border: rgba(139, 175, 143, 0.15);
 
-  /* SUCCESS / SAGE */
-  --wp-sage-main: #8A7E6E;
-  --wp-sage-dark: #C4B9AA;
-  /* Light sage for text in badges */
-  --wp-sage-soft: #282420;
-  --wp-sage-border: #474037;
+  --wp-terracotta-main: #D4826A;
+  --wp-terracotta-dark: #EBA890;
+  --wp-terracotta-soft: rgba(212, 130, 106, 0.1);
+  --wp-terracotta-border: rgba(212, 130, 106, 0.15);
 
-  /* ALERTS / TERRACOTTA */
-  --wp-terracotta-main: #B57960;
-  --wp-terracotta-dark: #E2B29F;
-  /* Light terracotta for text in badges */
-  --wp-terracotta-soft: #30201A;
-  --wp-terracotta-border: #52372C;
+  --wp-accent-contrast: #C4A87C;
+  --wp-accent-contrast-hover: #D4BA92;
+  --wp-accent-text: #0F0C0A;
 
-  /* TYPOGRAPHY & NEUTRALS (Brighter for Dark Mode) */
-  --wp-text-main: #FDFBFC;
-  /* Very bright cream/white */
-  --wp-text-secondary: #E3DCD5;
-  /* Lighter taupe */
-  --wp-text-muted: #CFC4B6;
-  /* Lightest brown for muted text */
-  --wp-text-inverse: #FDFBFC;
-  /* Same as main */
+  --wp-text-main: #FAF8F5;
+  --wp-text-secondary: #C4B8AC;
+  --wp-text-muted: #8A7E74;
+  --wp-text-inverse: #0F0C0A;
 
-  --wp-border-light: #382A25;
-  --wp-border-hover: #C4A176;
+  --wp-border-light: rgba(250, 248, 245, 0.06);
+  --wp-border-hover: var(--wp-gold-main);
 
-  /* SHADOWS (Harder and darker for dark mode) */
-  --wp-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --wp-shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.5);
-  --wp-shadow-dropdown: 0 12px 35px -5px rgba(0, 0, 0, 0.6);
+  --wp-glass-bg: linear-gradient(180deg, #2E2018 0%, #281B12 100%);
+  --wp-glass-bg-hover: linear-gradient(180deg, #35261D 0%, #2E2018 100%);
+  --wp-glass-border: rgba(255, 255, 255, 0.08);
+  --wp-glass-border-subtle: rgba(255, 255, 255, 0.04);
+  --wp-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.20);
+  --wp-glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.30);
+
+  --wp-shadow-card: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --wp-shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --wp-shadow-hero: 0 24px 64px -12px rgba(0, 0, 0, 0.5);
+  --wp-shadow-dropdown: 0 12px 40px -4px rgba(0, 0, 0, 0.5);
 }
