@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Panduan Wedding Planner{% endblock %}
+{% block content %}
+<div class="page-header fade-in">
+  <div>
+    <h1>Panduan Lengkap</h1>
+    <p class="page-subtitle">Pelajari setiap sudut aplikasi pintar ini untuk mengelola pernikahan impian Anda.</p>
+  </div>
+  <div class="header-actions" style="margin-top: 24px;">
+    <button class="btn btn-primary" onclick="startComprehensiveTour()">
+      <i data-lucide="play-circle"></i> Mulai Tur Interaktif (Multi-Page)
+    </button>
+  </div>
+</div>
+
+<div class="card fade-in" style="margin-bottom: var(--wp-space-xl);">
+  <div class="card-body" style="padding: var(--wp-space-xl) var(--wp-space-lg);">
+    <div style="max-width: 900px;">
+      
+      <!-- General Tips -->
+      <div class="alert alert-info" style="margin-bottom: var(--wp-space-xl);">
+        <div>
+          <strong style="display: block; margin-bottom: 8px;"><i data-lucide="lightbulb" style="width: 16px; height: 16px; display: inline; vertical-align: middle;"></i> Tips Interaktif</strong>
+          Di seluruh aplikasi, Anda akan menemukan ikon tanda tanya kecil (<i data-lucide="help-circle" style="width: 16px; height: 16px; display: inline-flex; vertical-align: middle;"></i>) di sudut kartu. Klik ikon tersebut kapan saja untuk mendapatkan <em>mini-tour</em> penjelasan fitur tersebut secara instan tanpa harus pindah halaman.
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          1. Dashboard
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Pusat kendali utama persiapan pernikahan Anda. Semua informasi vital terangkum di sini.</p>
+        <div class="bento-grid bento-grid-2">
+          <div class="card" style="background: var(--wp-bg-canvas); box-shadow: none; border: 1px solid var(--wp-border-light);">
+            <div class="card-body">
+              <h4 style="margin-bottom: 8px;">D-Day Countdown & Budget</h4>
+              <p style="font-size: 0.9rem; color: var(--wp-text-secondary); line-height: 1.5;">Melacak sisa hari menuju pernikahan dan sisa budget keuangan yang belum terpakai berdasarkan pengeluaran aktual.</p>
+            </div>
+          </div>
+          <div class="card" style="background: var(--wp-bg-canvas); box-shadow: none; border: 1px solid var(--wp-border-light);">
+            <div class="card-body">
+              <h4 style="margin-bottom: 8px;">Perlu Perhatian</h4>
+              <p style="font-size: 0.9rem; color: var(--wp-text-secondary); line-height: 1.5;">Sistem cerdas yang akan memunculkan peringatan (alert merah/kuning) jika ada tugas yang tertunda, budget yang overlimit, atau hal mendesak lainnya.</p>
+            </div>
+          </div>
+          <div class="card" style="background: var(--wp-bg-canvas); box-shadow: none; border: 1px solid var(--wp-border-light);">
+            <div class="card-body">
+              <h4 style="margin-bottom: 8px;">Tugas Aktif</h4>
+              <p style="font-size: 0.9rem; color: var(--wp-text-secondary); line-height: 1.5;">Menampilkan daftar tugas (*checklist*) yang saat ini berstatus 'In Progress'.</p>
+            </div>
+          </div>
+          <div class="card" style="background: var(--wp-bg-canvas); box-shadow: none; border: 1px solid var(--wp-border-light);">
+            <div class="card-body">
+              <h4 style="margin-bottom: 8px;">Aksi Cepat</h4>
+              <p style="font-size: 0.9rem; color: var(--wp-text-secondary); line-height: 1.5;">Jalan pintas ke fitur-fitur seperti tambah tamu, tambah pengeluaran, dll.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget & Finance -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          2. Budget & Finance
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Kelola anggaran miliaran dengan transparan, terukur, dan cerdas melalui split-bill.</p>
+        <ul style="font-size: 0.95rem; padding-left: 1.5rem; color: var(--wp-text-main); line-height: 1.8;">
+          <li><strong>Alokasi Kategori (Pie Chart):</strong> Bagilah total budget Anda berdasarkan persentase yang disarankan (misal 30% Katering, 20% Dekorasi).</li>
+          <li><strong>Variance & Actual (Ringkasan Budget):</strong> Anda bisa melihat "Selisih". Jika angkanya negatif (merah), berarti Anda membelanjakan uang melebihi alokasi.</li>
+          <li><strong>Split Bill Breakdown:</strong> Fitur paling esensial jika biaya ditanggung bersama. Ketika Anda menginput Biaya Aktual, Anda bisa menentukan persentase tanggungan Pihak Pria, Pihak Wanita, dan Keluarga. Sistem otomatis menghitung total tanggungan masing-masing pihak!</li>
+        </ul>
+      </div>
+      
+      <!-- Tabungan Bersama -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          3. Tabungan Bersama
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Fitur gamifikasi untuk menabung demi hari pernikahan impian.</p>
+        <ul style="font-size: 0.95rem; padding-left: 1.5rem; color: var(--wp-text-main); line-height: 1.8;">
+          <li><strong>Pengaturan Target:</strong> Masukkan total target tabungan dan kesanggupan setoran per bulan.</li>
+          <li><strong>Estimasi Selesai:</strong> Sistem akan otomatis membagi sisa target dengan setoran per bulan untuk memperkirakan berapa bulan lagi target Anda tercapai.</li>
+          <li><strong>Histori Setoran:</strong> Catat setiap uang yang disisihkan agar transparan antara Anda dan pasangan.</li>
+        </ul>
+      </div>
+
+      <!-- Guest List & Catering Math -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          4. Guest List & Catering
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Sistem terintegrasi dari list tamu hingga simulasi porsi makanan.</p>
+        <ul style="font-size: 0.95rem; padding-left: 1.5rem; color: var(--wp-text-main); line-height: 1.8;">
+          <li><strong>Catering Simulator:</strong> Sistem matematika pintar. Menggunakan *best practice*: (Total Undangan x 2) dikali persentase kehadiran, lalu dibagi menjadi 60% porsi *buffet* dan 40% porsi gubukan (*food stall*). Terdapat juga tambahan untuk VIP buffer dan vendor crew.</li>
+          <li><strong>Kuota 4-Arah:</strong> Lihat perbandingan porsi undangan antara Pihak Pria, Pihak Wanita, Keluarga, dan Teman secara visual (bar chart).</li>
+          <li><strong>Database Tamu & RSVP:</strong> Klik status RSVP (Pending -> Attending -> Declined) untuk mengubah status dengan cepat.</li>
+        </ul>
+      </div>
+
+      <!-- Vendors -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          5. Vendors Compare
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Pemilihan vendor berbasis angka, bukan sekadar intuisi.</p>
+        <ul style="font-size: 0.95rem; padding-left: 1.5rem; color: var(--wp-text-main); line-height: 1.8;">
+          <li><strong>Bobot Prioritas (Config):</strong> Jika Anda mementingkan Harga di atas Kualitas, atur bobot Harga lebih tinggi (misal 5, Kualitas 3, Fasilitas 2).</li>
+          <li><strong>Scoring Vendor:</strong> Masukkan nilai 1-10 untuk masing-masing kriteria pada setiap vendor. Sistem akan mengalikan nilai dengan bobot untuk mendapatkan <strong>Weighted Score</strong>, memastikan vendor terbaik terpilih secara matematis.</li>
+        </ul>
+      </div>
+
+      <!-- Operations Hub -->
+      <div class="guide-section" style="margin-bottom: var(--wp-space-xl); padding-bottom: var(--wp-space-xl); border-bottom: 1px dashed var(--wp-border-light);">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">
+          6. Operations Hub & Checklists
+        </h2>
+        <p class="text-secondary" style="font-size: 1.05rem; margin-bottom: var(--wp-space-md); line-height: 1.6;">Pusat komando eksekusi menjelang dan pada saat Hari H.</p>
+        <ul style="font-size: 0.95rem; padding-left: 1.5rem; color: var(--wp-text-main); line-height: 1.8;">
+          <li><strong>Rundown Sanity:</strong> Susun jadwal hari H. Sistem akan mendeteksi tumpang tindih waktu (clash) dan memberikan peringatan (Sanity Alerts).</li>
+          <li><strong>Aset Kritis:</strong> Tracker khusus untuk barang yang TIDAK BOLEH TERTINGGAL (Cincin, Mahar, Buku Nikah) beserta PIC yang membawanya.</li>
+          <li><strong>Kalkulator Kain:</strong> Masukkan jumlah keluarga. Kalkulator akan menghitung kebutuhan meter kain Bridesmaid, Atasan, dan Bawahan secara otomatis (standar 2 meter per pax).</li>
+          <li><strong>Detail Kelengkapan:</strong> Checklists mendetail per kategori (Dokumen KUA, Hantaran, Perlengkapan Kamar Pengantin).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

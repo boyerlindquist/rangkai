@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Pengaturan — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Pengaturan <span class="serif-accent">Workspace</span></h1>
+  <p class="page-subtitle">Konfigurasi data pernikahan dan workspace.</p>
+</div>
+
+<div class="bento-grid bento-grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h3><i data-lucide="gem"></i> Data Pernikahan</h3>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i data-lucide="link"></i> Kode Undangan Kolaborasi</h3>
+    </div>
+    <div class="card-body text-center">
+      <p class="text-secondary mb-md">Kode ini digunakan pasangan untuk join workspace:</p>
+      <div class="invite-code-display mb-lg">{{ wedding.invite_code }}</div>
+      <p class="text-muted" style="font-size: 0.8rem;">Salin dan bagikan ke pasanganmu</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

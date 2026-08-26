@@ -1,0 +1,18 @@
+{% load humanize %}
+<div class="phase-info" id="category-header-{{ cat.pk }}">
+  <span style="font-size: 1.3rem;">{{ cat.icon|safe }}</span>
+  <div>
+    <div class="phase-title" style="display: flex; align-items: center;">
+      {{ cat.name }}
+    </div>
+    <div class="phase-stats">
+      Alokasi: Rp {{ cat.allocated_amount|floatformat:0|intcomma }} ({{ cat.allocation_percentage|floatformat:"0" }}%)
+      &nbsp;·&nbsp;
+      Actual: Rp {{ cat.total_actual|intcomma }}
+      &nbsp;·&nbsp;
+      <span style="color: {% if cat.variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %}">
+        {% if cat.variance >= 0 %}Hemat{% else %}Over{% endif %} Rp {{ cat.variance|floatformat:0|intcomma }}
+      </span>
+    </div>
+  </div>
+</div>

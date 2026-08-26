@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Guest List — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-guests">
+  <div>
+    <h1>Guest List
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-guests', 'Guest List & Catering', 'Kelola daftar tamu Anda di sini. Sistem akan otomatis menghitung rasio kebutuhan catering prasmanan (buffet) vs gubukan (food stall) berdasarkan jumlah undangan.')"></i>
+    </h1>
+    <p class="page-subtitle">Kelola database tamu undangan dan hitung kebutuhan katering Anda.</p>
+  </div>
+</div>
+
+<!-- Guest KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Undangan</div>
+    <div class="kpi-value">{{ stats.total|default:"0" }}</div>
+    <div class="kpi-detail">{{ stats.total_pax|default:"0" }} total pax</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Konfirmasi Hadir</div>
+    <div class="kpi-value">{{ stats.attending|default:"0" }}</div>
+    <div class="kpi-detail">{{ stats.attending_pax|default:"0" }} pax hadir</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Checked-in</div>
+    <div class="kpi-value">{{ stats.checked_in|default:"0" }}</div>
+    <div class="kpi-detail">tamu tiba di venue</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Buffet Portions</div>
+    <div class="kpi-value">{{ catering.buffet_portions }}</div>
+    <div class="kpi-detail">estimasi porsi buffet utama</div>
+  </div>
+</div>
+
+<div class="bento-grid bento-grid-2 mb-lg">
+  <!-- Catering Math Simulator -->
+  <div class="card" id="guide-catering">
+    <div class="card-header">
+      <h3><i data-lucide="utensils"></i> Simulator Katering
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-catering', 'Simulator Katering', 'Ubah angka Total Undangan untuk mensimulasikan kebutuhan porsi makanan. Rasio standar industri yang digunakan: Total Porsi = Total Undangan x 2.5, dengan 60% untuk prasmanan dan 40% untuk gubukan.')"></i>
+      </h3>
+    </div>
+    <form hx-post="{% url 'guests:catering_config' %}" hx-swap="none" @htmx:after-request="if($event.detail.successful) window.location.reload();">
+      {% csrf_token %}
+      <input type="hidden" name="pax_multiplier" value="{{ config.pax_multiplier|stringformat:'s'|default:'2' }}">
+      <input type="hidden" name="stall_portion_per_pax" value="{{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }}">
+      <input type="hidden" name="stall_variety_count" value="{{ config.stall_variety_count|default:'4' }}">
+      <input type="hidden" name="crew_count" value="{{ config.crew_count|default:'50' }}">
+      <input type="hidden" name="akad_pax" value="{{ config.akad_pax|default:'100' }}">
+      <div class="card-body"
+           x-data="cateringCalc({
+             totalInvitations: {{ catering.total_invitations|default:'0' }},
+             paxMultiplier: {{ config.pax_multiplier|stringformat:'s'|default:'2' }},
+             attendanceRate: {{ config.attendance_rate|stringformat:'s'|default:'85' }},
+             vipBuffer: {{ config.vip_buffer_rate|stringformat:'s'|default:'10' }},
+             stallPerPax: {{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }},
+             stallVariety: {{ config.stall_variety_count|default:'4' }},
+             crewCount: {{ config.crew_count|default:'50' }},
+             akadPax: {{ config.akad_pax|default:'100' }}
+           })">
+        <div class="form-group">
+          <label>Total Undangan</label>
+          <input type="number" class="wp-input" x-model.number="totalInvitations">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Attendance Rate (%)</label>
+          <input type="number" name="attendance_rate" class="wp-input" x-model.number="attendanceRate" step="0.1" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label>VIP Buffer (%)</label>
+          <input type="number" name="vip_buffer_rate" class="wp-input" x-model.number="vipBuffer" step="0.1" min="0">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="bento-grid bento-grid-2" style="gap: 12px;">
+        <div class="alert alert-success" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Est. Dewasa Hadir</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="estAdultPax"></div>
+          </div>
+        </div>
+        <div class="alert alert-success" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Buffer Pax (VIP)</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="bufferPax"></div>
+          </div>
+        </div>
+        <div class="alert alert-warning" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;"><i data-lucide="soup"></i> Buffet Utama</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="buffetPortions + ' porsi'"></div>
+          </div>
+        </div>
+        <div class="alert alert-warning" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;"><i data-lucide="chef-hat"></i> Total Stall</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="stallTotal + ' porsi'"></div>
+            <div class="text-muted" style="font-size: 0.7rem;" x-text="stallPerVariety + ' per variasi (' + stallVariety + ' stall)'"></div>
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;"><i data-lucide="user-check"></i> Crew Meals</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="crewCount * 2 + ' box'"></div>
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin: 0;">
+          <div>
+            <div class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;"><i data-lucide="coffee"></i> Akad Snacks</div>
+            <div style="font-size: 1.2rem; font-weight: 600;" x-text="akadPax + ' pax'"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: var(--wp-space-md);">
+        <button type="submit" class="btn btn-primary" style="width: 100%;"><i data-lucide="calculator"></i> Terapkan & Hitung Ulang</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+  <!-- Family Quota Tug-of-War -->
+  <div class="card" id="guide-guest-quota">
+    <div class="card-header">
+      <h3><i data-lucide="scale"></i> Kuota Tamu 4-Arah
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-guest-quota', 'Kuota 4-Arah', 'Visualisasi porsi kuota undangan Keluarga vs Teman.')"></i>
+      </h3>
+    </div>
+    <div class="card-body">
+      {% if quota_breakdown %}
+      <div style="display: grid; gap: 12px;">
+        {% for q in quota_breakdown %}
+        <div>
+          <div class="flex justify-between items-center mb-md" style="margin-bottom: 4px;">
+            <span style="font-size: 0.85rem; font-weight: 600;">
+              {% if q.relation_side == 'groom_family' %}<i data-lucide="user"></i> Keluarga Pria
+              {% elif q.relation_side == 'bride_family' %}<i data-lucide="user"></i> Keluarga Wanita
+              {% elif q.relation_side == 'groom_friend' %}<i data-lucide="handshake"></i> Teman Pria
+              {% elif q.relation_side == 'bride_friend' %}<i data-lucide="handshake"></i> Teman Wanita
+              {% endif %}
+            </span>
+            <span class="text-muted" style="font-size: 0.8rem;">{{ q.count }} undangan · {{ q.pax }} pax</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill progress-fill-sage" style="width: {% widthratio q.count stats.total 100 %}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i data-lucide="users"></i></div>
+        <p>Belum ada data tamu. Tambahkan tamu di tabel di bawah.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Guest Table -->
+<div class="card mt-lg" id="guide-guest-db">
+  <div class="card-header">
+    <h3><i data-lucide="clipboard-list"></i> Database Tamu
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-guest-db', 'Database Tamu', 'Catat detail kontak, RSVP, dan status kehadiran saat hari H.')"></i>
+    </h3>
+    <div class="flex gap-sm">
+      <span class="badge badge-muted">{{ stats.total|default:"0" }} undangan</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div style="padding: var(--wp-space-md) var(--wp-space-lg); border-bottom: 1px solid var(--wp-border-light);">
+    <div class="filter-bar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none" style="margin-bottom: 0;">
+      <a href="{% url 'guests:list' %}" class="filter-pill {% if not side_filter and not rsvp_filter %}active{% endif %}">Semua</a>
+      <a href="?side=groom_family" class="filter-pill {% if side_filter == 'groom_family' %}active{% endif %}">Kel. Pria</a>
+      <a href="?side=bride_family" class="filter-pill {% if side_filter == 'bride_family' %}active{% endif %}">Kel. Wanita</a>
+      <a href="?side=groom_friend" class="filter-pill {% if side_filter == 'groom_friend' %}active{% endif %}">Teman Pria</a>
+      <a href="?side=bride_friend" class="filter-pill {% if side_filter == 'bride_friend' %}active{% endif %}">Teman Wanita</a>
+      <span style="color: var(--wp-border-light);">|</span>
+      <a href="?rsvp=attending" class="filter-pill {% if rsvp_filter == 'attending' %}active{% endif %}"><i data-lucide="check-square"></i> Hadir</a>
+      <a href="?rsvp=pending" class="filter-pill {% if rsvp_filter == 'pending' %}active{% endif %}"><i data-lucide="clock"></i> Pending</a>
+      <a href="?rsvp=declined" class="filter-pill {% if rsvp_filter == 'declined' %}active{% endif %}"><i data-lucide="x"></i> Berhalangan</a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if guests %}
+    <div class="table-responsive">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th>Nama Tamu</th>
+            <th>Asal Relasi</th>
+            <th>Kategori</th>
+            <th>Pax</th>
+            <th>RSVP</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for guest in guests %}
+          {% include "guests/partials/guest_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i data-lucide="users"></i></div>
+      <p>Belum ada tamu. Tambahkan tamu pertama di bawah.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Guest Form -->
+<div class="card mt-lg" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Tamu</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah Tamu'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'guests:add' %}" hx-post="{% url 'guests:add' %}" hx-swap="none" @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-sage mt-md"><i data-lucide="save"></i> Simpan Tamu</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('cateringCalc', (config) => ({
+      totalInvitations: config.totalInvitations || 500,
+      paxMultiplier: config.paxMultiplier || 2,
+      attendanceRate: config.attendanceRate || 85,
+      vipBuffer: config.vipBuffer || 10,
+      stallPerPax: config.stallPerPax || 1.5,
+      stallVariety: config.stallVariety || 4,
+      crewCount: config.crewCount || 50,
+      akadPax: config.akadPax || 100,
+
+      get estAdultPax() {
+        return Math.round(this.totalInvitations * this.paxMultiplier * (this.attendanceRate / 100));
+      },
+      get bufferPax() {
+        return Math.round(this.estAdultPax * (1 + (this.vipBuffer / 100)));
+      },
+      get buffetPortions() {
+        // Simple 60% buffet rule
+        return Math.round(this.bufferPax * 0.6);
+      },
+      get stallTotal() {
+        return Math.round(this.bufferPax * this.stallPerPax);
+      },
+      get stallPerVariety() {
+        return this.stallVariety > 0 ? Math.round(this.stallTotal / this.stallVariety) : 0;
+      }
+    }))
+  })
+</script>
+{% endblock %}

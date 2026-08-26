@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Budget & Finance — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-budget">
+  <div>
+    <h1>Budget & Finance
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-budget', 'Budget Split Bill', 'Masukkan Biaya Aktual di sini. Split bill akan secara otomatis memisahkan porsi bayaran Pria, Wanita, dan Keluarga sesuai persentase yang Anda atur.')"></i>
+    </h1>
+    <p class="page-subtitle">Kelola alokasi dana dan pantau pengeluaran aktual Anda.</p>
+  </div>
+</div>
+
+<!-- Financial KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Budget</div>
+    <div class="kpi-value">Rp {{ total_allocated|intcomma }}</div>
+    <div class="kpi-detail">Target anggaran keseluruhan</div>
+  </div>
+  <div class="kpi-card" id="guide-budget-summary">
+    <div class="kpi-label">
+      Total Actual
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 14px; height: 14px; margin-left: 4px;" onclick="showFeatureGuide('#guide-budget-summary', 'Ringkasan Budget', 'Variance menunjukkan selisih antara budget alokasi dan pengeluaran aktual. Merah berarti overbudget.')"></i>
+    </div>
+    <div class="kpi-value">Rp {{ total_actual|intcomma }}</div>
+    <div class="kpi-detail">
+      Variance:
+      <span style="color: {% if variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %}">
+        {% if variance >= 0 %}+{% endif %}Rp {{ variance|intcomma }}
+      </span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Sudah Dibayar</div>
+    <div class="kpi-value">Rp {{ total_paid|intcomma }}</div>
+    <div class="kpi-detail">dari total actual cost</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Sisa Bayar</div>
+    <div class="kpi-value">Rp {{ total_remaining|intcomma }}</div>
+    <div class="kpi-detail">belum lunas ke vendor</div>
+  </div>
+</div>
+
+<!-- Config Allocations Container -->
+<div id="allocation-container"></div>
+
+<!-- Budget Categories & Items -->
+<div class="card mb-lg" id="guide-categories">
+  <div class="card-header">
+    <h3><i data-lucide="pie-chart"></i> Alokasi per Kategori
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-categories', 'Alokasi Kategori', 'Total budget Anda dibagi ke dalam kategori-kategori. Gunakan persentase untuk menentukan proporsi ideal masing-masing kategori.')"></i>
+    </h3>
+    <button class="btn btn-outline btn-sm" hx-get="{% url 'finances:config_allocations' %}" hx-target="#allocation-container" hx-swap="innerHTML">
+      <i data-lucide="settings"></i> Atur Alokasi
+    </button>
+  </div>
+  <div class="card-body">
+    {% for cat in categories %}
+    <div x-data="{ open: false }" class="accordion-item" style="border: none; border-bottom: 1px solid var(--wp-border-light); border-radius: 0; margin-bottom: 0;">
+      <div class="accordion-header" @click="open = !open">
+        {% include "finances/partials/budget_category_row.html" %}
+        <span class="chevron" :style="open && 'transform: rotate(180deg)'">▼</span>
+      </div>
+      <div class="accordion-body" x-show="open" x-transition x-cloak>
+        <div class="accordion-body-inner">
+          {% if cat.items.all %}
+          <div class="table-responsive">
+            <table class="wp-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Vendor</th>
+                  <th>Actual Cost</th>
+                  <th>Dibayar</th>
+                  <th>Status</th>
+                  <th>Jatuh Tempo</th>
+                  <th>PJ</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in cat.items.all %}
+                {% include "finances/partials/budget_item_row.html" %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-muted" style="padding: var(--wp-space-md) 0;">Belum ada item di kategori ini.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Add Budget Item Form -->
+<div class="card mb-lg" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Item Pengeluaran</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Buka Form'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'finances:add_item' %}" hx-post="{% url 'finances:add_item' %}" hx-swap="outerHTML" hx-target=".main-content" hx-select=".main-content">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-gold mt-md"><i data-lucide="save"></i> Simpan Item</button>
+    </form>
+  </div>
+</div>
+
+<!-- Split-Bill Breakdown -->
+{% if payer_breakdown %}
+<div class="card mb-lg" id="guide-split-bill">
+  <div class="card-header">
+    <h3><i data-lucide="users"></i> Split-Bill Breakdown
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-split-bill', 'Split Bill Breakdown', 'Ringkasan proporsi pembayaran untuk Pria, Wanita, dan Keluarga yang dihitung otomatis dari tiap item pengeluaran.')"></i>
+    </h3>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th>Kontributor</th>
+            <th>Total Actual</th>
+            <th>Sudah Dibayar</th>
+            <th>Sisa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payer, amounts in payer_breakdown.items %}
+          <tr>
+            <td><strong>{{ payer }}</strong></td>
+            <td>Rp {{ amounts.actual|intcomma }}</td>
+            <td>Rp {{ amounts.paid|intcomma }}</td>
+            <td>
+              <span class="{% if amounts.actual > amounts.paid %}text-terracotta{% else %}text-sage{% endif %}">
+                Rp {{ amounts.remaining|intcomma }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Cash-Out Forecast Chart -->
+{% if cash_out_data %}
+<div class="card">
+  <div class="card-header">
+    <h3><i data-lucide="trending-up"></i> Cash-Out Forecast</h3>
+  </div>
+  <div class="card-body" x-data="cashOutChart()" x-init="init()">
+    <div style="display: flex; align-items: flex-end; gap: 8px; height: 200px; padding-top: 20px;">
+      {% for item in cash_out_data %}
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
+        <div class="text-muted" style="font-size: 0.7rem; margin-bottom: 4px;">Rp {{ item.amount|intcomma }}</div>
+        <div style="flex: 1; display: flex; align-items: flex-end; width: 100%;">
+          <div style="width: 100%; background: var(--wp-gold-main); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.6s ease;"
+               x-bind:style="'height: ' + getBarHeight({{ item.amount }}) + '%'"></div>
+        </div>
+        <div class="text-muted" style="font-size: 0.7rem; margin-top: 4px;">{{ item.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function cashOutChart() {
+  return {
+    maxVal: 0,
+    init() {
+      const amounts = [{% for item in cash_out_data %}{{ item.amount }},{% endfor %}];
+      this.maxVal = Math.max(...amounts, 1);
+    },
+    getBarHeight(amount) {
+      return Math.max((amount / this.maxVal) * 100, 2);
+    }
+  }
+}
+</script>
+{% endblock %}

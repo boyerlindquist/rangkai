@@ -1,0 +1,88 @@
+<form hx-post="{% url 'finances:config_allocations' %}" 
+      hx-target=".main-content" 
+      hx-select=".main-content"
+      hx-swap="outerHTML"
+      class="fade-in" 
+      style="background: var(--wp-bg-surface); padding: var(--wp-space-xl); border-radius: var(--wp-radius-lg); margin-bottom: var(--wp-space-xl); box-shadow: var(--wp-shadow-sm); border: 1px solid var(--wp-border-light);"
+      x-data="allocationForm()"
+      @submit="if (total > 100) { $event.preventDefault(); alert('Total alokasi tidak boleh melebihi 100%!'); }">
+  {% csrf_token %}
+  {{ formset.management_form }}
+  
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--wp-space-xl); border-bottom: 1px solid var(--wp-border-light); padding-bottom: var(--wp-space-md);">
+    <div>
+      <h3 style="margin-top: 0; color: var(--wp-text-main); display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="pie-chart"></i> Atur Alokasi Kategori (%)
+      </h3>
+      <p class="text-muted" style="margin-bottom: 0;">Sesuaikan persentase alokasi dana untuk setiap kategori. Total maksimal 100%.</p>
+    </div>
+    <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 20px; border-radius: var(--wp-radius-md);">
+      <div style="font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Alokasi</div>
+      <div :style="total > 100 ? 'color: var(--wp-terracotta-main);' : (total === 100 ? 'color: var(--wp-sage-main);' : 'color: var(--wp-text-primary);')" 
+           style="font-size: 1.8rem; font-weight: 500; font-family: 'Instrument Serif', serif;">
+        <span x-text="total"></span>%
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--wp-space-lg);">
+    {% for form in formset %}
+    <div class="form-group" style="margin-bottom: 0; background: var(--wp-bg-base); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); border: 1px solid var(--wp-border-light);">
+      {{ form.id }}
+      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-weight: 600;">
+        <span style="font-size: 1.2rem; background: var(--wp-bg-surface); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: var(--wp-shadow-sm);">{{ form.instance.icon|safe }}</span>
+        {{ form.instance.name }}
+      </label>
+      <div style="position: relative;">
+        <!-- Injecting Alpine x-model to track input -->
+        <input type="number" 
+               name="{{ form.allocation_percentage.html_name }}" 
+               id="{{ form.allocation_percentage.id_for_label }}"
+               class="wp-input" 
+               style="padding-right: 36px; font-weight: 600; text-align: right;"
+               min="0" max="100"
+               x-model.number="values['{{ form.instance.pk }}']"
+               @input="calculateTotal()">
+        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--wp-text-muted); font-weight: 600;">%</span>
+      </div>
+      {% if form.allocation_percentage.errors %}
+      <div style="color: var(--wp-terracotta-main); font-size: 0.8rem; margin-top: 4px;">{{ form.allocation_percentage.errors.0 }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  
+  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: var(--wp-space-2xl); padding-top: var(--wp-space-lg); border-top: 1px solid var(--wp-border-light);">
+    <button type="button" class="btn btn-secondary" hx-get="{% url 'finances:dashboard' %}" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">Batal</button>
+    <button type="submit" class="btn btn-primary" :disabled="total > 100">
+      <i data-lucide="save"></i> Simpan Alokasi
+    </button>
+  </div>
+</form>
+
+<script>
+function allocationForm() {
+    return {
+        values: {
+            {% for form in formset %}
+            '{{ form.instance.pk }}': parseInt('{{ form.instance.allocation_percentage|default:"0" }}') || 0,
+            {% endfor %}
+        },
+        total: 0,
+        init() {
+            this.calculateTotal();
+            lucide.createIcons();
+        },
+        calculateTotal() {
+            let sum = 0;
+            for (let key in this.values) {
+                let val = parseInt(this.values[key]);
+                if (!isNaN(val)) {
+                    sum += val;
+                }
+            }
+            this.total = sum;
+        }
+    }
+}
+</script>

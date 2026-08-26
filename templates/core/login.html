@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Login — Smart Wedding Engine{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card fade-in">
+    <div class="auth-brand">
+      <h1><i data-lucide="gem"></i> Smart Wedding Engine</h1>
+      <p>Masuk ke workspace pernikahanmu</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.errors %}
+      <div class="alert alert-danger">
+        <span><i data-lucide="alert-triangle"></i></span>
+        <div>Username atau password salah.</div>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_username">Username</label>
+        {{ form.username }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        {{ form.password }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+
+    <div class="auth-links">
+      Belum punya akun? <a href="{% url 'core:register' %}">Daftar Sekarang</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

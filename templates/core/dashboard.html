@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-overview">
+  <div>
+    <h1>Overview
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;"
+        onclick="showFeatureGuide('#guide-overview', 'Dashboard Overview', 'Di sini Anda dapat melihat rangkuman seluruh data persiapan pernikahan, mulai dari hitung mundur hari H, sisa budget, RSVP tamu, dan tugas terdekat. Notifikasi merah menandakan hal yang perlu segera ditindaklanjuti.')"></i>
+    </h1>
+    <p class="page-subtitle">Rangkuman progres dan metrik utama pernikahan Anda.</p>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <!-- D-Day Countdown -->
+  <div class="kpi-card" id="guide-dday">
+    <div class="kpi-label">
+      D-Day Countdown
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 14px; height: 14px; margin-left: 4px;"
+        onclick="showFeatureGuide('#guide-dday', 'D-Day Countdown', 'Hitung mundur menuju hari bahagia Anda berdasarkan tanggal yang diset di Pengaturan.')"></i>
+    </div>
+    <div class="kpi-value">{% if days_remaining is not None %}{{ days_remaining }}{% else %}—{% endif %}</div>
+    <div class="kpi-detail">{% if days_remaining is not None %}hari menuju hari bahagia{% else %}Set tanggal di
+      Pengaturan{% endif %}</div>
+  </div>
+
+  <!-- Budget Remaining -->
+  <div class="kpi-card" id="guide-budget-rem">
+    <div class="kpi-label">
+      Sisa Budget
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 14px; height: 14px; margin-left: 4px;"
+        onclick="showFeatureGuide('#guide-budget-rem', 'Sisa Budget', 'Total budget dikurangi dengan pembayaran aktual (paid).')"></i>
+    </div>
+    <div class="kpi-value">Rp {{ budget_remaining|intcomma }}</div>
+    <div class="kpi-detail">Actual: Rp {{ total_actual|intcomma }} / Paid: Rp {{ total_paid|intcomma }}</div>
+  </div>
+
+  <!-- RSVP -->
+  <div class="kpi-card" id="guide-rsvp">
+    <div class="kpi-label">
+      RSVP Hadir
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 14px; height: 14px; margin-left: 4px;"
+        onclick="showFeatureGuide('#guide-rsvp', 'RSVP Hadir', 'Jumlah tamu dan pax yang telah mengonfirmasi kehadiran (Attending).')"></i>
+    </div>
+    <div class="kpi-value">{{ guest_stats.attending|default:"0" }}</div>
+    <div class="kpi-detail">dari {{ guest_stats.total|default:"0" }} undangan ({{ guest_stats.attending_pax|default:"0" }} pax)</div>
+  </div>
+
+  <!-- Task Progress -->
+  <div class="kpi-card" id="guide-task-prog">
+    <div class="kpi-label">
+      Progress Tugas
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 14px; height: 14px; margin-left: 4px;"
+        onclick="showFeatureGuide('#guide-task-prog', 'Progress Tugas', 'Persentase tugas yang sudah selesai dari total keseluruhan.')"></i>
+    </div>
+    <div class="kpi-value">{{ task_progress }}%</div>
+    <div class="kpi-detail">{{ task_stats.done }} / {{ task_stats.total }} selesai</div>
+    <div class="progress-bar mt-md">
+      <div class="progress-fill progress-fill-terracotta" style="width: {{ task_progress }}%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bento-grid bento-grid-2 mb-lg">
+  <!-- Perlu Perhatian -->
+  <div class="card" id="guide-attention">
+    <div class="card-header">
+      <h3><i data-lucide="alert-triangle"></i> Perlu Perhatian
+        <i data-lucide="help-circle" class="text-muted"
+          style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
+          onclick="showFeatureGuide('#guide-attention', 'Perlu Perhatian', 'Daftar hal-hal kritis yang harus diselesaikan segera, seperti pembayaran tertunda atau tugas penting.')"></i>
+      </h3>
+    </div>
+    <div class="card-body" style="height: 320px; overflow-y: auto; padding-right: 8px;">
+      {% if overdue_items %}
+      {% for item in overdue_items %}
+      <div class="alert alert-danger">
+        <span><i data-lucide="banknote"></i></span>
+        <div>
+          <strong>{{ item.name }}</strong> — overdue {{ item.due_date }}
+          <div class="text-muted" style="font-size: 0.8rem;">Rp {{ item.remaining|intcomma }} belum dibayar</div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state" style="padding: var(--wp-space-lg);">
+        <div class="empty-icon"><i data-lucide="check-square"></i></div>
+        <p>Tidak ada pembayaran overdue. Mantap!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Tugas Aktif (In Progress) -->
+  <div class="card" id="guide-active-tasks">
+    <div class="card-header">
+      <h3><i data-lucide="play-circle"></i> Tugas Aktif
+        <i data-lucide="help-circle" class="text-muted"
+          style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
+          onclick="showFeatureGuide('#guide-active-tasks', 'Tugas Aktif', 'Tugas yang sedang dalam status In Progress muncul di sini.')"></i>
+      </h3>
+      <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-outline btn-sm">Lihat Semua</a>
+    </div>
+    <div class="card-body" style="height: 320px; overflow-y: auto; padding-right: 8px;">
+      {% if active_tasks %}
+      {% for task in active_tasks %}
+      <div class="task-item">
+        <div class="task-checkbox {% if task.status == 'in_progress' %}in-progress{% endif %}">
+          {% if task.status == 'in_progress' %}<i data-lucide="clock"></i>{% endif %}
+        </div>
+        <div class="task-title">
+          {{ task.title }}
+          {% if task.is_critical %}<span class="badge badge-terracotta">Kritis</span>{% endif %}
+        </div>
+        <span class="badge badge-muted">{{ task.get_assignee_display }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state" style="padding: var(--wp-space-lg);">
+        <div class="empty-icon"><i data-lucide="party-popper"></i></div>
+        <p>Semua tugas sudah selesai!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" id="guide-quick-actions">
+  <div class="card-header">
+    <h3><i data-lucide="zap"></i> Aksi Cepat
+      <i data-lucide="help-circle" class="text-muted"
+        style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
+        onclick="showFeatureGuide('#guide-quick-actions', 'Aksi Cepat', 'Pintasan ke aksi-aksi umum untuk mempercepat alur kerja Anda.')"></i>
+    </h3>
+  </div>
+  <div class="card-body">
+    <div class="flex gap-md" style="flex-wrap: wrap;">
+      <a href="{% url 'finances:dashboard' %}" class="btn btn-outline btn-sm"><i data-lucide="wallet"></i> Kelola
+        Budget</a>
+      <a href="{% url 'guests:list' %}" class="btn btn-outline btn-sm"><i data-lucide="users"></i> Tambah Tamu</a>
+      <a href="{% url 'vendors:compare' %}" class="btn btn-outline btn-sm"><i data-lucide="store"></i> Bandingkan
+        Vendor</a>
+      <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-outline btn-sm"><i
+          data-lucide="check-square"></i> Cek Tugas</a>
+      <a href="{% url 'operations-hub:operations_hub' %}" class="btn btn-outline btn-sm"><i
+          data-lucide="settings-2"></i> Operasional H-Day</a>
+    </div>
+  </div>
+</div>
+<!-- Vendor & Budget Flow Summary -->
+<div class="bento-grid bento-grid-2 mb-lg mt-lg">
+  <!-- Vendor Terpilih -->
+  <div class="card" id="guide-vendors">
+    <div class="card-header">
+      <h3><i data-lucide="store"></i> Vendor Pilihan
+        <i data-lucide="help-circle" class="text-muted"
+          style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
+          onclick="showFeatureGuide('#guide-vendors', 'Vendor Pilihan', 'Daftar vendor yang sudah Anda tandai sebagai Booked.')"></i>
+      </h3>
+      <a href="{% url 'vendors:compare' %}" class="btn btn-outline btn-sm">Kelola</a>
+    </div>
+    <div class="card-body" style="height: 350px; overflow-y: auto; padding-right: 8px;">
+      {% if booked_vendors %}
+      <div style="display: flex; flex-direction: column; gap: var(--wp-space-sm);">
+        {% for vendor in booked_vendors %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--wp-space-sm); border: 1px solid var(--wp-border-light); border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle);">
+          <div>
+            <div style="font-weight: 500; color: var(--wp-text-primary);">{{ vendor.name }}</div>
+            <div class="text-muted" style="font-size: 0.8rem;">{{ vendor.get_category_display }}</div>
+          </div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 0.9rem;">
+            Rp {{ vendor.price_estimate|intcomma }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding: var(--wp-space-lg);">
+        <div class="empty-icon"><i data-lucide="store"></i></div>
+        <p>Belum ada vendor yang di-Booked.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sankey Diagram -->
+  <div class="card" id="guide-sankey">
+    <div class="card-header">
+      <h3><i data-lucide="git-merge"></i> Alur Budget
+        <i data-lucide="help-circle" class="text-muted"
+          style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
+          onclick="showFeatureGuide('#guide-sankey', 'Alur Budget', 'Visualisasi flow anggaran dari Total Budget menuju ke masing-masing kategori pengeluaran aktual.')"></i>
+      </h3>
+    </div>
+    <div class="card-body" style="padding: 0; min-height: 350px; overflow: hidden; background: var(--wp-bg-surface); display: block;">
+      {% if sankey_data_json and sankey_data_json != '[]' %}
+      <div id="sankey_chart" style="width: 100%; height: 350px; display: block;"></div>
+      {% else %}
+      <div class="empty-state" style="padding: var(--wp-space-lg); width: 100%; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="empty-icon"><i data-lucide="wallet"></i></div>
+        <p>Belum ada pengeluaran aktual untuk ditampilkan.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if wedding %}
+<!-- Invite Code Section -->
+<div class="card mt-lg">
+  <div class="card-header">
+    <h3><i data-lucide="link"></i> Kode Undangan Pasangan</h3>
+  </div>
+  <div class="card-body text-center">
+    <p class="text-secondary mb-md">Bagikan kode ini ke pasanganmu agar bisa join workspace bersama:</p>
+    <div class="invite-code-display">{{ wedding.invite_code }}</div>
+    <p class="text-muted mt-md" style="font-size: 0.8rem;">Kode ini bisa digunakan di halaman "Gabung Workspace"</p>
+  </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+{% if sankey_data_json and sankey_data_json != '[]' %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+  google.charts.load('current', {'packages':['sankey']});
+  google.charts.setOnLoadCallback(drawChart);
+
+  function drawChart() {
+    var data = new google.visualization.DataTable();
+    data.addColumn('string', 'Dari');
+    data.addColumn('string', 'Ke');
+    data.addColumn('number', 'Alokasi (Rp)');
+    
+    // Parse JSON
+    var chartData = {{ sankey_data_json|safe }};
+    data.addRows(chartData);
+
+    // Custom palette matching theme (Gold, Sage, Terracotta)
+    var colors = ['#C0A888', '#9BACA0', '#C38B75', '#4A4A4A', '#8b7a63', '#6f8373', '#9c6f5d', '#d9c8b0'];
+    var options = {
+      width: '100%',
+      height: 350,
+      sankey: {
+        node: {
+          colors: colors,
+          nodePadding: 24,
+          label: {
+            fontName: 'Montserrat',
+            fontSize: 13,
+            color: '#1a1a1a',
+            bold: true
+          }
+        },
+        link: {
+          colorMode: 'gradient',
+          colors: colors
+        }
+      }
+    };
+
+    var chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+    chart.draw(data, options);
+  }
+
+  // Use ResizeObserver to detect real container dimension changes (e.g. after initial DOM/CSS load)
+  document.addEventListener("DOMContentLoaded", function() {
+    const chartContainer = document.getElementById('sankey_chart');
+    if (chartContainer) {
+      let resizeTimer;
+      const resizeObserver = new ResizeObserver(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (typeof google !== 'undefined' && google.visualization && google.visualization.Sankey) {
+            drawChart();
+          }
+        }, 150);
+      });
+      // Observe the parent container which dictates the width
+      resizeObserver.observe(chartContainer.parentElement);
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
+{% endblock %}

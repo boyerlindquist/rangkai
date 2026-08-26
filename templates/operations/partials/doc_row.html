@@ -1,0 +1,19 @@
+<tr id="doc-{{ doc.pk }}">
+  <td>{{ doc.name }}</td>
+  <td>{{ doc.get_party_display }}</td>
+  <td>
+    <span class="badge {% if doc.status == 'done' %}badge-success{% elif doc.status == 'process' %}badge-warning{% else %}badge-default{% endif %}">
+      {{ doc.get_status_display }}
+    </span>
+  </td>
+  <td class="text-secondary" style="font-size: 0.9rem;">{{ doc.notes|default:"-" }}</td>
+  <td style="text-align: right;">
+    <button type="button" class="btn btn-ghost btn-sm" hx-get="{% url 'operations-checklist:update_document' doc.pk %}" hx-target="#doc-{{ doc.pk }}" hx-swap="outerHTML">
+      <i data-lucide="edit-3"></i>
+    </button>
+    <form method="post" action="{% url 'operations-checklist:delete_document' doc.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
+    </form>
+  </td>
+</tr>

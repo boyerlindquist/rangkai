@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Gabung Workspace — Smart Wedding Engine{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card fade-in">
+    <div class="auth-brand">
+      <h1><i data-lucide="gem"></i> Gabung Workspace</h1>
+      <p>Masukkan kode undangan dari pasanganmu untuk bergabung ke workspace pernikahan bersama</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.errors %}
+      <div class="alert alert-danger">
+        <span><i data-lucide="alert-triangle"></i></span>
+        <div>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_invite_code">Kode Undangan (8 Karakter)</label>
+        {{ form.invite_code }}
+      </div>
+
+      <button type="submit" class="btn btn-gold">Gabung Workspace</button>
+    </form>
+
+    <div class="auth-links">
+      <a href="{% url 'core:register' %}">Buat workspace baru</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,229 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Smart Wedding Engine — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
+  <title>{% block title %}Smart Wedding Engine{% endblock %}</title>
+
+  <!-- Theme Initialization (Prevents flicker) -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
+
+  <!-- Google Fonts: Luxury Editorial Aesthetics -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4">
+  <!-- Driver.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  {% if messages %}
+  <div class="messages-container" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" x-transition>
+    {% for message in messages %}
+    <div class="message-toast {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% block body %}
+  <div class="app-shell" x-data="{ collapsed: localStorage.getItem('sidebarCollapsed') === 'true' }">
+    <!-- Theme Toggle Floating Button -->
+    <button onclick="toggleTheme()" class="btn btn-ghost theme-toggle-floating" aria-label="Toggle Theme" style="position: fixed; top: var(--wp-space-lg); right: var(--wp-space-lg); z-index: 1000; background: var(--wp-accent-contrast); border: 1px solid var(--wp-accent-contrast); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s ease;">
+      <i data-lucide="moon" id="themeIcon" style="width: 20px; height: 20px; color: var(--wp-accent-text);"></i>
+    </button>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+      <span style="color: var(--wp-gold-main); font-weight: 500; font-size: 0.9rem;">Wedding Planner</span>
+      <span></span>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar" :class="{ 'collapsed': collapsed }">
+      <div class="sidebar-brand">
+        <div class="brand-info">
+          <h2 class="brand-text">Wedding Planner</h2>
+          {% if wedding %}
+          <div class="couple-names">
+            {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
+          </div>
+          {% endif %}
+        </div>
+        {% if wedding %}
+        <div class="brand-initials">
+          {{ wedding.groom_name|first|upper }}&{{ wedding.bride_name|first|upper }}
+        </div>
+        {% else %}
+        <div class="brand-initials">WP</div>
+        {% endif %}
+      </div>
+
+      <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">
+        <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> <span class="nav-text">Overview</span>
+        </a>
+        <a href="{% url 'finances:dashboard' %}" class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="wallet"></i></span> <span class="nav-text">Budget & Finance</span>
+        </a>
+        <a href="{% url 'finances:savings_tracker' %}" class="{% if '/savings/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="piggy-bank"></i></span> <span class="nav-text">Tabungan Bersama</span>
+        </a>
+        <a href="{% url 'guests:list' %}" class="{% if '/guests/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="users"></i></span> <span class="nav-text">Guest List</span>
+        </a>
+        <a href="{% url 'vendors:compare' %}" class="{% if '/vendors/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="store"></i></span> <span class="nav-text">Vendors</span>
+        </a>
+        <a href="{% url 'operations-checklist:checklist' %}" class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Checklist & Tasks</span>
+        </a>
+        <a href="{% url 'operations-checklist:detail_checklists' %}" class="{% if '/details/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="file-check-2"></i></span> <span class="nav-text">Detail Berkas</span>
+        </a>
+        <a href="{% url 'operations-hub:operations_hub' %}" class="{% if '/operations/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="settings-2"></i></span> <span class="nav-text">Operations</span>
+        </a>
+        <a href="{% url 'core:guide' %}" class="{% if '/guide/' in request.path %}active{% endif %}" style="margin-top: auto;">
+          <span class="nav-icon"><i data-lucide="book-open"></i></span> <span class="nav-text">Panduan</span>
+        </a>
+        <a href="{% url 'core:settings' %}" class="{% if '/settings/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="settings"></i></span> <span class="nav-text">Pengaturan</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        {% if user.is_authenticated %}
+        <div class="user-info">
+          <div class="user-avatar">{{ user.username|first|upper }}</div>
+          <div class="nav-text">
+            <div class="user-name" style="color: var(--wp-sidebar-text);">{{ user.username }}</div>
+            {% if wedding_role %}
+            <div class="user-role">{{ wedding_role }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="nav-text" style="margin-top: 12px;">
+          <a href="{% url 'core:logout' %}" class="btn btn-ghost" style="color: var(--wp-sidebar-text-muted); width: 100%; font-size: 0.8rem; padding: 6px; text-align: center; display: block;">Logout</a>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+
+    <!-- Floating Sidebar Toggle -->
+    <button class="floating-sidebar-toggle" 
+            :style="collapsed ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
+            @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);">
+      <i x-show="!collapsed" data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+      <i x-show="collapsed" data-lucide="chevron-right" style="width: 14px; height: 14px; display: none;"></i>
+    </button>
+
+    <!-- Main Content Area -->
+    <main class="main-content" :class="{ 'collapsed': collapsed }">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% endblock %}
+
+  <!-- Alpine.js (Client-Side Reactivity) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- HTMX (Async Server Persistence) -->
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Driver.js (Guided Tour) -->
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+  <!-- Custom Tour Script -->
+  <script src="{% static 'js/guide.js' %}"></script>
+
+  <script>
+    // Sidebar toggle for mobile
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    // Auto-dismiss messages
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var msgs = document.querySelector('.messages-container');
+        if (msgs) msgs.style.display = 'none';
+      }, 5000);
+      
+      // Initialize icons
+      lucide.createIcons();
+    });
+
+    // Update active sidebar link after HTMX swap
+    document.body.addEventListener('htmx:pushedIntoHistory', function(evt) {
+      let links = Array.from(document.querySelectorAll('.sidebar-nav a'));
+      links.forEach(a => a.classList.remove('active'));
+      
+      let path = window.location.pathname;
+      
+      // Sort links by href length descending to match most specific path first
+      links.sort((a, b) => b.getAttribute('href').length - a.getAttribute('href').length);
+      
+      for (let a of links) {
+        let href = a.getAttribute('href');
+        if (href === path || (href !== '/' && href !== '/dashboard/' && path.startsWith(href))) {
+          a.classList.add('active');
+          break; // Stop after finding the most specific match
+        }
+      }
+    });
+
+    // Re-initialize icons after HTMX swaps
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        lucide.createIcons();
+    });
+
+    // Add CSRF token to all HTMX requests
+    document.body.addEventListener('htmx:configRequest', function(evt) {
+        evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    });
+
+    // Theme Toggle Logic
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      const themeIcon = document.getElementById('themeIcon');
+      if (themeIcon) {
+        themeIcon.setAttribute('data-lucide', newTheme === 'dark' ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+
+    // Set initial icon state based on theme
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('theme') === 'dark') {
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+          themeIcon.setAttribute('data-lucide', 'sun');
+        }
+      }
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

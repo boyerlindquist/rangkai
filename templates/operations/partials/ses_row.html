@@ -1,0 +1,22 @@
+{% load humanize %}
+<tr id="ses-{{ ses.pk }}">
+  <td>{{ ses.name }}</td>
+  <td class="text-secondary">{{ ses.category|default:"-" }}</td>
+  <td>Rp {{ ses.est_price|intcomma }}</td>
+  <td>Rp {{ ses.actual_price|intcomma }}</td>
+  <td>
+    <span class="badge {% if ses.status == 'done' %}badge-success{% elif ses.status == 'process' %}badge-warning{% else %}badge-default{% endif %}">
+      {{ ses.get_status_display }}
+    </span>
+  </td>
+  <td class="text-secondary">{{ ses.pic|default:"-" }}</td>
+  <td style="text-align: right;">
+    <button type="button" class="btn btn-ghost btn-sm" hx-get="{% url 'operations-checklist:update_seserahan' ses.pk %}" hx-target="#ses-{{ ses.pk }}" hx-swap="outerHTML">
+      <i data-lucide="edit-3"></i>
+    </button>
+    <form method="post" action="{% url 'operations-checklist:delete_seserahan' ses.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
+    </form>
+  </td>
+</tr>

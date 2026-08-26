@@ -1,0 +1,23 @@
+<tr style="border-bottom: 1px solid var(--wp-border-hover); background: var(--wp-bg-surface-subtle);" id="doc-{{ doc.pk }}">
+  <td colspan="5" style="padding: 12px 8px;">
+    <form method="post" action="{% url 'operations-checklist:update_document' doc.pk %}" style="display: flex; gap: 12px; align-items: flex-end; margin: 0;">
+      {% csrf_token %}
+      <div style="flex: 2;">
+        {{ doc_form.name }}
+      </div>
+      <div style="flex: 1;">
+        {{ doc_form.party }}
+      </div>
+      <div style="flex: 1;">
+        {{ doc_form.status }}
+      </div>
+      <div style="flex: 2;">
+        {{ doc_form.notes }}
+      </div>
+      <div style="white-space: nowrap;">
+        <button type="submit" class="btn btn-secondary btn-sm" hx-post="{% url 'operations-checklist:update_document' doc.pk %}" hx-target="#doc-{{ doc.pk }}" hx-swap="outerHTML">Simpan</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="window.location.reload();">Batal</button>
+      </div>
+    </form>
+  </td>
+</tr>

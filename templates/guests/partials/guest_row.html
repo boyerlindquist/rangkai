@@ -1,0 +1,40 @@
+<tr>
+  <td>
+    <strong>{{ guest.name }}</strong>
+    {% if guest.phone %}<br><span class="text-muted" style="font-size: 0.75rem;">{{ guest.phone }}</span>{% endif %}
+  </td>
+  <td><span class="badge badge-muted">{{ guest.get_relation_side_display }}</span></td>
+  <td>
+    <span class="badge {% if guest.category == 'vvip' %}badge-gold{% elif guest.category == 'vip' %}badge-sage{% else %}badge-muted{% endif %}">
+      {{ guest.get_category_display }}
+    </span>
+  </td>
+  <td style="text-align: center;">{{ guest.pax_allocation }}</td>
+  <td>
+    <button
+      class="badge {% if guest.rsvp_status == 'attending' %}badge-sage{% elif guest.rsvp_status == 'declined' %}badge-terracotta{% else %}badge-gold{% endif %}"
+      hx-post="{% url 'guests:toggle_rsvp' guest.pk %}"
+      hx-target="closest tr"
+      hx-swap="outerHTML"
+      style="cursor: pointer; border: none;"
+    >
+      {{ guest.get_rsvp_status_display }}
+    </button>
+  </td>
+  <td style="display: flex; gap: 4px;">
+    <button
+      class="btn btn-ghost btn-icon btn-sm"
+      hx-get="{% url 'guests:update' guest.pk %}"
+      hx-target="closest tr"
+      hx-swap="outerHTML"
+      style="color: var(--wp-gold-main);"
+    ><i data-lucide="pencil"></i></button>
+    <button
+      class="btn btn-ghost btn-icon btn-sm"
+      hx-delete="{% url 'guests:delete' guest.pk %}"
+      hx-confirm="Hapus tamu {{ guest.name }}?"
+      hx-target="closest tr"
+      hx-swap="outerHTML"
+    ><i data-lucide="trash-2"></i></button>
+  </td>
+</tr>

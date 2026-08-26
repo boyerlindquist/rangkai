@@ -1,0 +1,98 @@
+{% load humanize %}
+<div class="card" style="background: var(--wp-bg-surface); border: 1px solid {% if vendor.status == 'booked' %}var(--wp-sage-border){% elif vendor.status == 'rejected' %}var(--wp-terracotta-border){% else %}var(--wp-border-light){% endif %};">
+        <div class="card-body">
+          <div class="flex justify-between items-center mb-md">
+            <h4 style="margin: 0;">{{ vendor.name }}</h4>
+            <button
+              class="badge"
+              hx-post="{% url 'vendors:toggle_status' vendor.pk %}"
+              hx-target="closest .card"
+              hx-swap="outerHTML"
+              style="cursor: pointer; border: none; background: {% if vendor.status == 'booked' %}var(--wp-sage-main){% elif vendor.status == 'rejected' %}var(--wp-terracotta-main){% else %}var(--wp-gold-main){% endif %}; color: white; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              {% if vendor.status == 'booked' %}
+                <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+              {% elif vendor.status == 'rejected' %}
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+              {% endif %}
+              {{ vendor.get_status_display }}
+            </button>
+          </div>
+
+          {% if vendor.contact_pic %}
+          <p class="text-muted" style="font-size: 0.8rem;"><i data-lucide="phone"></i> {{ vendor.contact_pic }} {% if vendor.phone %}· {{ vendor.phone }}{% endif %}</p>
+          {% endif %}
+
+          <div style="font-size: 1.1rem; font-weight: 500; color: var(--wp-gold-dark); margin: var(--wp-space-md) 0;">
+            Rp {{ vendor.price_estimate|intcomma }}
+          </div>
+
+          <!-- Score Breakdown -->
+          <div style="display: grid; gap: 6px; margin-top: var(--wp-space-md);">
+            <div>
+              <div class="flex justify-between" style="font-size: 0.75rem; margin-bottom: 2px;">
+                <span class="text-secondary"><i data-lucide="wallet"></i> Harga ({{ vendor.weight_price }}%)</span>
+                <span class="font-mono">{{ vendor.score_price }}/5</span>
+              </div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width: {% widthratio vendor.score_price 5 100 %}%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="font-size: 0.75rem; margin-bottom: 2px;">
+                <span class="text-secondary"><i data-lucide="star"></i> Kualitas ({{ vendor.weight_quality }}%)</span>
+                <span class="font-mono">{{ vendor.score_quality }}/5</span>
+              </div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width: {% widthratio vendor.score_quality 5 100 %}%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="font-size: 0.75rem; margin-bottom: 2px;">
+                <span class="text-secondary"><i data-lucide="building"></i> Fasilitas ({{ vendor.weight_facility }}%)</span>
+                <span class="font-mono">{{ vendor.score_facility }}/5</span>
+              </div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width: {% widthratio vendor.score_facility 5 100 %}%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="font-size: 0.75rem; margin-bottom: 2px;">
+                <span class="text-secondary"><i data-lucide="handshake"></i> Reputasi ({{ vendor.weight_reputation }}%)</span>
+                <span class="font-mono">{{ vendor.score_reputation }}/5</span>
+              </div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width: {% widthratio vendor.score_reputation 5 100 %}%"></div></div>
+            </div>
+          </div>
+
+          <!-- Weighted Total Score -->
+          <div style="margin-top: var(--wp-space-md); padding-top: var(--wp-space-md); border-top: 1px solid var(--wp-border-light);">
+            <div class="flex justify-between items-center">
+              <span style="font-weight: 500; font-size: 0.85rem;">Weighted Score</span>
+              <span style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; color: var(--wp-accent-contrast);">
+                {{ vendor.weighted_total_score }}
+              </span>
+            </div>
+            <div class="progress-bar mt-md">
+              <div class="progress-fill"
+                   style="width: {{ vendor.weighted_total_score }}%; background: var(--wp-accent-contrast);"></div>
+            </div>
+          </div>
+
+          {% if vendor.notes %}
+          <p class="text-muted mt-md" style="font-size: 0.8rem;"><i data-lucide="file-text"></i> {{ vendor.notes }}</p>
+          {% endif %}
+        </div>
+        <div class="card-footer flex justify-between">
+          {% if vendor.offer_link %}
+          <a href="{{ vendor.offer_link }}" target="_blank" class="btn btn-ghost btn-sm"><i data-lucide="file"></i> Lihat Penawaran</a>
+          {% else %}
+          <span></span>
+          {% endif %}
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-ghost btn-sm" style="color: var(--wp-accent-contrast);"
+                    hx-get="{% url 'vendors:update' vendor.pk %}"
+                    hx-target="closest .card"
+                    hx-swap="outerHTML"><i data-lucide="pencil"></i> Edit</button>
+            <button class="btn btn-ghost btn-sm" style="color: var(--wp-accent-contrast);"
+                    hx-delete="{% url 'vendors:delete' vendor.pk %}"
+                    hx-confirm="Hapus vendor ini?"
+                    hx-target="closest .card"
+                    hx-swap="outerHTML"><i data-lucide="trash-2"></i> Hapus</button>
+          </div>
+        </div>
+</div>

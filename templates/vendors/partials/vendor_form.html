@@ -1,0 +1,79 @@
+<div class="card fade-in">
+  <div class="card-header">
+    <h3><i data-lucide="edit"></i> Edit Vendor</h3>
+  </div>
+  <form hx-post="{% url 'vendors:update' vendor.pk %}"
+        hx-target="closest .card"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+    {{ form.weight_price.as_hidden }}
+    {{ form.weight_quality.as_hidden }}
+    {{ form.weight_facility.as_hidden }}
+    {{ form.weight_reputation.as_hidden }}
+
+    <div class="card-body" style="max-height: 450px; overflow-y: auto;">
+      <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+          <label>Nama Vendor</label>
+          {{ form.name }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Kategori</label>
+          {{ form.category }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex: 1;">
+          <label>Kontak/PIC</label>
+          {{ form.contact_pic }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Telepon</label>
+          {{ form.phone }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex: 1;">
+          <label>Estimasi Harga</label>
+          {{ form.price_estimate }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+      <hr class="section-divider">
+      <div style="font-weight: 500; margin-bottom: var(--wp-space-md); color: var(--wp-text-secondary);">Skoring Subjektif (1-5)</div>
+      <div class="form-row">
+        <div class="form-group" style="flex: 1;">
+          <label>Harga</label>
+          {{ form.score_price }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Kualitas</label>
+          {{ form.score_quality }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Fasilitas</label>
+          {{ form.score_facility }}
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Reputasi</label>
+          {{ form.score_reputation }}
+        </div>
+      </div>
+      <div class="form-group mt-md">
+        <label>Link Penawaran / GDrive (Opsional)</label>
+        {{ form.offer_link }}
+      </div>
+      <div class="form-group mt-md">
+        <label>Catatan Tambahan</label>
+        {{ form.notes }}
+      </div>
+    </div>
+    <div class="card-footer flex justify-end gap-sm">
+      <button type="button" class="btn btn-secondary" onclick="window.location.reload();">Batal</button>
+      <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Simpan</button>
+    </div>
+  </form>
+</div>

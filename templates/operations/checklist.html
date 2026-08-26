@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Checklist — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Master <span class="serif-accent">Checklist</span></h1>
+  <p class="page-subtitle">Pantau progress persiapan pernikahan dari D-360 sampai D-Day.</p>
+</div>
+
+<!-- Overall Progress -->
+<div class="card mb-lg">
+  <div class="card-body flex items-center gap-lg" id="overall-progress-bar">
+    <div>
+      <div style="font-size: 2.5rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main);">{{ overall_progress }}%</div>
+      <div class="text-muted" style="font-size: 0.8rem;">{{ done_tasks }} / {{ total_tasks }} tugas selesai</div>
+    </div>
+    <div style="flex: 1;">
+      <div class="progress-bar" style="height: 12px;">
+        <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assignee Filter -->
+<div class="filter-bar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none">
+  <a href="{% url 'operations-checklist:checklist' %}" class="filter-pill {% if not assignee_filter %}active{% endif %}">Semua</a>
+  <a href="?assignee=groom" class="filter-pill {% if assignee_filter == 'groom' %}active{% endif %}"><i data-lucide="user"></i> Groom</a>
+  <a href="?assignee=bride" class="filter-pill {% if assignee_filter == 'bride' %}active{% endif %}"><i data-lucide="user"></i> Bride</a>
+  <a href="?assignee=both" class="filter-pill {% if assignee_filter == 'both' %}active{% endif %}"><i data-lucide="users"></i> Both</a>
+  <a href="?assignee=family" class="filter-pill {% if assignee_filter == 'family' %}active{% endif %}"><i data-lucide="users"></i> Family/WO</a>
+</div>
+
+<!-- Phase Accordions -->
+{% for phase_key, phase_data in grouped_tasks.items %}
+<div class="accordion-item" x-data="{ open: {{ phase_data.progress|yesno:'false,true,true' }} }">
+  <div class="accordion-header" @click="open = !open">
+    <div class="phase-info" id="phase-info-{{ phase_key }}">
+      <div style="min-width: 50px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
+          {{ phase_data.progress }}%
+        </div>
+      </div>
+      <div style="flex: 1;">
+        <div class="phase-title">{{ phase_data.label }}</div>
+        <div class="phase-stats">{{ phase_data.done }} / {{ phase_data.total }} selesai</div>
+        <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
+          <div class="progress-fill {% if phase_data.progress == 100 %}progress-fill-sage{% elif phase_data.progress > 0 %}progress-fill-gold{% else %}progress-fill-terracotta{% endif %}"
+               style="width: {{ phase_data.progress }}%"></div>
+        </div>
+      </div>
+    </div>
+    <span class="chevron" :style="open && 'transform: rotate(180deg)'">▼</span>
+  </div>
+  <div class="accordion-body" x-show="open" x-transition x-cloak>
+    <div class="accordion-body-inner">
+      {% for task in phase_data.tasks %}
+        {% include 'operations/partials/task_item.html' with task=task %}
+      {% empty %}
+      <p class="text-muted" style="padding: var(--wp-space-sm) 0;">Tidak ada tugas di fase ini{% if assignee_filter %} untuk filter ini{% endif %}.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Custom Task -->
+<div class="card mt-lg" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Tugas Custom</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah Tugas'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'operations-checklist:add_task' %}" hx-post="{% url 'operations-checklist:add_task' %}" hx-swap="none" @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in task_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Tugas</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

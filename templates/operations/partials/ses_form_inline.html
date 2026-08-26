@@ -1,0 +1,29 @@
+<tr style="border-bottom: 1px solid var(--wp-border-hover); background: var(--wp-bg-surface-subtle);" id="ses-{{ ses.pk }}">
+  <td colspan="7" style="padding: 12px 8px;">
+    <form method="post" action="{% url 'operations-checklist:update_seserahan' ses.pk %}" style="display: flex; gap: 12px; align-items: flex-end; margin: 0; flex-wrap: wrap;">
+      {% csrf_token %}
+      <div style="flex: 2; min-width: 100px;">
+        {{ ses_form.name }}
+      </div>
+      <div style="flex: 1; min-width: 80px;">
+        {{ ses_form.category }}
+      </div>
+      <div style="flex: 1; min-width: 80px;">
+        {{ ses_form.est_price }}
+      </div>
+      <div style="flex: 1; min-width: 80px;">
+        {{ ses_form.actual_price }}
+      </div>
+      <div style="flex: 1; min-width: 100px;">
+        {{ ses_form.status }}
+      </div>
+      <div style="flex: 1; min-width: 80px;">
+        {{ ses_form.pic }}
+      </div>
+      <div style="white-space: nowrap;">
+        <button type="submit" class="btn btn-secondary btn-sm" hx-post="{% url 'operations-checklist:update_seserahan' ses.pk %}" hx-target="#ses-{{ ses.pk }}" hx-swap="outerHTML">Simpan</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="window.location.reload();">Batal</button>
+      </div>
+    </form>
+  </td>
+</tr>

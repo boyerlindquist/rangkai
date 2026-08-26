@@ -1,0 +1,23 @@
+<form class="task-item fade-in" 
+      hx-post="{% url 'operations-checklist:update_task' task.pk %}" 
+      hx-target="closest .task-item" 
+      hx-swap="outerHTML"
+      style="display: flex; gap: 8px; flex-wrap: wrap; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md);">
+  {% csrf_token %}
+  <div style="flex: 2; min-width: 200px;">
+    {{ form.title }}
+  </div>
+  <div style="flex: 1; min-width: 120px;">
+    {{ form.category }}
+  </div>
+  <div style="flex: 1; min-width: 120px;">
+    {{ form.assignee }}
+  </div>
+  <div style="flex: 1; min-width: 120px;">
+    {{ form.phase }}
+  </div>
+  <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; width: 100%;">
+    <button type="button" class="btn btn-secondary btn-sm" hx-get="{% url 'operations-checklist:checklist' %}" onclick="window.location.reload();">Batal</button>
+    <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="save"></i> Simpan</button>
+  </div>
+</form>

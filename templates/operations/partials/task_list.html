@@ -1,0 +1,5 @@
+{% for task in tasks %}
+    {% include 'operations/partials/task_item.html' %}
+{% empty %}
+    <p class="text-muted" style="padding: var(--wp-space-sm) 0;">Tidak ada tugas di fase ini.</p>
+{% endfor %}

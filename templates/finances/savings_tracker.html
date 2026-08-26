@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Tracker Tabungan Bersama{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-savings">
+  <div>
+    <h1>Tabungan Bersama
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-savings', 'Tabungan Bersama', 'Pantau dana yang berhasil dikumpulkan bersama pasangan secara transparan.')"></i>
+    </h1>
+    <p class="page-subtitle">Pantau progres tabungan pernikahan kalian menuju hari H.</p>
+  </div>
+</div>
+
+<div class="bento-grid bento-grid-2 fade-in" style="margin-bottom: var(--wp-space-xl);">
+  <!-- Goal Settings Card -->
+  <div class="card" style="border-top: 4px solid var(--wp-accent-contrast);" id="guide-savings-target">
+    <div class="card-body">
+      <h3 style="color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">Pengaturan Target
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-savings-target', 'Pengaturan Target', 'Tentukan target tabungan dan kesanggupan setoran per bulan Anda di sini.')"></i>
+      </h3>
+      <form action="{% url 'finances:update_savings_goal' %}" method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: var(--wp-space-md);">
+          <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; color: var(--wp-text-secondary);">Target Tabungan (Rp)</label>
+          {{ goal_form.target_amount }}
+        </div>
+        <div style="margin-bottom: var(--wp-space-lg);">
+          <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; color: var(--wp-text-secondary);">Kesanggupan Nabung Per Bulan (Rp)</label>
+          {{ goal_form.monthly_deposit }}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Simpan Pengaturan</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Progress Card -->
+  <div class="card" style="border-top: 4px solid var(--wp-accent-contrast);" id="guide-savings-progress">
+    <div class="card-body">
+      <h3 style="color: var(--wp-text-main); margin-bottom: var(--wp-space-md);">Status Saat Ini
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-savings-progress', 'Progres Tabungan', 'Sistem menghitung sisa target dibagi setoran per bulan untuk mendapatkan estimasi kapan tabungan akan selesai.')"></i>
+      </h3>
+      
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+        <div>
+          <div style="font-size: 0.85rem; color: var(--wp-text-secondary);">Terkumpul</div>
+          <div style="font-size: 1.5rem; font-family: 'Montserrat', sans-serif; font-weight: 600;">Rp {{ goal.total_saved|intcomma }}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.85rem; color: var(--wp-text-secondary);">Dari Target</div>
+          <div style="font-size: 1.2rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: var(--wp-text-muted);">Rp {{ goal.target_amount|intcomma }}</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="height: 12px; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-pill); overflow: hidden; margin-bottom: var(--wp-space-lg);">
+        <div style="height: 100%; background: var(--wp-accent-contrast); width: {{ progress_percentage|floatformat:'0' }}%; transition: width 1s ease;"></div>
+      </div>
+
+      <div style="display: flex; gap: var(--wp-space-md); margin-bottom: var(--wp-space-md);">
+        <div style="flex: 1; background: var(--wp-bg-canvas); padding: var(--wp-space-sm) var(--wp-space-md); border-radius: var(--wp-radius-sm);">
+          <div style="font-size: 0.8rem; color: var(--wp-text-secondary);">Estimasi Selesai</div>
+          <div style="font-weight: 600; color: var(--wp-text-main);">
+            {% if estimated_months > 0 %}
+              {{ estimated_months }} Bulan
+            {% else %}
+              Tercapai 🎉
+            {% endif %}
+          </div>
+        </div>
+        <div style="flex: 1; background: var(--wp-bg-canvas); padding: var(--wp-space-sm) var(--wp-space-md); border-radius: var(--wp-radius-sm);">
+          <div style="font-size: 0.8rem; color: var(--wp-text-secondary);">Bulan/Tahun</div>
+          <div style="font-weight: 600; color: var(--wp-text-main);">
+            {% if estimated_completion_date %}
+              {{ estimated_completion_date|date:"F Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bento-grid bento-grid-1-2 fade-in">
+  <!-- Add Deposit Card -->
+  <div class="card">
+    <div class="card-body">
+      <h3 style="margin-bottom: var(--wp-space-md); font-family: 'Cormorant Garamond', serif;">+ Tambah Setoran</h3>
+      <form action="{% url 'finances:add_savings_deposit' %}" method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: var(--wp-space-sm);">
+          <label style="display: block; font-size: 0.85rem; color: var(--wp-text-secondary);">Nominal</label>
+          {{ deposit_form.amount }}
+        </div>
+        <div style="margin-bottom: var(--wp-space-sm);">
+          <label style="display: block; font-size: 0.85rem; color: var(--wp-text-secondary);">Tanggal</label>
+          {{ deposit_form.date }}
+        </div>
+        <div style="margin-bottom: var(--wp-space-sm);">
+          <label style="display: block; font-size: 0.85rem; color: var(--wp-text-secondary);">Penyetor</label>
+          {{ deposit_form.depositor }}
+        </div>
+        <div style="margin-bottom: var(--wp-space-md);">
+          <label style="display: block; font-size: 0.85rem; color: var(--wp-text-secondary);">Catatan</label>
+          {{ deposit_form.notes }}
+        </div>
+        <button type="submit" class="btn btn-secondary" style="width: 100%;">Simpan Setoran</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Deposit History -->
+  <div class="card">
+    <div class="card-body">
+      <h3 style="margin-bottom: var(--wp-space-md); font-family: 'Cormorant Garamond', serif; color: var(--wp-text-main);">Riwayat Tabungan</h3>
+      
+      <div class="table-responsive">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--wp-border-light);">
+              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Tanggal</th>
+              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Penyetor</th>
+              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Nominal</th>
+              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for deposit in deposits %}
+            <tr style="border-bottom: 1px solid var(--wp-border-light);">
+              <td style="padding: 12px 8px;">{{ deposit.date|date:"d M Y" }}</td>
+              <td style="padding: 12px 8px;">{{ deposit.depositor }}</td>
+              <td style="padding: 12px 8px; font-weight: 500; color: var(--wp-text-main);">Rp {{ deposit.amount|intcomma }}</td>
+              <td style="padding: 12px 8px; color: var(--wp-text-secondary); font-size: 0.9rem;">{{ deposit.notes|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="padding: 24px; text-align: center; color: var(--wp-text-muted);">
+                Belum ada setoran tabungan. Yuk mulai menabung!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

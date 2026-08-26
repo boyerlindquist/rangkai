@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Daftar — Smart Wedding Engine{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card fade-in">
+    <div class="auth-brand">
+      <h1><i data-lucide="gem"></i> Smart Wedding Engine</h1>
+      <p>Buat akun & mulai rencanakan pernikahan impianmu</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.errors %}
+      <div class="alert alert-danger">
+        <span><i data-lucide="alert-triangle"></i></span>
+        <div>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_username">Username</label>
+        {{ form.username }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_email">Email</label>
+        {{ form.email }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        {{ form.password }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_password_confirm">Konfirmasi Password</label>
+        {{ form.password_confirm }}
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="form-group">
+        <label for="id_groom_name">Nama Pengantin Pria</label>
+        {{ form.groom_name }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_bride_name">Nama Pengantin Wanita</label>
+        {{ form.bride_name }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_wedding_date">Tanggal Pernikahan</label>
+        {{ form.wedding_date }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Daftar & Buat Workspace</button>
+    </form>
+
+    <div class="auth-links">
+      Sudah punya akun? <a href="{% url 'core:login' %}">Login</a>
+      <br>
+      Punya kode undangan? <a href="{% url 'core:join_workspace' %}">Gabung Workspace</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

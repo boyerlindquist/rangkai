@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Vendor Comparator — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-vendors">
+  <div>
+    <h1>Vendors
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-vendors', 'Vendor Compare', 'Evaluasi dan bandingkan vendor secara objektif menggunakan sistem skoring berdasarkan Harga, Kualitas, dan Fasilitas.')"></i>
+    </h1>
+    <p class="page-subtitle">Bandingkan dan pilih vendor terbaik untuk pernikahan Anda dengan sistem scoring.</p>
+  </div>
+</div>
+
+<!-- Category Filter -->
+<div class="filter-bar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none" id="guide-vendor-cards" style="position: relative;">
+  <i data-lucide="help-circle" class="text-muted" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); cursor: pointer; width: 16px; height: 16px;" onclick="showFeatureGuide('#guide-vendor-cards', 'Kandidat Vendor', 'Bandingkan Weighted Score tiap vendor untuk mendapatkan rekomendasi paling rasional.')"></i>
+  <a href="{% url 'vendors:compare' %}" class="filter-pill {% if not category_filter %}active{% endif %}">Semua</a>
+  {% for key, label in categories %}
+  <a href="?category={{ key }}" class="filter-pill {% if category_filter == key %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<!-- Vendor Cards by Category -->
+{% for cat_name, cat_vendors in vendor_groups.items %}
+<div class="card mb-lg">
+  <div class="card-header">
+    <h3>{{ cat_name }}</h3>
+    <span class="badge badge-muted">{{ cat_vendors|length }} vendor</span>
+  </div>
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--wp-space-md); align-items: start;">
+      {% for vendor in cat_vendors %}
+      {% include "vendors/partials/vendor_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon"><i data-lucide="store"></i></div>
+      <p>Belum ada vendor. Tambahkan vendor pertama di bawah.</p>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Add Vendor Form -->
+<div class="card mt-lg" x-data="{ showForm: false }" id="guide-vendor-weights">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Vendor
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-vendor-weights', 'Bobot Prioritas', 'Tentukan aspek apa (Harga, Kualitas, dll) yang paling penting saat menambah vendor.')"></i>
+    </h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah Vendor'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'vendors:add' %}" 
+          hx-post="{% url 'vendors:add' %}" 
+          hx-target=".main-content" 
+          hx-select=".main-content" 
+          hx-swap="outerHTML" 
+          @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="text-muted" style="font-size: 0.7rem;">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Vendor</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+<div class="task-item fade-in">
+  <button
+    class="task-checkbox {% if task.status == 'done' %}done{% elif task.status == 'in_progress' %}in-progress{% endif %}"
+    hx-post="{% url 'operations-checklist:toggle_task' task.pk %}"
+    hx-target="closest .task-item"
+    hx-swap="outerHTML"
+    title="Klik untuk ubah status"
+  >
+    {% if task.status == 'done' %}<i data-lucide="check"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock"></i>{% endif %}
+  </button>
+  <div class="task-title {% if task.status == 'done' %}done{% endif %}" style="flex: 1;">
+    {{ task.title }}
+    {% if task.is_critical %}<span class="badge badge-terracotta" style="margin-left: 4px;">Kritis</span>{% endif %}
+    {% if task.linked_tool %}<span class="badge badge-gold" style="margin-left: 4px;"><i data-lucide="link"></i> {{ task.linked_tool }}</span>{% endif %}
+  </div>
+  <div class="task-meta">
+    <span class="badge badge-muted">{{ task.get_assignee_display }}</span>
+    <span class="badge badge-muted">{{ task.get_category_display }}</span>
+        <button class="btn btn-ghost btn-icon btn-sm"
+            hx-get="{% url 'operations-checklist:update_task' task.pk %}"
+            hx-target="closest .task-item"
+            hx-swap="outerHTML"
+            style="color: var(--wp-gold-main);"><i data-lucide="pencil"></i></button>
+    {% if task.is_custom %}
+    <button class="btn btn-ghost btn-icon btn-sm"
+            hx-delete="{% url 'operations-checklist:delete_task' task.pk %}"
+            hx-confirm="Hapus tugas ini?"
+            hx-target="closest .task-item"
+            hx-swap="outerHTML"
+            style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
+    {% endif %}
+      </div>
+</div>
+
+{% if request.htmx %}
+{% if progress is not None %}
+<div class="phase-info" id="phase-info-{{ phase_key }}" hx-swap-oob="true">
+  <div style="min-width: 50px;">
+    <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
+      {{ progress }}%
+    </div>
+  </div>
+  <div style="flex: 1;">
+    <div class="phase-title">{{ phase_label }}</div>
+    <div class="phase-stats">{{ done_count }} / {{ total_count }} selesai</div>
+    <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
+      <div class="progress-fill {% if progress == 100 %}progress-fill-sage{% elif progress > 0 %}progress-fill-gold{% else %}progress-fill-terracotta{% endif %}"
+           style="width: {{ progress }}%"></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if overall_progress is not None %}
+<div class="card-body flex items-center gap-lg" id="overall-progress-bar" hx-swap-oob="true">
+  <div>
+    <div style="font-size: 2.5rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main);">{{ overall_progress }}%</div>
+    <div class="text-muted" style="font-size: 0.8rem;">{{ overall_done }} / {{ overall_total }} tugas selesai</div>
+  </div>
+  <div style="flex: 1;">
+    <div class="progress-bar" style="height: 12px;">
+      <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}

@@ -1,0 +1,22 @@
+<form hx-post="{% url 'finances:update_category' cat.pk %}" 
+      hx-target="#category-header-{{ cat.pk }}" 
+      hx-swap="outerHTML"
+      class="form-row fade-in" style="margin-bottom: 1rem; align-items: flex-end; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md);">
+  {% csrf_token %}
+  <div class="form-group" style="flex: 2;">
+    <label>Nama Kategori</label>
+    {{ form.name }}
+  </div>
+  <div class="form-group" style="flex: 1;">
+    <label>Ikon (HTML/Lucide)</label>
+    {{ form.icon }}
+  </div>
+  <div class="form-group" style="flex: 1;">
+    <label>Alokasi (%)</label>
+    {{ form.allocation_percentage }}
+  </div>
+  <div class="form-group" style="display: flex; gap: 8px;">
+    <button type="button" class="btn btn-secondary" onclick="this.closest('.form-row').outerHTML = ''">Batal</button>
+    <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Simpan</button>
+  </div>
+</form>

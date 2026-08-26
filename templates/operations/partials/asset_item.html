@@ -1,0 +1,17 @@
+<div class="task-item">
+  <button
+    class="task-checkbox {% if asset.status == 'handed' or asset.status == 'packed' %}done{% elif asset.status != 'pending' %}in-progress{% endif %}"
+    hx-post="{% url 'operations-hub:toggle_asset' asset.pk %}"
+    hx-target="closest .task-item"
+    hx-swap="outerHTML"
+  >
+    {% if asset.status == 'handed' or asset.status == 'packed' %}<i data-lucide="check"></i>{% elif asset.status != 'pending' %}<i data-lucide="clock"></i>{% endif %}
+  </button>
+  <div style="flex: 1;">
+    <div style="font-weight: 600; font-size: 0.9rem;">{{ asset.name }}</div>
+    <div class="text-muted" style="font-size: 0.75rem;">PIC: {{ asset.pic_name }}</div>
+  </div>
+  <span class="badge {% if asset.status == 'pending' %}badge-terracotta{% elif asset.status == 'handed' or asset.status == 'packed' %}badge-sage{% else %}badge-gold{% endif %}">
+    {{ asset.get_status_display }}
+  </span>
+</div>

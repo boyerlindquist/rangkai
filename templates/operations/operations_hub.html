@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Operations Hub — Smart Wedding Engine{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in" id="guide-operations">
+  <div>
+    <h1>Operations Hub
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-operations', 'Operations Hub', 'Di sini Anda dapat menyusun rundown acara, melacak barang/aset penting (seperti cincin, mahar), dan menghitung kebutuhan kain seragam keluarga.')"></i>
+    </h1>
+    <p class="page-subtitle">Rundown acara, tracking aset logistik, dan kalkulator kain seragam.</p>
+  </div>
+</div>
+
+<!-- Rundown Sanity Warnings -->
+{% if sanity_warnings %}
+<div class="card mb-lg" style="border-color: var(--wp-terracotta-border);" id="guide-rundown">
+  <div class="card-header">
+    <h3><i data-lucide="bell-ring"></i> Rundown Sanity Alerts
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-rundown', 'Rundown Sanity', 'Sistem mendeteksi jadwal yang bertabrakan atau terlalu padat secara otomatis.')"></i>
+    </h3>
+  </div>
+  <div class="card-body">
+    {% for warning in sanity_warnings %}
+    <div class="alert alert-{{ warning.type }}">
+      <span>{{ warning.icon }}</span>
+      <div>{{ warning.message }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- D-Day Rundown Timeline -->
+<div class="card mb-lg">
+  <div class="card-header">
+    <h3><i data-lucide="clock"></i> Rundown Hari-H</h3>
+    <span class="badge badge-muted">{{ rundown|length }} agenda</span>
+  </div>
+  <div class="card-body">
+    {% if rundown %}
+    <div class="table-responsive">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Durasi</th>
+            <th>Agenda</th>
+            <th>Lokasi</th>
+            <th>PIC</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in rundown %}
+          <tr>
+            <td style="white-space: nowrap; font-family: 'Outfit', sans-serif; font-weight: 500;">
+              {{ event.start_time|time:"H:i" }} — {{ event.end_time|time:"H:i" }}
+            </td>
+            <td>
+              <span class="badge {% if event.duration_minutes < 30 %}badge-terracotta{% else %}badge-muted{% endif %}">
+                {{ event.duration_minutes }}m
+              </span>
+            </td>
+            <td><strong>{{ event.activity }}</strong></td>
+            <td class="text-muted">{{ event.location|default:"—" }}</td>
+            <td class="text-muted">{{ event.pic|default:"—" }}</td>
+            <td>
+              <button class="btn btn-ghost btn-icon btn-sm"
+                      hx-delete="{% url 'operations-hub:delete_rundown' event.pk %}"
+                      hx-confirm="Hapus agenda {{ event.activity }}?"
+                      hx-target="closest tr"
+                      hx-swap="outerHTML"><i data-lucide="trash-2"></i></button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i data-lucide="clipboard-list"></i></div>
+      <p>Belum ada rundown. Tambahkan agenda di bawah.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Rundown Form -->
+<div class="card mb-lg" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Agenda Rundown</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'operations-hub:add_rundown' %}">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in rundown_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Agenda</button>
+    </form>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- Asset Custodian Hub -->
+<div class="bento-grid bento-grid-2 mb-lg">
+  <!-- Critical Assets -->
+  <div class="card" id="guide-assets">
+    <div class="card-header">
+      <h3><i data-lucide="alert-circle"></i> Aset Kritis
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-assets', 'Aset Kritis', 'Pastikan barang-barang krusial tidak tertinggal. Catat nama PIC pembawanya.')"></i>
+      </h3>
+    </div>
+    <div class="card-body">
+      {% if critical_assets %}
+        {% for asset in critical_assets %}
+        <div class="task-item">
+          <button
+            class="task-checkbox {% if asset.status == 'handed' or asset.status == 'packed' %}done{% elif asset.status != 'pending' %}in-progress{% endif %}"
+            hx-post="{% url 'operations-hub:toggle_asset' asset.pk %}"
+            hx-target="closest .task-item"
+            hx-swap="outerHTML"
+          >
+            {% if asset.status == 'handed' or asset.status == 'packed' %}<i data-lucide="check"></i>{% elif asset.status != 'pending' %}<i data-lucide="clock"></i>{% endif %}
+          </button>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 0.9rem;">{{ asset.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">PIC: {{ asset.pic_name }} {% if asset.vehicle_info %}· <i data-lucide="car"></i> {{ asset.vehicle_info }}{% endif %}</div>
+          </div>
+          <span class="badge {% if asset.status == 'pending' %}badge-terracotta{% elif asset.status == 'handed' or asset.status == 'packed' %}badge-sage{% else %}badge-gold{% endif %}">
+            {{ asset.get_status_display }}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Belum ada aset kritis.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Equipment Assets -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i data-lucide="package"></i> Perlengkapan</h3>
+    </div>
+    <div class="card-body">
+      {% if equipment_assets %}
+        {% for asset in equipment_assets %}
+        <div class="task-item">
+          <button
+            class="task-checkbox {% if asset.status == 'handed' or asset.status == 'packed' %}done{% elif asset.status != 'pending' %}in-progress{% endif %}"
+            hx-post="{% url 'operations-hub:toggle_asset' asset.pk %}"
+            hx-target="closest .task-item"
+            hx-swap="outerHTML"
+          >
+            {% if asset.status == 'handed' or asset.status == 'packed' %}<i data-lucide="check"></i>{% elif asset.status != 'pending' %}<i data-lucide="clock"></i>{% endif %}
+          </button>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 0.9rem;">{{ asset.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">PIC: {{ asset.pic_name }}</div>
+          </div>
+          <span class="badge {% if asset.status == 'pending' %}badge-terracotta{% elif asset.status == 'handed' or asset.status == 'packed' %}badge-sage{% else %}badge-gold{% endif %}">
+            {{ asset.get_status_display }}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Belum ada perlengkapan.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Asset Form -->
+<div class="card mb-lg" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Aset/Barang</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'operations-hub:add_asset' %}">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in asset_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Aset</button>
+    </form>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- Fabric Yardage Calculator -->
+<div class="card mb-lg" id="guide-attire">
+  <div class="card-header">
+    <h3><i data-lucide="scissors"></i> Kalkulator Kain Seragam
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-attire', 'Kalkulator Kain', 'Mengkonversi jumlah pax menjadi kebutuhan potongan meter kain secara otomatis.')"></i>
+    </h3>
+  </div>
+  <div class="card-body">
+    {% if fabric_entries %}
+    <div class="table-responsive mb-lg">
+      <table class="wp-table">
+        <thead>
+          <tr>
+            <th>Penerima</th>
+            <th>Gender</th>
+            <th>Model</th>
+            <th>Ukuran</th>
+            <th>Kebutuhan Kain</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in fabric_entries %}
+          <tr>
+            <td><strong>{{ entry.recipient_name }}</strong></td>
+            <td>{{ entry.get_gender_display }}</td>
+            <td>{{ entry.get_garment_type_display }}</td>
+            <td><span class="badge badge-muted">{{ entry.get_size_category_display }}</span></td>
+            <td>
+              {% for fabric, meters in entry.yardage.items %}
+              <span class="badge badge-gold" style="margin: 1px;">{{ fabric }}: {{ meters }}m</span>
+              {% endfor %}
+            </td>
+            <td>
+              <button class="btn btn-ghost btn-icon btn-sm"
+                      hx-delete="{% url 'operations-hub:delete_fabric' entry.pk %}"
+                      hx-confirm="Hapus entry {{ entry.recipient_name }}?"
+                      hx-target="closest tr"
+                      hx-swap="outerHTML"><i data-lucide="trash-2"></i></button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Fabric Totals -->
+    {% if fabric_totals %}
+    <div class="alert alert-success">
+      <span><i data-lucide="layout-dashboard"></i></span>
+      <div>
+        <strong>Total Kebutuhan Kain:</strong><br>
+        {% for fabric, total in fabric_totals.items %}
+        <span class="badge badge-sage" style="margin: 2px;">{{ fabric }}: {{ total|floatformat:2 }} meter</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i data-lucide="scissors"></i></div>
+      <p>Belum ada entry kain. Tambahkan penerima seragam di bawah.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Fabric Entry Form -->
+<div class="card" x-data="{ showForm: false }">
+  <div class="card-header">
+    <h3><i data-lucide="plus"></i> Tambah Penerima Seragam</h3>
+    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
+      <span x-text="showForm ? 'Tutup' : 'Tambah'"></span>
+    </button>
+  </div>
+  <div class="card-body" x-show="showForm" x-transition x-cloak>
+    <form method="post" action="{% url 'operations-hub:add_fabric' %}">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in fabric_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Entry</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+<tr class="fade-in">
+  <td colspan="6">
+    <form hx-post="{% url 'guests:update' guest.pk %}"
+          hx-target="closest tr"
+          hx-swap="outerHTML"
+          class="form-row" style="background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); gap: 8px;">
+      {% csrf_token %}
+      <div style="flex: 2;">{{ form.name }}</div>
+      <div style="flex: 1;">{{ form.relation_side }}</div>
+      <div style="flex: 1;">{{ form.category }}</div>
+      <div style="flex: 1;">{{ form.pax_allocation }}</div>
+      <div style="flex: 1;">{{ form.rsvp_status }}</div>
+      <div style="display: flex; gap: 4px;">
+        <button type="button" class="btn btn-secondary btn-sm" hx-get="{% url 'guests:list' %}" onclick="window.location.reload()">Batal</button>
+        <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="save"></i></button>
+      </div>
+    </form>
+  </td>
+</tr>
