@@ -88,7 +88,8 @@
         </a>
         <a href="{% url 'operations-checklist:checklist' %}"
           class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Checklist & Tasks</span>
+          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Checklist &
+            Tasks</span>
         </a>
         <a href="{% url 'finances:dashboard' %}"
           class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
@@ -142,7 +143,7 @@
 
           <!-- Logout Button (Right when expanded, Centered when collapsed) -->
           <a href="{% url 'core:logout' %}" class="btn btn-ghost logout-btn" title="Logout"
-             :style="collapsed ? 'width: 100%; display: flex; justify-content: center;' : ''">
+            :style="collapsed ? 'width: 100%; display: flex; justify-content: center;' : ''">
             <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
           </a>
         </div>
@@ -181,7 +182,7 @@
   <script>
     // Preload Google Sankey package globally
     if (typeof google !== 'undefined' && google.charts) {
-      google.charts.load('current', {'packages':['sankey']});
+      google.charts.load('current', { 'packages': ['sankey'] });
     }
     // Sidebar toggle for mobile
     function toggleSidebar() {
