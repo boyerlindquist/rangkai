@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from datetime import timedelta
 
 from core.models import Wedding, WeddingMembership
 from core.forms import RegisterForm, LoginForm, JoinWorkspaceForm, WeddingSettingsForm
@@ -26,27 +27,84 @@ DEFAULT_BUDGET_CATEGORIES = [
 ]
 
 DEFAULT_TASKS = [
-    {'phase': 'd360', 'category': 'finance', 'title': 'Tentukan target total budget & skema split-bill', 'assignee': 'both', 'linked_tool': 'Top-Down Allocator', 'is_critical': True},
+    # Persiapan Awal
+    {'phase': 'd360', 'category': 'other', 'title': 'Pertemuan keluarga (Perkenalan & Silaturahmi)', 'assignee': 'both', 'is_critical': True},
+    {'phase': 'd360', 'category': 'rundown', 'title': 'Menentukan tanggal pernikahan', 'assignee': 'both', 'is_critical': True},
+    {'phase': 'd360', 'category': 'other', 'title': 'Menentukan tema & konsep pernikahan', 'assignee': 'both'},
+    {'phase': 'd360', 'category': 'rundown', 'title': 'Menentukan tanggal lamaran (jika ada)', 'assignee': 'both'},
+    {'phase': 'd360', 'category': 'finance', 'title': 'Menentukan target total budget & skema split-bill', 'assignee': 'both', 'linked_tool': 'Top-Down Allocator', 'is_critical': True},
+    {'phase': 'd360', 'category': 'guest', 'title': 'Menentukan estimasi jumlah tamu', 'assignee': 'both'},
+    
+    # Tempat, Dekorasi, Vendor Utama
     {'phase': 'd360', 'category': 'venue', 'title': 'Survey & booking venue (Akad & Resepsi)', 'assignee': 'both', 'linked_tool': 'Vendor Scoring', 'is_critical': True},
     {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor Catering', 'assignee': 'both', 'linked_tool': 'Vendor Scoring'},
-    {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor MUA', 'assignee': 'bride', 'linked_tool': 'Vendor Scoring'},
-    {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor Dokumentasi', 'assignee': 'both', 'linked_tool': 'Vendor Scoring'},
+    {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor Dekorasi', 'assignee': 'both', 'linked_tool': 'Vendor Scoring'},
+    {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor MUA & Busana', 'assignee': 'bride', 'linked_tool': 'Vendor Scoring'},
+    {'phase': 'd360', 'category': 'vendor', 'title': 'Riset & shortlist vendor Dokumentasi (Foto/Video)', 'assignee': 'both', 'linked_tool': 'Vendor Scoring'},
+    
+    # Administrasi Persiapan Pernikahan
+    {'phase': 'd180', 'category': 'legal', 'title': 'Siapkan Surat Pengantar dari RT/RW', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Siapkan Fotocopy KTP & KK (CPP dan CPW)', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Siapkan Fotocopy Akta kelahiran & Ijazah (CPP dan CPW)', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Siapkan Pas Foto 3x2 latar biru 5 lembar (CPP dan CPW)', 'assignee': 'both'},
     {'phase': 'd180', 'category': 'legal', 'title': 'Pengurusan berkas N1-N4 di Kelurahan & Numpang Nikah', 'assignee': 'both', 'is_critical': True},
-    {'phase': 'd180', 'category': 'vendor', 'title': 'Lock DP Katering, MUA, dan Dokumentasi', 'assignee': 'both', 'linked_tool': 'Cash Flow Forecaster', 'is_critical': True},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Siapkan Fotocopy KTP Wali Nikah & 2 Orang Saksi', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Suntik TT / Keterangan Vaksin TT (CPW)', 'assignee': 'bride'},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Daftar nikah ke KUA', 'assignee': 'both', 'is_critical': True},
+    {'phase': 'd180', 'category': 'legal', 'title': 'Mengikuti bimbingan pra-nikah', 'assignee': 'both'},
+
+    # Mahar, Seserahan & Cincin
+    {'phase': 'd180', 'category': 'other', 'title': 'Beli cincin couple / kawin', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'other', 'title': 'Pesan mahar & kotak cincin nikah', 'assignee': 'groom'},
+    {'phase': 'd180', 'category': 'other', 'title': 'Beli & hias barang seserahan', 'assignee': 'both'},
+    
+    # Vendor Lanjutan
+    {'phase': 'd180', 'category': 'vendor', 'title': 'Lock DP Katering, MUA, Dekor, dan Dokumentasi', 'assignee': 'both', 'linked_tool': 'Cash Flow Forecaster', 'is_critical': True},
+    {'phase': 'd180', 'category': 'vendor', 'title': 'Pesan Baju pengantin akad & resepsi (CPP & CPW)', 'assignee': 'both'},
     {'phase': 'd180', 'category': 'vendor', 'title': 'Fitting baju pengantin & seragam keluarga', 'assignee': 'both'},
     {'phase': 'd180', 'category': 'vendor', 'title': 'Sesi prewedding foto/video', 'assignee': 'both'},
-    {'phase': 'd180', 'category': 'logistic', 'title': 'Desain & cetak undangan digital/fisik', 'assignee': 'both'},
+    
+    # Undangan, Souvenir, & Tamu
+    {'phase': 'd180', 'category': 'logistic', 'title': 'Pesan & cetak buku tamu', 'assignee': 'both'},
+    {'phase': 'd180', 'category': 'logistic', 'title': 'Pesan Souvenir pernikahan', 'assignee': 'both'},
     {'phase': 'd90', 'category': 'guest', 'title': 'Finalisasi database tamu & alokasi kuota keluarga', 'assignee': 'both', 'linked_tool': 'Quota Tug-of-War', 'is_critical': True},
+    {'phase': 'd90', 'category': 'logistic', 'title': 'Desain & cetak undangan digital/fisik', 'assignee': 'both'},
     {'phase': 'd90', 'category': 'logistic', 'title': 'Kirim undangan fisik & digital', 'assignee': 'both'},
-    {'phase': 'd90', 'category': 'vendor', 'title': 'Technical Meeting dengan semua vendor', 'assignee': 'both'},
     {'phase': 'd90', 'category': 'logistic', 'title': 'Beli kain seragam keluarga & bridesmaid', 'assignee': 'bride', 'linked_tool': 'Yardage Calculator'},
+    
+    # Acara & Hiburan
+    {'phase': 'd90', 'category': 'vendor', 'title': 'Booking MC, Hiburan (Band/Penyanyi) & Photobooth', 'assignee': 'both'},
+    {'phase': 'd90', 'category': 'rundown', 'title': 'Pesan jasa qori / tilawah (jika ada)', 'assignee': 'both'},
+    {'phase': 'd90', 'category': 'rundown', 'title': 'Tentukan petugas sambutan dari perwakilan keluarga/tokoh', 'assignee': 'both'},
+    {'phase': 'd90', 'category': 'rundown', 'title': 'Persiapan & booking alat Acara Adat (jika ada)', 'assignee': 'family'},
+
+    # Technical Meeting & Persiapan Mendekati Hari H
+    {'phase': 'd90', 'category': 'vendor', 'title': 'Technical Meeting tahap 1 dengan semua vendor', 'assignee': 'both'},
     {'phase': 'd30', 'category': 'fb', 'title': 'Finalisasi menu test food & fixasi rasio buffet/stall', 'assignee': 'both', 'linked_tool': 'Catering Simulator', 'is_critical': True},
     {'phase': 'd30', 'category': 'finance', 'title': 'Pelunasan seluruh vendor (H-7 to H-3)', 'assignee': 'both', 'linked_tool': 'Cash-Out Calendar', 'is_critical': True},
-    {'phase': 'd30', 'category': 'guest', 'title': 'Final RSVP & konfirmasi kehadiran', 'assignee': 'both'},
+    {'phase': 'd30', 'category': 'guest', 'title': 'Final RSVP & konfirmasi kehadiran tamu', 'assignee': 'both'},
     {'phase': 'd30', 'category': 'logistic', 'title': 'Packing logistik souvenir & seserahan', 'assignee': 'family'},
+    
+    # Panitia & Petugas Hari H
+    {'phase': 'd30', 'category': 'rundown', 'title': 'Menyusun susunan panitia keluarga', 'assignee': 'both'},
+    {'phase': 'd30', 'category': 'rundown', 'title': 'Menunjuk pengiring pengantin wanita / bridesmaid', 'assignee': 'bride'},
+    {'phase': 'd30', 'category': 'rundown', 'title': 'Menunjuk penjaga buku tamu & souvenir', 'assignee': 'family'},
+    {'phase': 'd30', 'category': 'finance', 'title': 'Menunjuk penjaga & pemegang kunci kotak amplop', 'assignee': 'family', 'is_critical': True},
+    {'phase': 'd30', 'category': 'fb', 'title': 'Menunjuk PIC penjaga makanan/prasmanan keluarga', 'assignee': 'family'},
+    {'phase': 'd30', 'category': 'other', 'title': 'Koordinasi Tim Kebersihan & Keamanan (Parkir, dll)', 'assignee': 'both'},
+    {'phase': 'd30', 'category': 'logistic', 'title': 'Booking / atur Transportasi Calon Pengantin & Keluarga', 'assignee': 'both'},
+    
+    # Finalisasi
+    {'phase': 'd30', 'category': 'rundown', 'title': 'Briefing / rapat panitia keluarga', 'assignee': 'both', 'is_critical': True},
     {'phase': 'd30', 'category': 'rundown', 'title': 'Final Technical Meeting (TM) & validasi rundown WO', 'assignee': 'both', 'linked_tool': 'Rundown Sanity', 'is_critical': True},
     {'phase': 'd30', 'category': 'logistic', 'title': 'Gladi bersih / rehearsal di venue', 'assignee': 'both'},
-    {'phase': 'dday', 'category': 'asset', 'title': 'Packing & serah terima barang berharga ke PIC', 'assignee': 'both', 'linked_tool': 'Asset Custodian', 'is_critical': True},
+    {'phase': 'd30', 'category': 'other', 'title': 'Booking & perawatan kuku (Nail art)', 'assignee': 'bride'},
+    {'phase': 'd30', 'category': 'legal', 'title': 'Ajukan izin cuti menikah di tempat kerja', 'assignee': 'both'},
+    {'phase': 'd30', 'category': 'other', 'title': 'Jaga kesehatan & konsumsi vitamin', 'assignee': 'both'},
+
+    # Hari H & Pasca Acara
+    {'phase': 'dday', 'category': 'asset', 'title': 'Logistik: pastikan semua barang dibawa ke venue', 'assignee': 'family', 'linked_tool': 'Asset Custodian', 'is_critical': True},
+    {'phase': 'dday', 'category': 'asset', 'title': 'Serah terima barang berharga ke PIC', 'assignee': 'both', 'linked_tool': 'Asset Custodian', 'is_critical': True},
     {'phase': 'dday', 'category': 'post', 'title': 'Pengembalian kotak seserahan sewa & busana adat', 'assignee': 'family'},
     {'phase': 'dday', 'category': 'post', 'title': 'Rekap amplop / angpao & hitung total', 'assignee': 'both'},
 ]
@@ -250,11 +308,12 @@ def dashboard_view(request):
     task_total = task_stats['total'] or 1
     task_progress = round((task_stats['done'] / task_total) * 100)
 
-    # Urgent items: overdue payments & critical tasks near deadline
+    # Urgent items: payments overdue or due within the next 7 days
+    from datetime import timedelta
     overdue_items = BudgetItem.objects.filter(
         wedding=wedding,
-        due_date__lt=timezone.now().date(),
-    ).exclude(payment_status='settled')[:5]
+        due_date__lte=timezone.now().date() + timedelta(days=7),
+    ).exclude(payment_status='settled').order_by('due_date')
 
     # Active phase tasks
     active_tasks = TaskMilestone.objects.filter(

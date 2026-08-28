@@ -1,40 +1,47 @@
-<tr>
-  <td>
-    <strong>{{ guest.name }}</strong>
-    {% if guest.phone %}<br><span class="text-muted" style="font-size: 0.75rem;">{{ guest.phone }}</span>{% endif %}
+<tr style="border-bottom: 1px solid var(--wp-border-light);">
+  <td style="vertical-align: middle; padding: 12px 16px;">
+    <strong style="color: var(--wp-text-main);">{{ guest.name }}</strong>
+    {% if guest.phone %}<br><span class="text-muted" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;"><i data-lucide="phone" style="width: 11px; height: 11px;"></i> {{ guest.phone }}</span>{% endif %}
   </td>
-  <td><span class="badge badge-muted">{{ guest.get_relation_side_display }}</span></td>
-  <td>
+  <td style="vertical-align: middle; padding: 12px 16px;"><span class="badge badge-muted">{{ guest.get_relation_side_display }}</span></td>
+  <td style="vertical-align: middle; padding: 12px 16px;">
     <span class="badge {% if guest.category == 'vvip' %}badge-gold{% elif guest.category == 'vip' %}badge-sage{% else %}badge-muted{% endif %}">
       {{ guest.get_category_display }}
     </span>
   </td>
-  <td style="text-align: center;">{{ guest.pax_allocation }}</td>
-  <td>
+  <td style="vertical-align: middle; padding: 12px 16px; text-align: center; font-weight: 600;">{{ guest.pax_allocation }}</td>
+  <td style="vertical-align: middle; padding: 12px 16px;">
     <button
       class="badge {% if guest.rsvp_status == 'attending' %}badge-sage{% elif guest.rsvp_status == 'declined' %}badge-terracotta{% else %}badge-gold{% endif %}"
       hx-post="{% url 'guests:toggle_rsvp' guest.pk %}"
       hx-target="closest tr"
       hx-swap="outerHTML"
-      style="cursor: pointer; border: none;"
+      style="cursor: pointer; border: none; padding: 4px 10px;"
+      title="Klik untuk ubah status RSVP"
     >
       {{ guest.get_rsvp_status_display }}
     </button>
   </td>
-  <td style="display: flex; gap: 4px;">
-    <button
-      class="btn btn-ghost btn-icon btn-sm"
-      hx-get="{% url 'guests:update' guest.pk %}"
-      hx-target="closest tr"
-      hx-swap="outerHTML"
-      style="color: var(--wp-gold-main);"
-    ><i data-lucide="pencil"></i></button>
-    <button
-      class="btn btn-ghost btn-icon btn-sm"
-      hx-delete="{% url 'guests:delete' guest.pk %}"
-      hx-confirm="Hapus tamu {{ guest.name }}?"
-      hx-target="closest tr"
-      hx-swap="outerHTML"
-    ><i data-lucide="trash-2"></i></button>
+  <td style="vertical-align: middle; padding: 12px 16px; text-align: right;">
+    <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
+      <button
+        class="btn btn-ghost btn-icon btn-sm"
+        hx-get="{% url 'guests:update' guest.pk %}"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
+        title="Edit Tamu"
+        style="color: var(--wp-gold-main);"
+      ><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></button>
+      <button
+        class="btn btn-ghost btn-icon btn-sm"
+        hx-delete="{% url 'guests:delete' guest.pk %}"
+        hx-confirm="Hapus tamu {{ guest.name }}?"
+        hx-target=".main-content"
+        hx-select=".main-content"
+        hx-swap="outerHTML"
+        title="Hapus Tamu"
+        style="color: var(--wp-terracotta-main);"
+      ><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+    </div>
   </td>
 </tr>

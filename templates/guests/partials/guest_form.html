@@ -1,18 +1,42 @@
 <tr class="fade-in">
-  <td colspan="6">
+  <td colspan="6" style="padding: 12px 16px; background: var(--wp-bg-surface-subtle);">
     <form hx-post="{% url 'guests:update' guest.pk %}"
           hx-target="closest tr"
           hx-swap="outerHTML"
-          class="form-row" style="background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); gap: 8px;">
+          style="display: grid; grid-template-columns: 1.5fr 1.2fr 1fr 1fr 0.8fr 1fr auto; gap: 8px; align-items: flex-end;">
       {% csrf_token %}
-      <div style="flex: 2;">{{ form.name }}</div>
-      <div style="flex: 1;">{{ form.relation_side }}</div>
-      <div style="flex: 1;">{{ form.category }}</div>
-      <div style="flex: 1;">{{ form.pax_allocation }}</div>
-      <div style="flex: 1;">{{ form.rsvp_status }}</div>
-      <div style="display: flex; gap: 4px;">
-        <button type="button" class="btn btn-secondary btn-sm" hx-get="{% url 'guests:list' %}" onclick="window.location.reload()">Batal</button>
-        <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="save"></i></button>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Nama Tamu</label>
+        {{ form.name }}
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">No Telp</label>
+        {{ form.phone }}
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Relasi</label>
+        {{ form.relation_side }}
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Kategori</label>
+        {{ form.category }}
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Pax</label>
+        {{ form.pax_allocation }}
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.7rem; color: var(--wp-text-secondary); margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">RSVP</label>
+        {{ form.rsvp_status }}
+      </div>
+      <div style="display: flex; gap: 4px; padding-bottom: 2px;">
+        <button type="button" class="btn btn-ghost btn-sm"
+                hx-get="{% url 'guests:list' %}"
+                hx-target=".main-content"
+                hx-select=".main-content"
+                hx-swap="outerHTML"
+                title="Batal">✕</button>
+        <button type="submit" class="btn btn-gold btn-sm" title="Simpan Perubahan"><i data-lucide="save" style="width: 14px; height: 14px;"></i></button>
       </div>
     </form>
   </td>

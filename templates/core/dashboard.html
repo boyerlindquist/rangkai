@@ -79,21 +79,26 @@
           onclick="showFeatureGuide('#guide-attention', 'Perlu Perhatian', 'Daftar hal-hal kritis yang harus diselesaikan segera, seperti pembayaran tertunda atau tugas penting.')"></i>
       </h3>
     </div>
-    <div class="card-body" style="height: 320px; overflow-y: auto; padding-right: 8px;">
+    <div class="card-body" style="height: 320px; overflow-y: auto;">
       {% if overdue_items %}
       {% for item in overdue_items %}
-      <div class="alert alert-danger">
-        <span><i data-lucide="banknote"></i></span>
-        <div>
-          <strong>{{ item.name }}</strong> — overdue {{ item.due_date }}
-          <div class="text-muted" style="font-size: 0.8rem;">Rp {{ item.remaining|intcomma }} belum dibayar</div>
+      <div class="alert alert-danger" style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px; padding: 14px 16px; border-radius: 8px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.2); width: 100%;">
+        <span style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: rgba(220, 38, 38, 0.12); color: var(--wp-terracotta-main); flex-shrink: 0;">
+          <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
+        </span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px;">
+            <strong style="color: var(--wp-text-main); font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.name }}</strong>
+            <span class="badge badge-terracotta" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">Tenggat: {{ item.due_date }}</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--wp-terracotta-main); font-weight: 500;">Rp {{ item.remaining|intcomma }} belum dibayar</div>
         </div>
       </div>
       {% endfor %}
       {% else %}
-      <div class="empty-state" style="padding: var(--wp-space-lg);">
+      <div class="empty-state" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
         <div class="empty-icon"><i data-lucide="check-square"></i></div>
-        <p>Tidak ada pembayaran overdue. Mantap!</p>
+        <p>Tidak ada tagihan mendesak. Aman!</p>
       </div>
       {% endif %}
     </div>
@@ -109,12 +114,12 @@
       </h3>
       <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-outline btn-sm">Lihat Semua</a>
     </div>
-    <div class="card-body" style="height: 320px; overflow-y: auto; padding-right: 8px;">
+    <div class="card-body" style="height: 320px; overflow-y: auto;">
       {% if active_tasks %}
       {% for task in active_tasks %}
       <div class="task-item">
         <div class="task-checkbox {% if task.status == 'in_progress' %}in-progress{% endif %}">
-          {% if task.status == 'in_progress' %}<i data-lucide="clock"></i>{% endif %}
+          {% if task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% endif %}
         </div>
         <div class="task-title">
           {{ task.title }}
@@ -124,7 +129,7 @@
       </div>
       {% endfor %}
       {% else %}
-      <div class="empty-state" style="padding: var(--wp-space-lg);">
+      <div class="empty-state" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
         <div class="empty-icon"><i data-lucide="party-popper"></i></div>
         <p>Semua tugas sudah selesai!</p>
       </div>
@@ -168,7 +173,7 @@
       </h3>
       <a href="{% url 'vendors:compare' %}" class="btn btn-outline btn-sm">Kelola</a>
     </div>
-    <div class="card-body" style="height: 350px; overflow-y: auto; padding-right: 8px;">
+    <div class="card-body" style="height: 350px; overflow-y: auto;">
       {% if booked_vendors %}
       <div style="display: flex; flex-direction: column; gap: var(--wp-space-sm);">
         {% for vendor in booked_vendors %}
@@ -184,7 +189,7 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="empty-state" style="padding: var(--wp-space-lg);">
+      <div class="empty-state" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
         <div class="empty-icon"><i data-lucide="store"></i></div>
         <p>Belum ada vendor yang di-Booked.</p>
       </div>
@@ -194,12 +199,15 @@
 
   <!-- Sankey Diagram -->
   <div class="card" id="guide-sankey">
-    <div class="card-header">
-      <h3><i data-lucide="git-merge"></i> Alur Budget
+    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+      <h3 style="margin: 0;"><i data-lucide="git-merge"></i> Alur Budget
         <i data-lucide="help-circle" class="text-muted"
           style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;"
           onclick="showFeatureGuide('#guide-sankey', 'Alur Budget', 'Visualisasi flow anggaran dari Total Budget menuju ke masing-masing kategori pengeluaran aktual.')"></i>
       </h3>
+      <a href="{% url 'finances:dashboard' %}" class="btn btn-outline btn-sm">
+        <i data-lucide="wallet" style="width: 14px; height: 14px;"></i> Kelola
+      </a>
     </div>
     <div class="card-body" style="padding: 0; min-height: 450px; overflow: hidden; background: var(--wp-bg-surface); display: block;">
       {% if sankey_data_json and sankey_data_json != '[]' %}
@@ -228,71 +236,92 @@
 </div>
 {% endif %}
 
-{% block extra_js %}
 {% if sankey_data_json and sankey_data_json != '[]' %}
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
-  google.charts.load('current', {'packages':['sankey']});
-  google.charts.setOnLoadCallback(drawChart);
+  (function() {
+    function renderSankey() {
+      const container = document.getElementById('sankey_chart');
+      if (!container) return;
 
-  function drawChart() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var labelColor = isDark ? '#FAF8F5' : '#2C1E16';
+      const chartData = {{ sankey_data_json|safe }};
+      if (!chartData || chartData.length === 0) return;
 
-    var data = new google.visualization.DataTable();
-    data.addColumn('string', 'Dari');
-    data.addColumn('string', 'Ke');
-    data.addColumn('number', 'Alokasi (Rp)');
-    
-    // Parse JSON
-    var chartData = {{ sankey_data_json|safe }};
-    data.addRows(chartData);
+      function draw() {
+        if (!document.getElementById('sankey_chart')) return;
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var labelColor = isDark ? '#FAF8F5' : '#2C1E16';
 
-    // Custom palette matching theme (Gold, Sage, Terracotta variants)
-    var colors = ['#C0A888', '#9BACA0', '#C38B75', '#8b7a63', '#6f8373', '#9c6f5d', '#d9c8b0', '#a89070', '#b5a08a', '#7a9080'];
-    var options = {
-      width: '100%',
-      height: 450,
-      sankey: {
-        node: {
-          colors: colors,
-          nodePadding: 18,
-          width: 12,
-          label: {
-            fontName: 'Montserrat',
-            fontSize: 12,
-            color: labelColor,
-            bold: false
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Dari');
+        data.addColumn('string', 'Ke');
+        data.addColumn('number', 'Alokasi (Rp)');
+        data.addRows(chartData);
+
+        var colors = ['#C0A888', '#9BACA0', '#C38B75', '#8b7a63', '#6f8373', '#9c6f5d', '#d9c8b0', '#a89070', '#b5a08a', '#7a9080'];
+        var options = {
+          width: '100%',
+          height: 450,
+          sankey: {
+            node: {
+              colors: colors,
+              nodePadding: 18,
+              width: 12,
+              label: {
+                fontName: 'Montserrat',
+                fontSize: 12,
+                color: labelColor,
+                bold: false
+              }
+            },
+            link: {
+              colorMode: 'gradient',
+              colors: colors
+            }
           }
-        },
-        link: {
-          colorMode: 'gradient',
-          colors: colors
-        }
+        };
+
+        var chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+        chart.draw(data, options);
       }
-    };
 
-    var chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
-    chart.draw(data, options);
-  }
+      if (typeof google !== 'undefined' && google.charts) {
+        if (!google.visualization || !google.visualization.Sankey) {
+          google.charts.load('current', {'packages':['sankey']});
+          google.charts.setOnLoadCallback(draw);
+        } else {
+          draw();
+        }
+      } else {
+        // Retry shortly if google charts loader script is still fetching
+        setTimeout(renderSankey, 100);
+      }
+    }
 
-  // Redraw when theme toggles
-  document.addEventListener('DOMContentLoaded', function() {
+    // Run immediately when script is evaluated (HTMX swap or page load)
+    renderSankey();
+
+    // Also run on DOMContentLoaded just in case
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderSankey);
+    }
+
+    // Redraw immediately when user toggles dark/light mode
+    window.addEventListener('themeChanged', renderSankey);
+
+    // Redraw on parent container resize
     const chartContainer = document.getElementById('sankey_chart');
-    if (chartContainer) {
+    if (chartContainer && window.ResizeObserver) {
       let resizeTimer;
       const resizeObserver = new ResizeObserver(() => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-          if (typeof google !== 'undefined' && google.visualization && google.visualization.Sankey) {
-            drawChart();
-          }
+          renderSankey();
         }, 150);
       });
       resizeObserver.observe(chartContainer.parentElement);
     }
-  });
+  })();
 </script>
 {% endif %}
-{% endblock %}
+
 {% endblock %}

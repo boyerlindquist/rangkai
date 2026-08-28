@@ -2,6 +2,7 @@
 Operations views: Checklist, Rundown, Asset Custodian, Fabric Calculator.
 """
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
@@ -19,7 +20,7 @@ from operations.forms import TaskMilestoneForm, RundownEventForm, AssetCustodian
 @login_required
 @workspace_required
 def checklist_view(request):
-    """Phased Checklist hub with accordion and filters."""
+    """Phased Checklist hub with smart active phase detection and overdue catch-up tracking."""
     wedding = request.wedding
     tasks = TaskMilestone.objects.filter(wedding=wedding)
 
@@ -28,20 +29,65 @@ def checklist_view(request):
     if assignee_filter:
         tasks = tasks.filter(assignee=assignee_filter)
 
+    # Calculate active phase based on days remaining
+    days_remaining = wedding.days_remaining
+    phase_order = ['d360', 'd180', 'd90', 'd30', 'dday']
+    
+    current_phase_key = None
+    current_phase_idx = -1
+    if days_remaining is not None:
+        if days_remaining > 180:
+            current_phase_key = 'd360'
+        elif days_remaining >= 90:
+            current_phase_key = 'd180'
+        elif days_remaining >= 30:
+            current_phase_key = 'd90'
+        elif days_remaining >= 7:
+            current_phase_key = 'd30'
+        else:
+            current_phase_key = 'dday'
+        current_phase_idx = phase_order.index(current_phase_key)
+
     # Group by phase for accordion
     phases = TaskMilestone.PHASE_CHOICES
     grouped_tasks = {}
+    total_overdue_tasks = 0
+    all_overdue_tasks = []
+
     for phase_key, phase_label in phases:
         phase_tasks = tasks.filter(phase=phase_key)
         total = phase_tasks.count()
         done = phase_tasks.filter(status='done').count()
         progress = round((done / total) * 100) if total > 0 else 0
+        
+        phase_idx = phase_order.index(phase_key)
+        is_current = (phase_key == current_phase_key)
+        is_past = (current_phase_idx != -1 and phase_idx < current_phase_idx)
+        is_upcoming = (current_phase_idx != -1 and phase_idx > current_phase_idx)
+        
+        overdue_tasks_in_phase = []
+        if is_past:
+            overdue_tasks_in_phase = [t for t in phase_tasks if t.status != 'done']
+            total_overdue_tasks += len(overdue_tasks_in_phase)
+            all_overdue_tasks.extend(overdue_tasks_in_phase)
+            
+        # Annotate tasks in phase with is_overdue
+        annotated_tasks = []
+        for t in phase_tasks:
+            t_is_overdue = (is_past and t.status != 'done')
+            setattr(t, 'is_overdue', t_is_overdue)
+            annotated_tasks.append(t)
+
         grouped_tasks[phase_key] = {
             'label': phase_label,
-            'tasks': phase_tasks,
+            'tasks': annotated_tasks,
             'total': total,
             'done': done,
             'progress': progress,
+            'is_current': is_current,
+            'is_past': is_past,
+            'is_upcoming': is_upcoming,
+            'overdue_count': len(overdue_tasks_in_phase),
         }
 
     # Overall stats
@@ -58,6 +104,11 @@ def checklist_view(request):
         'done_tasks': done,
         'assignee_filter': assignee_filter,
         'task_form': TaskMilestoneForm(),
+        'days_remaining': days_remaining,
+        'current_phase_key': current_phase_key,
+        'current_phase_label': dict(phases).get(current_phase_key) if current_phase_key else None,
+        'total_overdue_tasks': total_overdue_tasks,
+        'all_overdue_tasks': all_overdue_tasks,
     }
     return render(request, 'operations/checklist.html', context)
 
@@ -72,6 +123,26 @@ def toggle_task_status(request, pk):
     task.status = cycle[(idx + 1) % len(cycle)]
     task.save(update_fields=['status'])
     if request.htmx:
+        # Check if task is in a past phase
+        days_remaining = request.wedding.days_remaining
+        phase_order = ['d360', 'd180', 'd90', 'd30', 'dday']
+        current_phase_idx = -1
+        if days_remaining is not None:
+            if days_remaining > 180:
+                current_phase_key = 'd360'
+            elif days_remaining >= 90:
+                current_phase_key = 'd180'
+            elif days_remaining >= 30:
+                current_phase_key = 'd90'
+            elif days_remaining >= 7:
+                current_phase_key = 'd30'
+            else:
+                current_phase_key = 'dday'
+            current_phase_idx = phase_order.index(current_phase_key)
+        
+        task_idx = phase_order.index(task.phase) if task.phase in phase_order else 0
+        task.is_overdue = (current_phase_idx != -1 and task_idx < current_phase_idx and task.status != 'done')
+
         phase_tasks = TaskMilestone.objects.filter(wedding=request.wedding, phase=task.phase)
         total = phase_tasks.count()
         done = phase_tasks.filter(status='done').count()
@@ -117,11 +188,57 @@ def add_task(request):
 @login_required
 @owner_required
 def delete_task(request, pk):
-    """HTMX endpoint: Delete a custom task."""
-    task = get_object_or_404(TaskMilestone, pk=pk, wedding=request.wedding, is_custom=True)
+    """HTMX endpoint: Delete any task (custom or default)."""
+    task = get_object_or_404(TaskMilestone, pk=pk, wedding=request.wedding)
+    phase_key = task.phase
+    phase_label = task.get_phase_display()
     task.delete()
     if request.htmx:
-        return HttpResponse('')
+        phase_tasks = TaskMilestone.objects.filter(wedding=request.wedding, phase=phase_key)
+        total = phase_tasks.count()
+        done = phase_tasks.filter(status='done').count()
+        progress = int((done / total) * 100) if total > 0 else 0
+        
+        all_tasks = TaskMilestone.objects.filter(wedding=request.wedding)
+        overall_total = all_tasks.count()
+        overall_done = all_tasks.filter(status='done').count()
+        overall_progress = int((overall_done / overall_total) * 100) if overall_total > 0 else 0
+        
+        progress_fill_class = 'progress-fill-sage' if progress == 100 else ('progress-fill-gold' if progress > 0 else 'progress-fill-terracotta')
+        
+        response_html = f"""
+        <div class="phase-info" id="phase-info-{phase_key}" hx-swap-oob="true">
+          <div style="min-width: 50px;">
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
+              {progress}%
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="phase-title">{phase_label}</span>
+            </div>
+            <div class="phase-stats" style="margin-top: 2px;">{done} / {total} selesai</div>
+            <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
+              <div class="progress-fill {progress_fill_class}"
+                   style="width: {progress}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body" id="overall-progress-bar" hx-swap-oob="true" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 12px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div style="font-size: 2.4rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main); line-height: 1;">
+              {overall_progress}<span style="font-size: 1.4rem; font-weight: 400; color: var(--wp-text-secondary); margin-left: 2px;">%</span>
+            </div>
+            <div class="text-muted" style="font-size: 0.82rem;">
+              {overall_done} dari {overall_total} tugas tuntas
+            </div>
+          </div>
+          <div class="progress-bar" style="height: 10px; background: rgba(44, 30, 22, 0.08); border-radius: var(--wp-radius-pill);">
+            <div class="progress-fill progress-fill-sage" style="width: {overall_progress}%"></div>
+          </div>
+        </div>
+        """
+        return HttpResponse(response_html)
     return redirect('operations-checklist:checklist')
 
 

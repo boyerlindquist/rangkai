@@ -6,10 +6,15 @@
     hx-swap="outerHTML"
     title="Klik untuk ubah status"
   >
-    {% if task.status == 'done' %}<i data-lucide="check"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock"></i>{% endif %}
+    {% if task.status == 'done' %}<i data-lucide="check" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% endif %}
   </button>
   <div class="task-title {% if task.status == 'done' %}done{% endif %}" style="flex: 1;">
     {{ task.title }}
+    {% if task.is_overdue and task.status != 'done' %}
+      <span class="badge badge-terracotta" style="margin-left: 4px; font-size: 0.72rem; padding: 2px 6px;">
+        <i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i> Tertinggal
+      </span>
+    {% endif %}
     {% if task.is_critical %}<span class="badge badge-terracotta" style="margin-left: 4px;">Kritis</span>{% endif %}
     {% if task.linked_tool %}<span class="badge badge-gold" style="margin-left: 4px;"><i data-lucide="link"></i> {{ task.linked_tool }}</span>{% endif %}
   </div>
@@ -21,15 +26,14 @@
             hx-target="closest .task-item"
             hx-swap="outerHTML"
             style="color: var(--wp-gold-main);"><i data-lucide="pencil"></i></button>
-    {% if task.is_custom %}
     <button class="btn btn-ghost btn-icon btn-sm"
             hx-delete="{% url 'operations-checklist:delete_task' task.pk %}"
             hx-confirm="Hapus tugas ini?"
             hx-target="closest .task-item"
             hx-swap="outerHTML"
+            title="Hapus tugas"
             style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
-    {% endif %}
-      </div>
+  </div>
 </div>
 
 {% if request.htmx %}
@@ -52,15 +56,17 @@
 {% endif %}
 
 {% if overall_progress is not None %}
-<div class="card-body flex items-center gap-lg" id="overall-progress-bar" hx-swap-oob="true">
-  <div>
-    <div style="font-size: 2.5rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main);">{{ overall_progress }}%</div>
-    <div class="text-muted" style="font-size: 0.8rem;">{{ overall_done }} / {{ overall_total }} tugas selesai</div>
-  </div>
-  <div style="flex: 1;">
-    <div class="progress-bar" style="height: 12px;">
-      <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
+<div class="card-body" id="overall-progress-bar" hx-swap-oob="true" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 12px;">
+  <div style="display: flex; align-items: baseline; justify-content: space-between;">
+    <div style="font-size: 2.4rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main); line-height: 1;">
+      {{ overall_progress }}<span style="font-size: 1.4rem; font-weight: 400; color: var(--wp-text-secondary); margin-left: 2px;">%</span>
     </div>
+    <div class="text-muted" style="font-size: 0.82rem;">
+      {{ overall_done }} dari {{ overall_total }} tugas tuntas
+    </div>
+  </div>
+  <div class="progress-bar" style="height: 10px;">
+    <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
   </div>
 </div>
 {% endif %}

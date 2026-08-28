@@ -113,30 +113,37 @@
 
   <!-- Deposit History -->
   <div class="card">
-    <div class="card-body">
-      <h3 style="margin-bottom: var(--wp-space-md); font-family: 'Cormorant Garamond', serif; color: var(--wp-text-main);">Riwayat Tabungan</h3>
+    <div class="card-body" style="display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--wp-space-md);">
+        <h3 style="margin: 0; font-family: 'Cormorant Garamond', serif; color: var(--wp-text-main);">Riwayat Tabungan</h3>
+        <span class="badge badge-muted">{{ deposits|length }} Setoran</span>
+      </div>
       
-      <div class="table-responsive">
+      <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
-          <thead>
+          <thead style="position: sticky; top: 0; background: var(--wp-bg-surface); z-index: 1;">
             <tr style="border-bottom: 1px solid var(--wp-border-light);">
-              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Tanggal</th>
-              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Penyetor</th>
-              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Nominal</th>
-              <th style="padding: 12px 8px; color: var(--wp-text-secondary); font-weight: 500;">Catatan</th>
+              <th style="padding: 10px 8px; color: var(--wp-text-secondary); font-weight: 600; font-size: 0.8rem;">Tanggal</th>
+              <th style="padding: 10px 8px; color: var(--wp-text-secondary); font-weight: 600; font-size: 0.8rem;">Penyetor</th>
+              <th style="padding: 10px 8px; color: var(--wp-text-secondary); font-weight: 600; font-size: 0.8rem;">Nominal</th>
+              <th style="padding: 10px 8px; color: var(--wp-text-secondary); font-weight: 600; font-size: 0.8rem;">Catatan</th>
             </tr>
           </thead>
           <tbody>
             {% for deposit in deposits %}
             <tr style="border-bottom: 1px solid var(--wp-border-light);">
-              <td style="padding: 12px 8px;">{{ deposit.date|date:"d M Y" }}</td>
-              <td style="padding: 12px 8px;">{{ deposit.depositor }}</td>
-              <td style="padding: 12px 8px; font-weight: 500; color: var(--wp-text-main);">Rp {{ deposit.amount|intcomma }}</td>
-              <td style="padding: 12px 8px; color: var(--wp-text-secondary); font-size: 0.9rem;">{{ deposit.notes|default:"-" }}</td>
+              <td style="padding: 10px 8px; font-size: 0.85rem;">{{ deposit.date|date:"d M Y" }}</td>
+              <td style="padding: 10px 8px;">
+                <span class="badge {% if deposit.depositor == 'CPP' %}badge-gold{% else %}badge-sage{% endif %}" style="font-size: 0.72rem; padding: 2px 8px;">
+                  {{ deposit.depositor }}
+                </span>
+              </td>
+              <td style="padding: 10px 8px; font-weight: 600; color: var(--wp-text-main); font-size: 0.85rem;">Rp {{ deposit.amount|intcomma }}</td>
+              <td style="padding: 10px 8px; color: var(--wp-text-secondary); font-size: 0.82rem;">{{ deposit.notes|default:"-" }}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="4" style="padding: 24px; text-align: center; color: var(--wp-text-muted);">
+              <td colspan="4" style="padding: 32px; text-align: center; color: var(--wp-text-muted);">
                 Belum ada setoran tabungan. Yuk mulai menabung!
               </td>
             </tr>

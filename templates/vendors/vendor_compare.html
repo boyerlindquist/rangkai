@@ -3,12 +3,53 @@
 {% block title %}Vendor Comparator — Rangkai{% endblock %}
 
 {% block content %}
+<div x-data="{ showForm: false }">
+
 <div class="page-header fade-in" id="guide-vendors">
   <div>
     <h1>Vendors
       <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-vendors', 'Vendor Compare', 'Evaluasi dan bandingkan vendor secara objektif menggunakan sistem skoring berdasarkan Harga, Kualitas, dan Fasilitas.')"></i>
     </h1>
     <p class="page-subtitle">Bandingkan dan pilih vendor terbaik untuk pernikahan Anda dengan sistem scoring.</p>
+  </div>
+  <button class="btn btn-outline btn-sm" style="margin-top: var(--wp-space-md); align-self: flex-end; background: var(--wp-glass-bg);" @click="showForm = !showForm">
+    <i data-lucide="plus"></i>
+    <span x-text="showForm ? 'Tutup' : 'Tambah Vendor'">Tambah Vendor</span>
+  </button>
+</div>
+
+<!-- Inline Add Vendor Form (collapsible) -->
+<div x-show="showForm" x-transition x-cloak class="card mb-lg fade-in">
+  <div class="card-header">
+    <span style="font-weight: 600; font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+      <i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i>
+      Tambah Vendor Baru
+      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 14px; height: 14px; margin-left: 6px;" onclick="showFeatureGuide('#guide-vendor-weights', 'Bobot Prioritas', 'Tentukan aspek apa (Harga, Kualitas, dll) yang paling penting saat menambah vendor.')"></i>
+    </span>
+    <button class="btn btn-ghost btn-sm" @click="showForm = false" style="padding: 2px 10px; font-size: 1.1rem;">✕</button>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'vendors:add' %}"
+          hx-post="{% url 'vendors:add' %}"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML"
+          @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="text-muted" style="font-size: 0.7rem;">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
+        <button type="button" class="btn btn-ghost btn-sm" @click="showForm = false">Batal</button>
+        <button type="submit" class="btn btn-gold"><i data-lucide="save"></i> Simpan Vendor</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -23,13 +64,39 @@
 
 <!-- Vendor Cards by Category -->
 {% for cat_name, cat_vendors in vendor_groups.items %}
-<div class="card mb-lg">
-  <div class="card-header">
-    <h3>{{ cat_name }}</h3>
-    <span class="badge badge-muted">{{ cat_vendors|length }} vendor</span>
+<div class="card mb-lg" x-data="{ open: true }">
+  <div class="card-header" @click="open = !open" style="cursor: pointer; user-select: none; transition: background var(--wp-transition-fast);">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h3 style="margin: 0;">{{ cat_name }}</h3>
+      <span class="badge badge-muted">{{ cat_vendors|length }} vendor</span>
+    </div>
+    <span class="chevron" :style="open ? 'transform: rotate(180deg)' : ''" style="transition: transform var(--wp-transition-normal); font-size: 1.1rem; color: var(--wp-text-muted); display: inline-block;">▼</span>
   </div>
-  <div class="card-body">
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--wp-space-md); align-items: start;">
+  <div class="card-body" x-show="open" x-transition x-cloak>
+    <style>
+      .vendor-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--wp-space-md);
+        align-items: stretch;
+      }
+      @media (max-width: 1200px) {
+        .vendor-cards-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 900px) {
+        .vendor-cards-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 580px) {
+        .vendor-cards-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <div class="vendor-cards-grid">
       {% for vendor in cat_vendors %}
       {% include "vendors/partials/vendor_card.html" %}
       {% endfor %}
@@ -41,41 +108,11 @@
   <div class="card-body">
     <div class="empty-state">
       <div class="empty-icon"><i data-lucide="store"></i></div>
-      <p>Belum ada vendor. Tambahkan vendor pertama di bawah.</p>
+      <p>Belum ada vendor. Klik <strong>+ Tambah Vendor</strong> di atas untuk mulai.</p>
     </div>
   </div>
 </div>
 {% endfor %}
 
-<!-- Add Vendor Form -->
-<div class="card mt-lg" x-data="{ showForm: false }" id="guide-vendor-weights">
-  <div class="card-header">
-    <h3><i data-lucide="plus"></i> Tambah Vendor
-      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-vendor-weights', 'Bobot Prioritas', 'Tentukan aspek apa (Harga, Kualitas, dll) yang paling penting saat menambah vendor.')"></i>
-    </h3>
-    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
-      <span x-text="showForm ? 'Tutup' : 'Tambah Vendor'"></span>
-    </button>
-  </div>
-  <div class="card-body" x-show="showForm" x-transition x-cloak>
-    <form method="post" action="{% url 'vendors:add' %}" 
-          hx-post="{% url 'vendors:add' %}" 
-          hx-target=".main-content" 
-          hx-select=".main-content" 
-          hx-swap="outerHTML" 
-          @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
-      {% csrf_token %}
-      <div class="form-row">
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<p class="text-muted" style="font-size: 0.7rem;">{{ field.help_text }}</p>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Vendor</button>
-    </form>
-  </div>
 </div>
 {% endblock %}

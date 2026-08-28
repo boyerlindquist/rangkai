@@ -2,10 +2,12 @@
 {% load humanize %}
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Rangkai — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
+  <meta name="description"
+    content="Rangkai — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
   <title>{% block title %}Rangkai{% endblock %}</title>
 
   <!-- Theme Initialization (Prevents flicker) -->
@@ -18,19 +20,23 @@
   <!-- Google Fonts: Luxury Editorial Aesthetics -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap"
+    rel="stylesheet">
 
   <!-- Design System -->
   <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/main.css' %}?v=10">
   <!-- Driver.js CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
   {% block extra_css %}{% endblock %}
 </head>
+
 <body>
   {% if messages %}
-  <div class="messages-container" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" x-transition>
+  <div class="messages-container" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show"
+    x-transition>
     {% for message in messages %}
     <div class="message-toast {{ message.tags }}">{{ message }}</div>
     {% endfor %}
@@ -40,12 +46,14 @@
   {% block body %}
   <div class="app-shell" x-data="{ collapsed: localStorage.getItem('sidebarCollapsed') === 'true' }">
     <!-- Theme Toggle Floating Button -->
-    <button onclick="toggleTheme()" class="btn btn-ghost theme-toggle-floating" aria-label="Toggle Theme" style="position: fixed; top: var(--wp-space-lg); right: var(--wp-space-lg); z-index: 1000; background: var(--wp-accent-contrast); border: 1px solid var(--wp-accent-contrast); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s ease;">
+    <button onclick="toggleTheme()" class="btn btn-ghost theme-toggle-floating" aria-label="Toggle Theme"
+      style="position: fixed; top: var(--wp-space-lg); right: var(--wp-space-lg); z-index: 1000; background: var(--wp-accent-contrast); border: 1px solid var(--wp-accent-contrast); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s ease;">
       <i data-lucide="moon" id="themeIcon" style="width: 20px; height: 20px; color: var(--wp-accent-text);"></i>
     </button>
     <!-- Mobile Header -->
     <div class="mobile-header">
-      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i
+          data-lucide="menu"></i></button>
       <span style="color: var(--wp-gold-main); font-weight: 500; font-size: 0.9rem;">Rangkai</span>
       <span></span>
     </div>
@@ -74,31 +82,37 @@
       </div>
 
       <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">
-        <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
+        <a href="{% url 'core:dashboard' %}"
+          class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> <span class="nav-text">Overview</span>
         </a>
-        <a href="{% url 'finances:dashboard' %}" class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
+        <a href="{% url 'operations-checklist:checklist' %}"
+          class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Checklist & Tasks</span>
+        </a>
+        <a href="{% url 'finances:dashboard' %}"
+          class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="wallet"></i></span> <span class="nav-text">Budget & Finance</span>
         </a>
         <a href="{% url 'finances:savings_tracker' %}" class="{% if '/savings/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="piggy-bank"></i></span> <span class="nav-text">Tabungan Bersama</span>
         </a>
-        <a href="{% url 'guests:list' %}" class="{% if '/guests/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="users"></i></span> <span class="nav-text">Guest List</span>
-        </a>
         <a href="{% url 'vendors:compare' %}" class="{% if '/vendors/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="store"></i></span> <span class="nav-text">Vendors</span>
         </a>
-        <a href="{% url 'operations-checklist:checklist' %}" class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Checklist & Tasks</span>
+        <a href="{% url 'guests:list' %}" class="{% if '/guests/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="users"></i></span> <span class="nav-text">Guest List</span>
         </a>
-        <a href="{% url 'operations-checklist:detail_checklists' %}" class="{% if '/details/' in request.path %}active{% endif %}">
+        <a href="{% url 'operations-checklist:detail_checklists' %}"
+          class="{% if '/details/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="file-check-2"></i></span> <span class="nav-text">Detail Berkas</span>
         </a>
-        <a href="{% url 'operations-hub:operations_hub' %}" class="{% if '/operations/' in request.path %}active{% endif %}">
+        <a href="{% url 'operations-hub:operations_hub' %}"
+          class="{% if '/operations/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="settings-2"></i></span> <span class="nav-text">Operations</span>
         </a>
-        <a href="{% url 'core:guide' %}" class="{% if '/guide/' in request.path %}active{% endif %}" style="margin-top: auto;">
+        <a href="{% url 'core:guide' %}" class="{% if '/guide/' in request.path %}active{% endif %}"
+          style="margin-top: auto;">
           <span class="nav-icon"><i data-lucide="book-open"></i></span> <span class="nav-text">Panduan</span>
         </a>
         <a href="{% url 'core:settings' %}" class="{% if '/settings/' in request.path %}active{% endif %}">
@@ -106,28 +120,40 @@
         </a>
       </nav>
 
-      <div class="sidebar-footer">
+      <div class="sidebar-footer" :style="collapsed ? 'padding: 16px 8px;' : ''">
         {% if user.is_authenticated %}
-        <div class="user-info">
-          <div class="user-avatar">{{ user.username|first|upper }}</div>
-          <div class="nav-text">
-            <div class="user-name" style="color: var(--wp-sidebar-text);">{{ user.username }}</div>
-            {% if wedding_role %}
-            <div class="user-role">{{ wedding_role }}</div>
-            {% endif %}
+        <div class="user-profile-row">
+          <!-- Profile Info (Left) — Avatar on Left, Name & Role stacked on Right -->
+          <div class="user-info" x-show="!collapsed">
+            <div class="user-avatar">
+              {{ user.username|first|upper }}
+            </div>
+            <div class="user-text">
+              <div class="user-name">
+                {{ user.username }}
+              </div>
+              {% if wedding_role %}
+              <div class="user-role">
+                {{ wedding_role }}
+              </div>
+              {% endif %}
+            </div>
           </div>
-        </div>
-        <div class="nav-text" style="margin-top: 12px;">
-          <a href="{% url 'core:logout' %}" class="btn btn-ghost" style="color: var(--wp-sidebar-text-muted); width: 100%; font-size: 0.8rem; padding: 6px; text-align: center; display: block;">Logout</a>
+
+          <!-- Logout Button (Right when expanded, Centered when collapsed) -->
+          <a href="{% url 'core:logout' %}" class="btn btn-ghost logout-btn" title="Logout"
+             :style="collapsed ? 'width: 100%; display: flex; justify-content: center;' : ''">
+            <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+          </a>
         </div>
         {% endif %}
       </div>
     </aside>
 
     <!-- Floating Sidebar Toggle -->
-    <button class="floating-sidebar-toggle" 
-            :style="collapsed ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
-            @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);">
+    <button class="floating-sidebar-toggle"
+      :style="collapsed ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
+      @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);">
       <i x-show="!collapsed" data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
       <i x-show="collapsed" data-lucide="chevron-right" style="width: 14px; height: 14px; display: none;"></i>
     </button>
@@ -139,6 +165,8 @@
   </div>
   {% endblock %}
 
+  <!-- Google Charts -->
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
   <!-- Alpine.js (Client-Side Reactivity) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- HTMX (Async Server Persistence) -->
@@ -151,6 +179,10 @@
   <script src="{% static 'js/guide.js' %}"></script>
 
   <script>
+    // Preload Google Sankey package globally
+    if (typeof google !== 'undefined' && google.charts) {
+      google.charts.load('current', {'packages':['sankey']});
+    }
     // Sidebar toggle for mobile
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('open');
@@ -158,26 +190,26 @@
     }
 
     // Auto-dismiss messages
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(function() {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
         var msgs = document.querySelector('.messages-container');
         if (msgs) msgs.style.display = 'none';
       }, 5000);
-      
+
       // Initialize icons
       lucide.createIcons();
     });
 
     // Update active sidebar link after HTMX swap
-    document.body.addEventListener('htmx:pushedIntoHistory', function(evt) {
+    document.body.addEventListener('htmx:pushedIntoHistory', function (evt) {
       let links = Array.from(document.querySelectorAll('.sidebar-nav a'));
       links.forEach(a => a.classList.remove('active'));
-      
+
       let path = window.location.pathname;
-      
+
       // Sort links by href length descending to match most specific path first
       links.sort((a, b) => b.getAttribute('href').length - a.getAttribute('href').length);
-      
+
       for (let a of links) {
         let href = a.getAttribute('href');
         if (href === path || (href !== '/' && href !== '/dashboard/' && path.startsWith(href))) {
@@ -188,13 +220,13 @@
     });
 
     // Re-initialize icons after HTMX swaps
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-        lucide.createIcons();
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      lucide.createIcons();
     });
 
     // Add CSRF token to all HTMX requests
-    document.body.addEventListener('htmx:configRequest', function(evt) {
-        evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    document.body.addEventListener('htmx:configRequest', function (evt) {
+      evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
     });
 
     // Theme Toggle Logic
@@ -202,15 +234,18 @@
       const html = document.documentElement;
       const currentTheme = html.getAttribute('data-theme');
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
+
       html.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
-      
+
       const themeIcon = document.getElementById('themeIcon');
       if (themeIcon) {
         themeIcon.setAttribute('data-lucide', newTheme === 'dark' ? 'sun' : 'moon');
         lucide.createIcons();
       }
+
+      // Notify components that depend on theme (e.g. Sankey chart)
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
     }
 
     // Set initial icon state based on theme
@@ -226,4 +261,5 @@
 
   {% block extra_js %}{% endblock %}
 </body>
+
 </html>

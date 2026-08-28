@@ -164,13 +164,207 @@
 </div>
 
 <!-- Guest Table -->
-<div class="card mt-lg" id="guide-guest-db">
-  <div class="card-header">
-    <h3><i data-lucide="clipboard-list"></i> Database Tamu
-      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-guest-db', 'Database Tamu', 'Catat detail kontak, RSVP, dan status kehadiran saat hari H.')"></i>
-    </h3>
-    <div class="flex gap-sm">
+<div class="card mt-lg" id="guide-guest-db" x-data="{
+  mode: null,
+  rows: [
+    { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' },
+    { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' },
+    { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' },
+    { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' },
+    { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' }
+  ],
+  addRow(count = 1) {
+    for(let i = 0; i < count; i++) {
+      this.rows.push({ name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' });
+    }
+  },
+  removeRow(index) {
+    if(this.rows.length > 1) {
+      this.rows.splice(index, 1);
+    } else {
+      this.rows[0] = { name: '', phone: '', relation_side: 'groom_family', category: 'regular', pax_allocation: 2, rsvp_status: 'pending', notes: '' };
+    }
+  }
+}">
+  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h3 style="margin: 0;"><i data-lucide="clipboard-list"></i> Database Tamu
+        <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 16px; height: 16px; margin-left: 8px;" onclick="showFeatureGuide('#guide-guest-db', 'Database Tamu & Opsi Input', 'Kelola seluruh daftar tamu Anda di sini. Tersedia 3 opsi input: (1) + Tambah Tamu (input standar 1 entry), (2) Mode Spreadsheet (tabel input cepat banyak baris ala Excel), dan (3) Import Excel/CSV (upload file spreadsheet dengan template resmi).')"></i>
+      </h3>
       <span class="badge badge-muted">{{ stats.total|default:"0" }} undangan</span>
+    </div>
+
+    <!-- Action Tools -->
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <a href="{% url 'guests:download_template' %}" class="btn btn-ghost btn-sm" title="Unduh format template Excel" style="color: var(--wp-text-secondary);">
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i> Template Excel
+      </a>
+      <button type="button" class="btn btn-outline btn-sm" @click="mode = (mode === 'import' ? null : 'import')" :style="mode === 'import' ? 'background: var(--wp-gold-main); color: white; border-color: var(--wp-gold-main);' : ''">
+        <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Import Excel/CSV
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" @click="mode = (mode === 'spreadsheet' ? null : 'spreadsheet')" :style="mode === 'spreadsheet' ? 'background: var(--wp-gold-main); color: white; border-color: var(--wp-gold-main);' : ''">
+        <i data-lucide="table" style="width: 14px; height: 14px;"></i> Mode Spreadsheet
+      </button>
+      <button type="button" class="btn btn-gold btn-sm" @click="mode = (mode === 'single' ? null : 'single')">
+        <span x-text="mode === 'single' ? '✕ Tutup Form' : '+ Tambah Tamu'"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANEL 1: Single Form -->
+  <div x-show="mode === 'single'" x-transition x-cloak style="padding: var(--wp-space-lg); background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-border-light);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--wp-space-md);">
+      <h4 style="margin: 0; font-size: 1rem;"><i data-lucide="user-plus" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Tambah Tamu Baru</h4>
+    </div>
+    <form method="post" action="{% url 'guests:add' %}"
+          hx-post="{% url 'guests:add' %}"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML"
+          @htmx:after-request="if($event.detail.successful) { $el.reset(); mode = null; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: var(--wp-space-sm);">
+        <button type="submit" class="btn btn-sage"><i data-lucide="save"></i> Simpan Tamu</button>
+        <button type="button" class="btn btn-ghost" @click="mode = null">Batal</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- PANEL 2: Spreadsheet Quick-Entry Mode -->
+  <div x-show="mode === 'spreadsheet'" x-transition x-cloak style="padding: var(--wp-space-lg); background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-border-light);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--wp-space-md); flex-wrap: wrap; gap: 8px;">
+      <div>
+        <h4 style="margin: 0; font-size: 1rem; color: var(--wp-text-main);">
+          <i data-lucide="table" style="width: 16px; height: 16px; vertical-align: -2px; color: var(--wp-gold-dark);"></i> Mode Spreadsheet (Input Beruntun Cepat)
+          <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 15px; height: 15px; margin-left: 6px;" onclick="showFeatureGuide('#guide-guest-db', 'Mode Spreadsheet', 'Input puluhan tamu dengan cepat tanpa buka-tutup form! Ketik nama, nomor HP, dan pilih kategori. Tekan Enter pada kolom terakhir untuk otomatis membuat baris baru di bawahnya. Klik Simpan Semua Tamu untuk menyimpan semua baris sekaligus.')"></i>
+        </h4>
+        <p class="text-muted" style="font-size: 0.8rem; margin: 4px 0 0 0;">Ketik nama dan detail tamu langsung di baris bawah. Gunakan <strong>Tab / Enter</strong> untuk berpindah kolom/baris secara cepat.</p>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button type="button" class="btn btn-outline btn-sm" @click="addRow(5)">+ Tambah 5 Baris</button>
+        <button type="button" class="btn btn-ghost btn-sm" @click="mode = null">✕ Tutup</button>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'guests:bulk_add' %}"
+          hx-post="{% url 'guests:bulk_add' %}"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML">
+      {% csrf_token %}
+      <div class="table-responsive" style="max-height: 420px; overflow-y: auto; background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); border-radius: var(--wp-radius-sm);">
+        <table class="wp-table" style="width: 100%; border-collapse: collapse;">
+          <thead style="position: sticky; top: 0; background: var(--wp-bg-surface); z-index: 2; border-bottom: 1px solid var(--wp-border-light);">
+            <tr>
+              <th style="width: 36px; text-align: center; font-size: 0.75rem;">#</th>
+              <th style="min-width: 210px; font-size: 0.75rem;">Nama Tamu <span style="color: var(--wp-terracotta-main);">*</span></th>
+              <th style="min-width: 140px; font-size: 0.75rem;">No. HP / WA</th>
+              <th style="min-width: 140px; font-size: 0.75rem;">Asal Relasi</th>
+              <th style="min-width: 110px; font-size: 0.75rem;">Kategori</th>
+              <th style="width: 70px; text-align: center; font-size: 0.75rem;">Pax</th>
+              <th style="min-width: 120px; font-size: 0.75rem;">RSVP</th>
+              <th style="min-width: 150px; font-size: 0.75rem;">Catatan</th>
+              <th style="width: 36px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, index) in rows" :key="index">
+              <tr style="border-bottom: 1px solid var(--wp-border-light);">
+                <td style="text-align: center; color: var(--wp-text-muted); font-size: 0.78rem;" x-text="index + 1"></td>
+                <td style="padding: 4px 6px;">
+                  <input type="text" name="name[]" x-model="row.name" placeholder="Nama tamu..." class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;" @keydown.enter.prevent="if(index === rows.length - 1) addRow(1)">
+                </td>
+                <td style="padding: 4px 6px;">
+                  <input type="text" name="phone[]" x-model="row.phone" placeholder="08xxxxxxxxxx" class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;">
+                </td>
+                <td style="padding: 4px 6px;">
+                  <select name="relation_side[]" x-model="row.relation_side" class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;">
+                    <option value="groom_family">Keluarga Pria</option>
+                    <option value="bride_family">Keluarga Wanita</option>
+                    <option value="groom_friend">Teman Pria</option>
+                    <option value="bride_friend">Teman Wanita</option>
+                  </select>
+                </td>
+                <td style="padding: 4px 6px;">
+                  <select name="category[]" x-model="row.category" class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;">
+                    <option value="regular">Reguler</option>
+                    <option value="vip">VIP</option>
+                    <option value="vvip">VVIP</option>
+                  </select>
+                </td>
+                <td style="padding: 4px 6px; text-align: center;">
+                  <input type="number" name="pax_allocation[]" x-model="row.pax_allocation" min="1" max="20" class="wp-input" style="padding: 6px 4px; font-size: 0.82rem; text-align: center;">
+                </td>
+                <td style="padding: 4px 6px;">
+                  <select name="rsvp_status[]" x-model="row.rsvp_status" class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;">
+                    <option value="pending">Pending</option>
+                    <option value="attending">Hadir</option>
+                    <option value="declined">Berhalangan</option>
+                  </select>
+                </td>
+                <td style="padding: 4px 6px;">
+                  <input type="text" name="notes[]" x-model="row.notes" placeholder="Catatan..." class="wp-input" style="padding: 6px 10px; font-size: 0.82rem;">
+                </td>
+                <td style="padding: 4px 6px; text-align: center;">
+                  <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="removeRow(index)" style="color: var(--wp-terracotta-main); padding: 4px;" title="Hapus Baris">✕</button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--wp-space-md); flex-wrap: wrap; gap: 8px;">
+        <button type="button" class="btn btn-outline btn-sm" @click="addRow(1)"><i data-lucide="plus" style="width: 14px; height: 14px;"></i> Tambah 1 Baris</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-ghost" @click="mode = null">Batal</button>
+          <button type="submit" class="btn btn-sage"><i data-lucide="save"></i> Simpan Semua Tamu</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- PANEL 3: Import Excel / CSV -->
+  <div x-show="mode === 'import'" x-transition x-cloak style="padding: var(--wp-space-lg); background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-border-light);">
+    <div style="max-width: 600px; margin: 0 auto;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--wp-space-md);">
+        <h4 style="margin: 0; font-size: 1.05rem; color: var(--wp-text-main);">
+          <i data-lucide="file-spreadsheet" style="width: 18px; height: 18px; vertical-align: -3px; color: var(--wp-gold-dark);"></i> Import Tamu dari Excel / CSV
+          <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 15px; height: 15px; margin-left: 6px;" onclick="showFeatureGuide('#guide-guest-db', 'Import File Excel / CSV', 'Unduh template resmi berformat .xlsx, salin/isi data tamu Anda di Excel atau Google Sheets, lalu upload file tersebut. Sistem akan otomatis memvalidasi dan memasukkan seluruh daftar tamu Anda ke database dalam 1 detik.')"></i>
+        </h4>
+        <button type="button" class="btn btn-ghost btn-sm" @click="mode = null">✕</button>
+      </div>
+
+      <p class="text-secondary" style="font-size: 0.85rem; margin-bottom: var(--wp-space-md); line-height: 1.5;">
+        Unggah file spreadsheet kamu (<strong>.xlsx</strong> atau <strong>.csv</strong>). Kolom yang dibaca meliputi: <em>Nama Tamu, No. HP, Asal Relasi, Kategori, Pax, RSVP, Catatan</em>.
+      </p>
+
+      <div style="background: var(--wp-bg-surface); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px dashed var(--wp-border-light); margin-bottom: var(--wp-space-md); text-align: center;">
+        <p style="font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: var(--wp-space-xs);">Gunakan template resmi agar format kolom langsung sesuai:</p>
+        <a href="{% url 'guests:download_template' %}" class="btn btn-outline btn-sm" style="display: inline-flex; gap: 6px;">
+          <i data-lucide="download" style="width: 14px; height: 14px;"></i> Unduh Template Excel (.xlsx)
+        </a>
+      </div>
+
+      <form action="{% url 'guests:import' %}" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: var(--wp-space-md);">
+        {% csrf_token %}
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--wp-text-secondary); margin-bottom: 6px;">Pilih File Excel / CSV (.xlsx, .csv)</label>
+          <input type="file" name="file" accept=".xlsx,.csv" required class="wp-input" style="padding: 10px;">
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="btn btn-ghost" @click="mode = null">Batal</button>
+          <button type="submit" class="btn btn-sage"><i data-lucide="upload"></i> Mulai Unggah & Import</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -213,33 +407,9 @@
     {% else %}
     <div class="empty-state">
       <div class="empty-icon"><i data-lucide="users"></i></div>
-      <p>Belum ada tamu. Tambahkan tamu pertama di bawah.</p>
+      <p>Belum ada tamu. Tambahkan tamu pertama di atas.</p>
     </div>
     {% endif %}
-  </div>
-</div>
-
-<!-- Add Guest Form -->
-<div class="card mt-lg" x-data="{ showForm: false }">
-  <div class="card-header">
-    <h3><i data-lucide="plus"></i> Tambah Tamu</h3>
-    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
-      <span x-text="showForm ? 'Tutup' : 'Tambah Tamu'"></span>
-    </button>
-  </div>
-  <div class="card-body" x-show="showForm" x-transition x-cloak>
-    <form method="post" action="{% url 'guests:add' %}" hx-post="{% url 'guests:add' %}" hx-swap="none" @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
-      {% csrf_token %}
-      <div class="form-row">
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-        </div>
-        {% endfor %}
-      </div>
-      <button type="submit" class="btn btn-sage mt-md"><i data-lucide="save"></i> Simpan Tamu</button>
-    </form>
   </div>
 </div>
 {% endblock %}

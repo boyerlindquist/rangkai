@@ -3,22 +3,137 @@
 {% block title %}Checklist — Rangkai{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1>Master <span class="serif-accent">Checklist</span></h1>
-  <p class="page-subtitle">Pantau progress persiapan pernikahan dari D-360 sampai D-Day.</p>
+<div x-data="{ showForm: false }">
+
+<div class="page-header fade-in">
+  <div>
+    <h1>Master <span class="serif-accent">Checklist</span></h1>
+    <p class="page-subtitle">Pantau progress persiapan pernikahan dari D-360 sampai D-Day.</p>
+  </div>
+  <button class="btn btn-outline btn-sm" style="margin-top: var(--wp-space-md); align-self: flex-end; background: var(--wp-glass-bg);" @click="showForm = !showForm">
+    <i data-lucide="plus"></i>
+    <span x-text="showForm ? 'Tutup' : 'Tambah Tugas'">Tambah Tugas</span>
+  </button>
 </div>
 
-<!-- Overall Progress -->
-<div class="card mb-lg">
-  <div class="card-body flex items-center gap-lg" id="overall-progress-bar">
-    <div>
-      <div style="font-size: 2.5rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main);">{{ overall_progress }}%</div>
-      <div class="text-muted" style="font-size: 0.8rem;">{{ done_tasks }} / {{ total_tasks }} tugas selesai</div>
+<!-- Inline Add Task Form (collapsible) -->
+<div x-show="showForm" x-transition x-cloak class="card mb-lg fade-in">
+  <div class="card-header">
+    <span style="font-weight: 600; font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+      <i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i>
+      Tambah Tugas Custom
+    </span>
+    <button class="btn btn-ghost btn-sm" @click="showForm = false" style="padding: 2px 10px; font-size: 1.1rem;">✕</button>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'operations-checklist:add_task' %}"
+          hx-post="{% url 'operations-checklist:add_task' %}"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML"
+          @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+      {% csrf_token %}
+      <div class="form-row">
+        {% for field in task_form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="text-muted" style="font-size: 0.7rem;">{{ field.help_text }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
+        <button type="button" class="btn btn-ghost btn-sm" @click="showForm = false">Batal</button>
+        <button type="submit" class="btn btn-gold"><i data-lucide="save"></i> Simpan Tugas</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Top Hero: 2 Bento Cards for Progress & Timeline Radar (Asymmetric 1.75 : 1) -->
+<style>
+  .checklist-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--wp-space-lg);
+    align-items: stretch;
+    margin-bottom: var(--wp-space-lg);
+  }
+  @media (min-width: 900px) {
+    .checklist-hero-grid {
+      grid-template-columns: 1.75fr 1fr;
+    }
+  }
+</style>
+
+<div class="checklist-hero-grid">
+  <!-- Card 1: Progres Keseluruhan -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-header" style="padding: var(--wp-space-md) var(--wp-space-lg);">
+      <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--wp-text-secondary); display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="check-circle-2" style="width: 15px; height: 15px; color: var(--wp-sage-main);"></i> Progres Keseluruhan
+      </span>
+      <span class="badge badge-sage">{{ done_tasks }} / {{ total_tasks }} Tugas</span>
     </div>
-    <div style="flex: 1;">
-      <div class="progress-bar" style="height: 12px;">
+    <div class="card-body" id="overall-progress-bar" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <div style="font-size: 2.4rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main); line-height: 1;">
+          {{ overall_progress }}<span style="font-size: 1.4rem; font-weight: 400; color: var(--wp-text-secondary); margin-left: 2px;">%</span>
+        </div>
+        <div class="text-muted" style="font-size: 0.82rem;">
+          {{ done_tasks }} dari {{ total_tasks }} tugas tuntas
+        </div>
+      </div>
+      <div class="progress-bar" style="height: 10px;">
         <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Fase Aktif & Timeline Tracker -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: {% if days_remaining is not None and total_overdue_tasks > 0 %}var(--wp-terracotta-border){% else %}var(--wp-glass-border){% endif %};">
+    <div class="card-header" style="padding: var(--wp-space-md) var(--wp-space-lg);">
+      <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--wp-text-secondary); display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="compass" style="width: 15px; height: 15px; color: var(--wp-gold-main);"></i> Timeline Radar
+      </span>
+      {% if days_remaining is not None %}
+        <span class="badge badge-gold" style="font-weight: 600; font-size: 0.75rem;">
+          <i data-lucide="zap" style="width: 12px; height: 12px;"></i> D-{{ days_remaining }} Hari
+        </span>
+      {% else %}
+        <a href="{% url 'core:settings' %}" class="badge badge-muted" style="text-decoration: none;">Set Tanggal</a>
+      {% endif %}
+    </div>
+    
+    <div class="card-body" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      {% if days_remaining is not None %}
+        <div>
+          <div style="font-size: 0.72rem; color: var(--wp-gold-dark); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">
+            Fase Aktif Saat Ini
+          </div>
+          <div style="font-size: 1.05rem; font-weight: 600; color: var(--wp-text-main);">
+            {{ current_phase_label }}
+          </div>
+        </div>
+
+        <div style="margin-top: 4px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;">
+          {% if total_overdue_tasks > 0 %}
+            <span style="color: var(--wp-terracotta-main); display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">
+              <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i> {{ total_overdue_tasks }} tugas tertinggal
+            </span>
+            <span class="badge badge-terracotta" style="font-size: 0.7rem; padding: 2px 6px;">Perlu Catch-Up</span>
+          {% else %}
+            <span style="color: var(--wp-sage-main); display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">
+              <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Semua fase lalu on-track
+            </span>
+            <span class="badge badge-sage" style="font-size: 0.7rem; padding: 2px 6px;">On Track</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div style="font-size: 0.85rem; color: var(--wp-text-secondary); line-height: 1.5;">
+          Belum ada tanggal pernikahan yang diset. Atur tanggal di menu <strong>Pengaturan</strong> untuk mengaktifkan kalkulasi fase otomatis.
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -34,17 +149,28 @@
 
 <!-- Phase Accordions -->
 {% for phase_key, phase_data in grouped_tasks.items %}
-<div class="accordion-item" x-data="{ open: {{ phase_data.progress|yesno:'false,true,true' }} }">
-  <div class="accordion-header" @click="open = !open">
+<div class="accordion-item"
+     style="{% if phase_data.is_current %}border: 1px solid var(--wp-gold-main); box-shadow: 0 2px 12px rgba(160, 130, 94, 0.12);{% elif phase_data.is_past and phase_data.overdue_count > 0 %}border-left: 4px solid var(--wp-terracotta-main);{% endif %}"
+     x-data="{ open: {% if phase_data.is_current or phase_data.overdue_count > 0 %}true{% else %}{{ phase_data.progress|yesno:'false,true,true' }}{% endif %} }">
+  <div class="accordion-header" @click="open = !open" style="{% if phase_data.is_current %}background: rgba(160, 130, 94, 0.05);{% endif %}">
     <div class="phase-info" id="phase-info-{{ phase_key }}">
       <div style="min-width: 50px;">
         <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
           {{ phase_data.progress }}%
         </div>
       </div>
-      <div style="flex: 1;">
-        <div class="phase-title">{{ phase_data.label }}</div>
-        <div class="phase-stats">{{ phase_data.done }} / {{ phase_data.total }} selesai</div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span class="phase-title">{{ phase_data.label }}</span>
+          {% if phase_data.is_current %}
+            <span class="badge badge-gold" style="font-size: 0.72rem; padding: 2px 8px;"><i data-lucide="zap" style="width: 12px; height: 12px;"></i> Fase Aktif</span>
+          {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
+            <span class="badge badge-terracotta" style="font-size: 0.72rem; padding: 2px 8px;"><i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i> {{ phase_data.overdue_count }} Tertinggal</span>
+          {% elif phase_data.is_past and phase_data.overdue_count == 0 %}
+            <span class="badge badge-sage" style="font-size: 0.72rem; padding: 2px 8px;"><i data-lucide="check" style="width: 12px; height: 12px;"></i> Tuntas</span>
+          {% endif %}
+        </div>
+        <div class="phase-stats" style="margin-top: 2px;">{{ phase_data.done }} / {{ phase_data.total }} selesai</div>
         <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
           <div class="progress-fill {% if phase_data.progress == 100 %}progress-fill-sage{% elif phase_data.progress > 0 %}progress-fill-gold{% else %}progress-fill-terracotta{% endif %}"
                style="width: {{ phase_data.progress }}%"></div>
@@ -65,27 +191,5 @@
 </div>
 {% endfor %}
 
-<!-- Add Custom Task -->
-<div class="card mt-lg" x-data="{ showForm: false }">
-  <div class="card-header">
-    <h3><i data-lucide="plus"></i> Tambah Tugas Custom</h3>
-    <button class="btn btn-outline btn-sm" @click="showForm = !showForm">
-      <span x-text="showForm ? 'Tutup' : 'Tambah Tugas'"></span>
-    </button>
-  </div>
-  <div class="card-body" x-show="showForm" x-transition x-cloak>
-    <form method="post" action="{% url 'operations-checklist:add_task' %}" hx-post="{% url 'operations-checklist:add_task' %}" hx-swap="none" @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
-      {% csrf_token %}
-      <div class="form-row">
-        {% for field in task_form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-        </div>
-        {% endfor %}
-      </div>
-      <button type="submit" class="btn btn-primary mt-md"><i data-lucide="save"></i> Simpan Tugas</button>
-    </form>
-  </div>
 </div>
 {% endblock %}

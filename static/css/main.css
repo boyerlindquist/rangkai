@@ -216,34 +216,72 @@ h4 { font-size: 1.1rem; }
 }
 
 .sidebar-footer {
-  padding: var(--wp-space-lg);
+  padding: var(--wp-space-md) var(--wp-space-lg);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-footer .user-profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
 }
 
 .sidebar-footer .user-info {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: var(--wp-space-sm);
-  margin-bottom: var(--wp-space-sm);
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.sidebar.collapsed .sidebar-footer .user-info {
+  display: none !important;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: 16px 8px !important;
+}
+
+.sidebar.collapsed .sidebar-footer .logout-btn {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
 }
 
 .sidebar-footer .user-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--wp-gold-main), var(--wp-gold-dark));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: white;
   flex-shrink: 0;
 }
 
+.sidebar-footer .user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
 .sidebar-footer .user-name {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--wp-sidebar-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-footer .user-role {
@@ -251,6 +289,26 @@ h4 { font-size: 1.1rem; }
   color: var(--wp-sidebar-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-footer .logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px;
+  color: var(--wp-sidebar-text-muted);
+  border-radius: var(--wp-radius-sm);
+  transition: all var(--wp-transition-fast);
+}
+
+.sidebar-footer .logout-btn:hover {
+  color: var(--wp-sidebar-text);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ── MAIN CONTENT ── */
@@ -793,19 +851,56 @@ textarea.wp-input {
 .badge-dark { background: var(--wp-accent-contrast); color: var(--wp-accent-text); }
 .badge-muted { background: var(--wp-glass-bg); color: var(--wp-text-secondary); border: 1px solid var(--wp-glass-border-subtle); }
 
+/* Bold Vendor Status Badges */
+.badge-status-booked {
+  background: #15803D !important; /* Bold Emerald Green */
+  color: #FFFFFF !important;
+  border: 1px solid #166534 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  text-transform: capitalize !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 1px 4px rgba(21, 128, 61, 0.3);
+}
+
+.badge-status-rejected {
+  background: #DC2626 !important; /* Bold Ruby / Crimson Red */
+  color: #FFFFFF !important;
+  border: 1px solid #B91C1C !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  text-transform: capitalize !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.3);
+}
+
+.badge-status-shortlist {
+  background: #D97706 !important; /* Bold Amber / Warm Golden Yellow */
+  color: #FFFFFF !important;
+  border: 1px solid #B45309 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  text-transform: capitalize !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.3);
+}
+
 /* ==========================================================================
    PROGRESS BAR
    ========================================================================== */
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: rgba(44, 30, 22, 0.06);
+  background: rgba(44, 30, 22, 0.08);
   border-radius: var(--wp-radius-pill);
   overflow: hidden;
 }
 
 [data-theme="dark"] .progress-bar {
-  background: rgba(250, 248, 245, 0.08);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .progress-fill {
@@ -905,19 +1000,19 @@ textarea.wp-input {
 }
 
 .task-checkbox:hover {
-  border-color: var(--wp-sage-main);
+  border-color: #15803D;
 }
 
 .task-checkbox.done {
-  background: var(--wp-sage-main);
-  border-color: var(--wp-sage-main);
-  color: white;
+  background: #15803D;
+  border-color: #166534;
+  color: #FFFFFF;
 }
 
 .task-checkbox.in-progress {
-  background: var(--wp-gold-soft);
-  border-color: var(--wp-gold-main);
-  color: var(--wp-gold-dark);
+  background: #D97706;
+  border-color: #B45309;
+  color: #FFFFFF;
 }
 
 .task-title {
@@ -953,6 +1048,50 @@ textarea.wp-input {
 .alert-warning { background: var(--wp-gold-soft); border: 1px solid var(--wp-gold-border); color: var(--wp-gold-dark); }
 .alert-danger { background: var(--wp-terracotta-soft); border: 1px solid var(--wp-terracotta-border); color: var(--wp-terracotta-dark); }
 .alert-info { background: rgba(160, 130, 94, 0.04); border: 1px solid var(--wp-gold-border); color: var(--wp-text-secondary); }
+
+/* ==========================================================================
+   BADGES
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--wp-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.badge-gold {
+  background: var(--wp-gold-soft);
+  color: var(--wp-gold-dark);
+  border: 1px solid var(--wp-gold-border);
+}
+
+.badge-sage {
+  background: var(--wp-sage-soft);
+  color: var(--wp-sage-dark);
+  border: 1px solid var(--wp-sage-border);
+}
+
+.badge-terracotta {
+  background: var(--wp-terracotta-soft);
+  color: var(--wp-terracotta-dark);
+  border: 1px solid var(--wp-terracotta-border);
+}
+
+.badge-muted {
+  background: rgba(44, 30, 22, 0.04);
+  color: var(--wp-text-secondary);
+  border: 1px solid var(--wp-border-light);
+}
+
+[data-theme="dark"] .badge-muted {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--wp-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 /* ==========================================================================
    MODAL / DIALOG
@@ -1046,20 +1185,24 @@ textarea.wp-input {
 .score-bar-track {
   flex: 1;
   height: 6px;
-  background: rgba(44, 30, 22, 0.06);
+  background: rgba(44, 30, 22, 0.10);
   border-radius: var(--wp-radius-pill);
   overflow: hidden;
 }
 
 [data-theme="dark"] .score-bar-track {
-  background: rgba(250, 248, 245, 0.08);
+  background: rgba(250, 248, 245, 0.10);
 }
 
 .score-bar-fill {
   height: 100%;
   border-radius: var(--wp-radius-pill);
-  background: linear-gradient(90deg, var(--wp-gold-main), var(--wp-gold-light));
+  background: linear-gradient(90deg, #3D2B1F, #6B4E3D);
   transition: width 0.4s ease;
+}
+
+[data-theme="dark"] .score-bar-fill {
+  background: linear-gradient(90deg, var(--wp-gold-main), var(--wp-gold-light));
 }
 
 .score-value {
@@ -1096,17 +1239,19 @@ textarea.wp-input {
   justify-content: center;
   min-height: 100vh;
   padding: var(--wp-space-lg);
-  background: linear-gradient(135deg, #1C1410 0%, #0F0C0A 100%);
+  background: var(--wp-bg-canvas);
+  transition: background var(--wp-transition-normal);
 }
 
 .auth-card {
-  background: var(--wp-glass-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--wp-bg-surface);
+  border: 1px solid var(--wp-glass-border);
   border-radius: var(--wp-radius-lg);
   box-shadow: var(--wp-shadow-hero);
   width: 100%;
   max-width: 460px;
   padding: var(--wp-space-2xl);
+  transition: background var(--wp-transition-normal), border-color var(--wp-transition-normal);
 }
 
 .auth-card .auth-brand {
@@ -1115,13 +1260,21 @@ textarea.wp-input {
 }
 
 .auth-card .auth-brand h1 {
-  font-size: 1.5rem;
+  font-family: 'Cormorant Garamond', 'Instrument Serif', Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0.08em;
   margin-bottom: var(--wp-space-xs);
-  color: var(--wp-accent-text);
+  color: var(--wp-gold-dark);
+}
+
+[data-theme="dark"] .auth-card .auth-brand h1 {
+  color: var(--wp-gold-light);
 }
 
 .auth-card .auth-brand p {
-  color: rgba(250, 248, 245, 0.6);
+  color: var(--wp-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1130,17 +1283,21 @@ textarea.wp-input {
 }
 
 .auth-card .form-group label {
-  color: rgba(250, 248, 245, 0.7);
+  color: var(--wp-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .auth-card .wp-input {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--wp-accent-text);
+  background: var(--wp-glass-bg);
+  border: 1px solid var(--wp-glass-border);
+  color: var(--wp-text-main);
 }
 
 .auth-card .wp-input::placeholder {
-  color: rgba(250, 248, 245, 0.35);
+  color: var(--wp-text-muted);
 }
 
 .auth-card .wp-input:focus {
@@ -1157,13 +1314,17 @@ textarea.wp-input {
   text-align: center;
   margin-top: var(--wp-space-lg);
   font-size: 0.875rem;
-  color: rgba(250, 248, 245, 0.6);
+  color: var(--wp-text-secondary);
 }
 
 .auth-links a {
-  color: var(--wp-gold-light);
+  color: var(--wp-gold-dark);
   text-decoration: none;
   font-weight: 600;
+}
+
+[data-theme="dark"] .auth-links a {
+  color: var(--wp-gold-light);
 }
 
 .auth-links a:hover {
@@ -1505,13 +1666,4 @@ textarea.wp-input {
 [data-theme="dark"] .sidebar-nav a:hover {
   color: var(--wp-sidebar-text);
   background: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .auth-page {
-  background: linear-gradient(135deg, #0F0C0A 0%, #1A1512 100%);
-}
-
-[data-theme="dark"] .auth-card {
-  background: rgba(26, 21, 18, 0.8);
-  border-color: rgba(255, 255, 255, 0.06);
 }
