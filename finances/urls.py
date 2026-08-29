@@ -18,4 +18,5 @@ urlpatterns = [
     path('savings/', views.savings_tracker_view, name='savings_tracker'),
     path('savings/update-goal/', views.update_savings_goal, name='update_savings_goal'),
     path('savings/add-deposit/', views.add_savings_deposit, name='add_savings_deposit'),
+    path('savings/deposit/<int:pk>/delete/', views.delete_savings_deposit, name='delete_savings_deposit'),
 ]

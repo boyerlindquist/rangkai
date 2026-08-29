@@ -190,9 +190,13 @@ def config_allocations(request):
 
 
 
+
+
 from finances.models import SavingsGoal, SavingsDeposit
 from finances.forms import SavingsGoalForm, SavingsDepositForm
 import datetime
+import json
+from collections import defaultdict
 
 @login_required
 @workspace_required
@@ -218,6 +222,66 @@ def savings_tracker_view(request):
     if goal.target_amount > 0:
         progress_percentage = min(100, (goal.total_saved / goal.target_amount) * 100)
 
+    # Prepare cumulative line chart data per depositor & total vs target
+    deposits_asc = list(goal.deposits.all().order_by('date', 'created_at', 'id'))
+    
+    # Distinct depositors preserving order
+    depositors = []
+    for d in deposits_asc:
+        dep_name = (d.depositor or 'Bersama').strip() or 'Bersama'
+        if dep_name not in depositors:
+            depositors.append(dep_name)
+
+    # Group deposits by date and depositor
+    date_deposits = defaultdict(lambda: defaultdict(int))
+    for d in deposits_asc:
+        dep_name = (d.depositor or 'Bersama').strip() or 'Bersama'
+        date_key = d.date.strftime('%Y-%m-%d')
+        date_deposits[date_key][dep_name] += int(d.amount)
+
+    sorted_dates = sorted(date_deposits.keys())
+
+    chart_labels = []
+    total_series = []
+    depositor_series = {dep: [] for dep in depositors}
+    target_val = int(goal.target_amount or 0)
+    target_series = []
+
+    running_total = 0
+    running_per_depositor = {dep: 0 for dep in depositors}
+
+    if sorted_dates:
+        # Initial starting point at 0
+        chart_labels.append('Mulai')
+        total_series.append(0)
+        for dep in depositors:
+            depositor_series[dep].append(0)
+        target_series.append(target_val)
+
+        for dt_str in sorted_dates:
+            dt_obj = datetime.datetime.strptime(dt_str, '%Y-%m-%d').date()
+            chart_labels.append(dt_obj.strftime('%d %b %Y'))
+
+            for dep in depositors:
+                amt = date_deposits[dt_str].get(dep, 0)
+                running_per_depositor[dep] += amt
+                depositor_series[dep].append(running_per_depositor[dep])
+                running_total += amt
+
+            total_series.append(running_total)
+            target_series.append(target_val)
+
+    chart_data = {
+        'has_data': len(sorted_dates) > 0,
+        'labels': chart_labels,
+        'target_amount': target_val,
+        'target_series': target_series,
+        'total_series': total_series,
+        'depositors': depositors,
+        'depositor_series': depositor_series,
+        'depositor_totals': {dep: running_per_depositor[dep] for dep in depositors},
+    }
+
     context = {
         'goal': goal,
         'deposits': goal.deposits.all(),
@@ -226,6 +290,8 @@ def savings_tracker_view(request):
         'progress_percentage': progress_percentage,
         'estimated_months': estimated_months,
         'estimated_completion_date': estimated_completion_date,
+        'chart_data_json': json.dumps(chart_data),
+        'chart_data': chart_data,
     }
     return render(request, 'finances/savings_tracker.html', context)
 
@@ -257,4 +323,13 @@ def add_savings_deposit(request):
             deposit.goal = goal
             deposit.save()
             return redirect('finances:savings_tracker')
+    return redirect('finances:savings_tracker')
+
+
+@login_required
+@owner_required
+def delete_savings_deposit(request, pk):
+    """HTMX/Standard endpoint to delete a deposit."""
+    deposit = get_object_or_404(SavingsDeposit, pk=pk, goal__wedding=request.wedding)
+    deposit.delete()
     return redirect('finances:savings_tracker')

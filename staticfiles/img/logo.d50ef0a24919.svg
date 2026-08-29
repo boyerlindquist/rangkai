@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" class="rangkai-logo">
+  <defs>
+    <!-- Warm Luxury Gold Flow -->
+    <linearGradient id="rk-gold-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5E8D8" />
+      <stop offset="30%" stop-color="#CBB08F" />
+      <stop offset="70%" stop-color="#9C7752" />
+      <stop offset="100%" stop-color="#5C3B20" />
+    </linearGradient>
+
+    <!-- Warm Mocha Ribbon Flow -->
+    <linearGradient id="rk-mocha-flow" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#DEBA94" />
+      <stop offset="35%" stop-color="#AC855D" />
+      <stop offset="75%" stop-color="#734D2E" />
+      <stop offset="100%" stop-color="#3D220E" />
+    </linearGradient>
+
+    <!-- Metallic Highlight Sheen -->
+    <linearGradient id="rk-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#CBB08F" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Soft Depth Shadow -->
+    <filter id="rk-soft-depth" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2.2" stdDeviation="2.8" flood-color="#180C05" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <g filter="url(#rk-soft-depth)">
+    <!-- 1. Left Primary Arch & Heart Loop (Forms the left body and upper crown of 'R') -->
+    <path
+      d="M 30 84
+         C 16 84, 8 72, 8 54
+         C 8 34, 22 18, 44 18
+         C 62 18, 76 28, 84 42
+         C 92 56, 86 72, 70 80
+         C 54 88, 36 82, 28 68
+         C 20 54, 24 38, 36 28
+         C 48 18, 64 22, 74 34"
+      stroke="url(#rk-gold-flow)"
+      stroke-width="8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 2. Interlocking Union Knot & 'R' Descender (Weaves over and under at the center) -->
+    <path
+      d="M 74 34
+         C 80 42, 82 54, 76 64
+         C 68 76, 54 80, 44 74
+         C 32 66, 32 50, 44 38
+         C 56 26, 76 30, 86 44
+         C 94 56, 92 72, 82 82
+         C 70 92, 52 90, 38 78"
+      stroke="url(#rk-mocha-flow)"
+      stroke-width="7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 3. Delicate Luster Contour on Upper Crest -->
+    <path
+      d="M 16 48 C 16 32, 28 22, 44 22 C 58 22, 70 30, 78 40"
+      stroke="url(#rk-sheen)"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      fill="none"
+    />
+  </g>
+</svg>

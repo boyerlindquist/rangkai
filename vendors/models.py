@@ -115,7 +115,7 @@ class VendorCandidate(models.Model):
             (self.score_facility / 5 * self.weight_facility) +
             (self.score_reputation / 5 * self.weight_reputation)
         )
-        return round(raw / total_weight * 100, 1)
+        return int(round(raw / total_weight * 100))
 
     def save(self, *args, **kwargs):
         self.weighted_total_score_db = self.weighted_total_score

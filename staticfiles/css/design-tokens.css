@@ -1,0 +1,148 @@
+/* ==========================================================================
+   RANGKAI — Design Tokens
+   Luxury White & Brown Glassmorphism Design System
+   ========================================================================== */
+
+:root {
+  /* ── CANVAS & SURFACE ── */
+  --wp-bg-canvas: #FFFFFF;
+  --wp-bg-surface: #FFFFFF;
+  --wp-bg-surface-subtle: #FAF8F5;
+  --wp-bg-surface-muted: #F3EEE8;
+
+  /* ── SIDEBAR (Dark Espresso Glass) ── */
+  --wp-dark-hero: #1C1410;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.07);
+  --wp-sidebar-bottom: #120E0B;
+  --wp-dark-border: rgba(255, 255, 255, 0.08);
+  --wp-sidebar-text: #FAF8F5;
+  --wp-sidebar-text-muted: rgba(250, 248, 245, 0.55);
+
+  /* ── PRIMARY ACCENT — Golden Bronze ── */
+  --wp-gold-main: #A0825E;
+  --wp-gold-dark: #7A6041;
+  --wp-gold-light: #C4A87C;
+  --wp-gold-soft: rgba(160, 130, 94, 0.08);
+  --wp-gold-border: rgba(160, 130, 94, 0.2);
+
+  /* ── SUCCESS / SAGE ── */
+  --wp-sage-main: #6B8F71;
+  --wp-sage-dark: #3D5E42;
+  --wp-sage-soft: rgba(107, 143, 113, 0.08);
+  --wp-sage-border: rgba(107, 143, 113, 0.2);
+
+  /* ── ALERT / TERRACOTTA ── */
+  --wp-terracotta-main: #B5654A;
+  --wp-terracotta-dark: #8B4332;
+  --wp-terracotta-soft: rgba(181, 101, 74, 0.08);
+  --wp-terracotta-border: rgba(181, 101, 74, 0.2);
+
+  /* ── HIGH-CONTRAST ACCENTS ── */
+  --wp-accent-contrast: #2C1E16;
+  --wp-accent-contrast-hover: #3D2B1F;
+  --wp-accent-text: #FAF8F5;
+
+  /* ── TYPOGRAPHY ── */
+  --wp-text-main: #2C1E16;
+  --wp-text-secondary: #6B5B52;
+  --wp-text-muted: #A09689;
+  --wp-text-inverse: #FAF8F5;
+
+  /* ── BORDERS ── */
+  --wp-border-light: rgba(44, 30, 22, 0.08);
+  --wp-border-hover: var(--wp-gold-main);
+
+  /* ── GLASSMORPHISM ── */
+  --wp-glass-bg: rgba(255, 255, 255, 0.80);
+  --wp-glass-bg-hover: rgba(255, 255, 255, 0.88);
+  --wp-glass-border: rgba(44, 30, 22, 0.12);
+  --wp-glass-border-subtle: rgba(44, 30, 22, 0.07);
+  --wp-glass-shadow: 0 2px 8px rgba(44, 30, 22, 0.06), 0 8px 32px rgba(44, 30, 22, 0.08);
+  --wp-glass-shadow-hover: 0 8px 24px rgba(44, 30, 22, 0.10), 0 16px 48px rgba(44, 30, 22, 0.14);
+
+
+  /* ── RADII ── */
+  --wp-radius-xs: 4px;
+  --wp-radius-sm: 8px;
+  --wp-radius-md: 16px;
+  --wp-radius-lg: 24px;
+  --wp-radius-pill: 500px;
+
+  /* ── ELEVATIONS ── */
+  --wp-shadow-card: 0 1px 3px rgba(44, 30, 22, 0.04);
+  --wp-shadow-elevated: 0 12px 40px rgba(44, 30, 22, 0.08);
+  --wp-shadow-hero: 0 24px 64px -12px rgba(44, 30, 22, 0.18);
+  --wp-shadow-dropdown: 0 12px 40px -4px rgba(44, 30, 22, 0.14);
+
+  /* ── TRANSITIONS ── */
+  --wp-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --wp-transition-normal: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── SPACING ── */
+  --wp-space-xs: 4px;
+  --wp-space-sm: 8px;
+  --wp-space-md: 16px;
+  --wp-space-lg: 24px;
+  --wp-space-xl: 40px;
+  --wp-space-2xl: 60px;
+  --wp-space-3xl: 80px;
+
+  /* ── SIDEBAR DIMENSIONS ── */
+  --wp-sidebar-width: 270px;
+  --wp-sidebar-collapsed: 72px;
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+[data-theme="dark"] {
+  --wp-bg-canvas: #0F0C0A;
+  --wp-bg-surface: #1A1512;
+  --wp-bg-surface-subtle: #231C17;
+  --wp-bg-surface-muted: #2E251F;
+
+  --wp-dark-hero: #1A1512;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.05);
+  --wp-dark-border: rgba(255, 255, 255, 0.06);
+  --wp-sidebar-text: #FAF8F5;
+  --wp-sidebar-text-muted: rgba(250, 248, 245, 0.45);
+
+  --wp-gold-main: #C4A87C;
+  --wp-gold-dark: #E2CCA5;
+  --wp-gold-soft: rgba(196, 168, 124, 0.1);
+  --wp-gold-border: rgba(196, 168, 124, 0.2);
+
+  --wp-sage-main: #8BAF8F;
+  --wp-sage-dark: #B5D4B8;
+  --wp-sage-soft: rgba(139, 175, 143, 0.1);
+  --wp-sage-border: rgba(139, 175, 143, 0.15);
+
+  --wp-terracotta-main: #D4826A;
+  --wp-terracotta-dark: #EBA890;
+  --wp-terracotta-soft: rgba(212, 130, 106, 0.1);
+  --wp-terracotta-border: rgba(212, 130, 106, 0.15);
+
+  --wp-accent-contrast: #C4A87C;
+  --wp-accent-contrast-hover: #D4BA92;
+  --wp-accent-text: #0F0C0A;
+
+  --wp-text-main: #FAF8F5;
+  --wp-text-secondary: #C4B8AC;
+  --wp-text-muted: #8A7E74;
+  --wp-text-inverse: #0F0C0A;
+
+  --wp-border-light: rgba(250, 248, 245, 0.06);
+  --wp-border-hover: var(--wp-gold-main);
+
+  --wp-glass-bg: linear-gradient(180deg, #2E2018 0%, #281B12 100%);
+  --wp-glass-bg-hover: linear-gradient(180deg, #35261D 0%, #2E2018 100%);
+  --wp-glass-border: rgba(255, 255, 255, 0.08);
+  --wp-glass-border-subtle: rgba(255, 255, 255, 0.04);
+  --wp-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.20);
+  --wp-glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.30);
+
+  --wp-shadow-card: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --wp-shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --wp-shadow-hero: 0 24px 64px -12px rgba(0, 0, 0, 0.5);
+  --wp-shadow-dropdown: 0 12px 40px -4px rgba(0, 0, 0, 0.5);
+}

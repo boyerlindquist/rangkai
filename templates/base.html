@@ -26,7 +26,7 @@
 
   <!-- Design System -->
   <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=10">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=11">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -54,7 +54,10 @@
     <div class="mobile-header">
       <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i
           data-lucide="menu"></i></button>
-      <span style="color: var(--wp-gold-main); font-weight: 500; font-size: 0.9rem;">Rangkai</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="{% static 'img/logo.svg' %}" alt="Rangkai Logo" style="width: 22px; height: 22px;" />
+        <span class="brand-text" style="font-size: 1.4rem; color: var(--wp-gold-main);">Rangkai</span>
+      </div>
       <span></span>
     </div>
 
@@ -64,21 +67,19 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar" :class="{ 'collapsed': collapsed }">
       <div class="sidebar-brand">
-        <div class="brand-info">
-          <span class="brand-text">Rangkai</span>
-          {% if wedding %}
-          <div class="couple-names">
-            {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
+        <a href="{% url 'core:dashboard' %}" class="brand-link">
+          <div class="brand-info">
+            <div class="brand-title-row">
+              <img src="{% static 'img/logo.svg' %}" alt="Rangkai Logo" class="brand-logo-icon" />
+              <span class="brand-text">Rangkai</span>
+            </div>
+            {% if wedding %}
+            <div class="couple-names">
+              {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
-        </div>
-        {% if wedding %}
-        <div class="brand-initials">
-          {{ wedding.groom_name|first|upper }}&{{ wedding.bride_name|first|upper }}
-        </div>
-        {% else %}
-        <div class="brand-initials">WP</div>
-        {% endif %}
+        </a>
       </div>
 
       <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">
@@ -168,6 +169,8 @@
 
   <!-- Google Charts -->
   <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <!-- Alpine.js (Client-Side Reactivity) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- HTMX (Async Server Persistence) -->

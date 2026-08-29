@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { route: '/budgets/savings/', element: '#guide-savings', popover: { title: 'Tabungan Bersama', description: 'Pantau dana yang berhasil dikumpulkan bersama pasangan.' } },
     { route: '/budgets/savings/', element: '#guide-savings-target', popover: { title: 'Pengaturan Target', description: 'Tentukan target total tabungan dan kesanggupan setoran per bulan.' } },
     { route: '/budgets/savings/', element: '#guide-savings-progress', popover: { title: 'Progres Tabungan', description: 'Lihat estimasi berapa bulan lagi tabungan akan mencapai target.' } },
+    { route: '/budgets/savings/', element: '#guide-savings-chart', popover: { title: 'Grafik Akumulasi', description: 'Pantau kurva akumulasi tabungan per penyetor dan garis target horizontal.' } },
     
     // --- GUESTS ( /guests/ ) ---
     { route: '/guests/', element: '#guide-guests', popover: { title: 'Guest List', description: 'Manajemen tamu undangan dan perhitungan catering otomatis.' } },
