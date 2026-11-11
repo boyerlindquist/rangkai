@@ -154,7 +154,7 @@
           </tr>
           <tr x-show="editingEvent" x-cloak style="background: var(--wp-bg-surface-subtle);">
             <td colspan="6" style="padding: 12px 20px;">
-              <form method="post" action="{% url 'operations-hub:update_rundown' event.pk %}" style="display: grid; grid-template-columns: 110px 110px 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
+              <form method="post" action="{% url 'operations-hub:update_rundown' event.pk %}" class="rg-stack" style="display: grid; grid-template-columns: 110px 110px 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
                 {% csrf_token %}
                 <input type="time" name="start_time" class="wp-input" value="{{ event.start_time|time:'H:i' }}" required>
                 <input type="time" name="end_time" class="wp-input" value="{{ event.end_time|time:'H:i' }}" required>
@@ -214,7 +214,7 @@
       </form>
     </div>
 
-    <div class="surface-panel-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+    <div class="surface-panel-body dashboard-split-grid" style="gap: 24px;">
       <!-- Critical Assets -->
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--wp-hairline);">
@@ -330,7 +330,7 @@
           </tr>
           <tr x-show="editingFabric" x-cloak style="background: var(--wp-bg-surface-subtle);">
             <td colspan="6" style="padding: 12px 20px;">
-              <form method="post" action="{% url 'operations-hub:update_fabric' entry.pk %}" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; align-items: center;">
+              <form method="post" action="{% url 'operations-hub:update_fabric' entry.pk %}" class="rg-stack" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr auto; gap: 10px; align-items: center;">
                 {% csrf_token %}
                 <input type="text" name="recipient_name" class="wp-input" value="{{ entry.recipient_name }}" required>
                 <select name="gender" class="wp-input">

@@ -81,7 +81,7 @@
         </div>
       </div>
 
-      <form action="{% url 'finances:update_savings_goal' %}" method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) auto; gap: 16px; align-items: flex-end;">
+      <form action="{% url 'finances:update_savings_goal' %}" method="post" class="savings-goal-form">
         {% csrf_token %}
         <div class="form-group" style="margin-bottom:0;">
           <label>Target Tabungan (Rp)</label>
@@ -143,7 +143,7 @@
   </div>
 
   <!-- Deposit Form & Ledger Section (Linear 2-Pane Split) -->
-  <div style="display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start;">
+  <div class="savings-split-grid">
     <!-- Add Deposit Form Panel -->
     <div class="surface-panel">
       <div class="surface-panel-header">
@@ -225,7 +225,7 @@
             </tr>
             <tr x-show="editing" x-cloak style="background: var(--wp-bg-surface-subtle);">
               <td colspan="5" style="padding: 12px 20px;">
-                <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" style="display: grid; grid-template-columns: 140px 150px 160px 1fr auto; gap: 10px; align-items: center;">
+                <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 140px 150px 160px 1fr auto; gap: 10px; align-items: center;">
                   {% csrf_token %}
                   <input type="date" name="date" class="wp-input" value="{{ deposit.date|date:'Y-m-d' }}" required>
                   <select name="depositor" class="wp-input">

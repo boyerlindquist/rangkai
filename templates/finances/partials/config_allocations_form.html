@@ -64,7 +64,7 @@
     </div>
   </div>
   
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--wp-space-md);">
+  <div class="allocation-categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--wp-space-md);">
     {% for form in formset %}
     <div class="form-group" style="margin-bottom: 0; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); border: 1px solid var(--wp-border-light);">
       {{ form.id }}

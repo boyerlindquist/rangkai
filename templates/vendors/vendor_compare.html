@@ -47,7 +47,7 @@
             hx-target=".main-content"
             hx-select=".main-content"
             hx-swap="outerHTML show:none"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 14px; align-items: flex-end;">
+            class="vendor-weight-form">
         {% csrf_token %}
         <div class="form-group" style="margin-bottom: 0;">
           <label>Bobot Harga (%)</label>
@@ -65,7 +65,7 @@
           <label>Bobot Reputasi (%)</label>
           <input type="number" name="weight_reputation" class="wp-input tabular-nums" x-model.number="wReputation" min="0" max="100" required>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div class="form-actions" style="display: flex; gap: 8px;">
           <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=30; wQuality=30; wFacility=20; wReputation=20;" style="height: 38px;">Reset Default</button>
           <button type="submit" class="btn btn-gold btn-sm" style="height: 38px;"><i data-lucide="check"></i> Terapkan Bobot</button>
         </div>
