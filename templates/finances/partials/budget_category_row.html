@@ -1,18 +1,77 @@
 {% load humanize %}
-<div class="phase-info" id="category-header-{{ cat.pk }}">
-  <span style="font-size: 1.3rem;">{{ cat.icon|safe }}</span>
-  <div>
-    <div class="phase-title" style="display: flex; align-items: center;">
-      {{ cat.name }}
+<div class="phase-info" id="category-header-{{ cat.pk }}" style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+  <div style="display: flex; align-items: center; gap: 12px; min-width: 240px; flex: 1;">
+    <div style="width: 36px; height: 36px; border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline); display: inline-flex; align-items: center; justify-content: center; color: var(--wp-gold-main); flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+      {{ cat.icon|safe }}
     </div>
-    <div class="phase-stats">
-      Alokasi: Rp {{ cat.allocated_amount|floatformat:0|intcomma }} ({{ cat.allocation_percentage|floatformat:"0" }}%)
-      &nbsp;·&nbsp;
-      Actual: Rp {{ cat.total_actual|intcomma }}
-      &nbsp;·&nbsp;
-      <span style="color: {% if cat.variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %}">
-        {% if cat.variance >= 0 %}Hemat{% else %}Over{% endif %} Rp {{ cat.variance|floatformat:0|intcomma }}
-      </span>
+    <div style="min-width: 0;">
+      <div class="phase-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-weight: 600; color: var(--wp-text-main); font-size: 0.95rem; white-space: nowrap;">{{ cat.name }}</span>
+        <span class="status-pill" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 500; white-space: nowrap;">{{ cat.items.count }} item</span>
+        {% if cat.coverage_status == 'settled' %}
+          <span class="status-pill status-done" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Seluruh kebutuhan kategori ini sudah dibayar lunas">
+            <i data-lucide="check-check" style="width: 12px; height: 12px;"></i> Lunas
+          </span>
+        {% elif cat.coverage_status == 'ready' %}
+          <span class="status-pill status-done" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Sisa dana tabungan mencukupi untuk meng-cover kategori ini">
+            <i data-lucide="check" style="width: 12px; height: 12px;"></i> Kas Siap
+          </span>
+        {% elif cat.coverage_status == 'partial' %}
+          <span class="status-pill status-warning" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Ter-cover {{ cat.cat_coverage_pct }}% (Kurang Rp {{ cat.cat_shortfall|intcomma }})">
+            <i data-lucide="pie-chart" style="width: 12px; height: 12px;"></i> {{ cat.cat_coverage_pct }}% Siap
+          </span>
+        {% elif cat.coverage_status == 'shortfall' %}
+          <span class="status-pill status-danger" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Kurang Rp {{ cat.cat_shortfall|intcomma }}{% if cat.cat_months_needed %} (~{{ cat.cat_months_needed }} bln){% endif %}">
+            <i data-lucide="clock" style="width: 12px; height: 12px;"></i>{% if cat.cat_months_needed %} ~{{ cat.cat_months_needed }} bln{% else %} Kurang Dana{% endif %}
+          </span>
+        {% endif %}
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.78rem;">
+        <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
+          <span class="text-secondary" style="font-size: 0.74rem;">Pagu:</span>
+          <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ cat.allocated_amount|floatformat:0|intcomma }}</strong>
+          <span class="text-muted" style="font-size: 0.72rem;">({{ cat.allocation_percentage|floatformat:"-1" }}%)</span>
+        </span>
+        <span style="color: var(--wp-hairline);">·</span>
+        <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
+          <span class="text-secondary" style="font-size: 0.74rem;">Kesepakatan:</span>
+          <span class="tabular-nums" style="font-weight: 600; color: var(--wp-text-main);">Rp {{ cat.total_actual|intcomma }}</span>
+        </span>
+        <span style="color: var(--wp-hairline);">·</span>
+        <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
+          <span class="text-secondary" style="font-size: 0.74rem;">Dibayar:</span>
+          <span class="tabular-nums" style="font-weight: 600; color: var(--wp-sage-main);">Rp {{ cat.total_paid|intcomma }}</span>
+        </span>
+        <span style="color: var(--wp-hairline);">·</span>
+        <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
+          <span class="text-secondary" style="font-size: 0.74rem;">{% if cat.variance >= 0 %}Sisa Pagu:{% else %}Over Pagu:{% endif %}</span>
+          <strong class="tabular-nums" style="color: {% if cat.variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %};">
+            Rp {{ cat.variance|floatformat:0|intcomma }}
+          </strong>
+        </span>
+      </div>
     </div>
+  </div>
+  <div style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" @click.stop>
+    <button type="button"
+            class="btn btn-ghost btn-icon btn-sm"
+            hx-get="{% url 'finances:update_category' cat.pk %}"
+            hx-target="#category-header-{{ cat.pk }}"
+            hx-swap="outerHTML"
+            style="color: var(--wp-gold-main);"
+            title="Edit Nominal / % Pagu Kategori {{ cat.name }}">
+      <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+    </button>
+    <button type="button"
+            class="btn btn-ghost btn-icon btn-sm"
+            hx-delete="{% url 'finances:delete_category' cat.pk %}"
+            hx-confirm="Hapus kategori '{{ cat.name }}' beserta semua item di dalamnya?"
+            hx-target=".main-content"
+            hx-select=".main-content"
+            hx-swap="outerHTML show:none"
+            style="color: var(--wp-text-muted);"
+            title="Hapus Kategori {{ cat.name }}">
+      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+    </button>
   </div>
 </div>

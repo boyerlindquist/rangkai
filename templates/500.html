@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terjadi Kendala Teknis — Rangkai</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=21">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FBF9F5;
+      --card-bg: #FFFFFF;
+      --border: #E8E2D9;
+      --text-main: #2C2825;
+      --text-muted: #7A7269;
+      --forest: #2D4A3E;
+      --forest-hover: #22382F;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141615;
+        --card-bg: #1C1F1D;
+        --border: #2D3330;
+        --text-main: #EDE8E1;
+        --text-muted: #9E988F;
+        --forest: #436B5C;
+        --forest-hover: #507D6C;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    .logo {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      display: block;
+    }
+    .code {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #C2543D;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--forest);
+      color: #FFFFFF;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+    .btn:hover {
+      background: var(--forest-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai" class="logo">
+    <div class="code">500</div>
+    <h1>Terjadi Kendala Teknis</h1>
+    <p>Sistem sedang mengalami kendala sementara saat memproses permintaanmu. Silakan refresh halaman atau kembali ke beranda.</p>
+    <a href="/" class="btn">Kembali ke Beranda</a>
+  </div>
+</body>
+</html>

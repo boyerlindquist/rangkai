@@ -1,28 +1,87 @@
-<tr style="border-bottom: 1px solid var(--wp-border-light);">
-  <td style="vertical-align: middle; padding: 12px 16px;">
-    <strong style="color: var(--wp-text-main);">{{ guest.name }}</strong>
-    {% if guest.phone %}<br><span class="text-muted" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;"><i data-lucide="phone" style="width: 11px; height: 11px;"></i> {{ guest.phone }}</span>{% endif %}
+<tr>
+  <td style="padding-left: 20px; font-weight: 500;">
+    <span style="color: var(--wp-text-main);">{{ guest.name }}</span>
+    {% if guest.phone %}<div class="text-muted" style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 2px;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> {{ guest.phone }}</div>{% endif %}
+    {% if guest.notes %}<div class="text-secondary" style="font-size: 0.75rem; margin-top: 2px;">{{ guest.notes }}</div>{% endif %}
   </td>
-  <td style="vertical-align: middle; padding: 12px 16px;"><span class="badge badge-muted">{{ guest.get_relation_side_display }}</span></td>
-  <td style="vertical-align: middle; padding: 12px 16px;">
-    <span class="badge {% if guest.category == 'vvip' %}badge-gold{% elif guest.category == 'vip' %}badge-sage{% else %}badge-muted{% endif %}">
+  <td><span class="status-pill">{{ guest.get_relation_side_display }}</span></td>
+  <td>
+    <span class="status-pill {% if guest.category == 'vvip' %}status-warning{% elif guest.category == 'vip' %}status-done{% endif %}">
+      <span class="dot"></span>
       {{ guest.get_category_display }}
     </span>
   </td>
-  <td style="vertical-align: middle; padding: 12px 16px; text-align: center; font-weight: 600;">{{ guest.pax_allocation }}</td>
-  <td style="vertical-align: middle; padding: 12px 16px;">
+  <td class="num" style="font-weight: 600;">{{ guest.pax_allocation }}</td>
+  <td style="white-space: nowrap;">
+    <form style="margin: 0; display: inline-block;">
+      {% csrf_token %}
+      <div class="wp-dropdown"
+           x-data="customSelect({
+             value: '{{ guest.rsvp_status }}',
+             postUrl: '{% url 'guests:toggle_rsvp' guest.pk %}',
+             paramName: 'rsvp_status',
+             options: [
+               { value: 'pending', label: 'Belum Pasti', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'attending', label: 'Hadir', pillClass: 'status-done', dot: 'var(--wp-sage-main)' },
+               { value: 'declined', label: 'Tidak Hadir', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' }
+             ]
+           })"
+           :class="{ 'is-open': open }"
+           @click.outside="open = false"
+           @keydown.escape.window="open = false">
+        <button type="button"
+                x-ref="trigger"
+                class="wp-dropdown-trigger wp-dropdown-pill"
+                :class="currentOption.pillClass"
+                @click="toggle()"
+                title="Pilih status RSVP">
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="wp-dropdown-dot" :style="'background:' + currentOption.dot"></span>
+            <span x-text="currentOption.label"></span>
+          </span>
+          <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="wp-dropdown-panel"
+             x-ref="panel"
+             :class="{ 'is-dropup': dropUp }"
+             x-show="open"
+             x-transition.opacity.scale.95
+             x-cloak
+             style="min-width: 160px;">
+          <template x-for="opt in options" :key="opt.value">
+            <div class="wp-dropdown-item"
+                 :class="{ 'is-selected': value === opt.value }"
+                 @click="select(opt)">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
+                <span x-text="opt.label"></span>
+              </span>
+              <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </template>
+        </div>
+      </div>
+    </form>
+  </td>
+  <td>
     <button
-      class="badge {% if guest.rsvp_status == 'attending' %}badge-sage{% elif guest.rsvp_status == 'declined' %}badge-terracotta{% else %}badge-gold{% endif %}"
-      hx-post="{% url 'guests:toggle_rsvp' guest.pk %}"
-      hx-target="closest tr"
-      hx-swap="outerHTML"
-      style="cursor: pointer; border: none; padding: 4px 10px;"
-      title="Klik untuk ubah status RSVP"
+      class="status-pill {% if guest.checked_in %}status-done{% endif %}"
+      hx-post="{% url 'guests:toggle_checkin' guest.pk %}"
+      hx-target=".main-content"
+      hx-select=".main-content"
+      hx-swap="outerHTML show:none"
+      style="cursor: pointer;"
+      title="Klik untuk menandai kehadiran tamu di lokasi (Check-In Hari-H)"
     >
-      {{ guest.get_rsvp_status_display }}
+      <span class="dot"></span>
+      {% if guest.checked_in %}Sudah Hadir{% else %}Belum Check-In{% endif %}
     </button>
   </td>
-  <td style="vertical-align: middle; padding: 12px 16px; text-align: right;">
+  <td style="text-align: right; padding-right: 20px;">
     <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
       <button
         class="btn btn-ghost btn-icon btn-sm"
@@ -31,17 +90,17 @@
         hx-swap="outerHTML"
         title="Edit Tamu"
         style="color: var(--wp-gold-main);"
-      ><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></button>
+      ><i data-lucide="pencil" style="width: 13px; height: 13px;"></i></button>
       <button
         class="btn btn-ghost btn-icon btn-sm"
         hx-delete="{% url 'guests:delete' guest.pk %}"
         hx-confirm="Hapus tamu {{ guest.name }}?"
         hx-target=".main-content"
         hx-select=".main-content"
-        hx-swap="outerHTML"
+        hx-swap="outerHTML show:none"
         title="Hapus Tamu"
-        style="color: var(--wp-terracotta-main);"
-      ><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+        style="color: var(--wp-text-muted);"
+      ><i data-lucide="trash-2" style="width: 13px; height: 13px;"></i></button>
     </div>
   </td>
 </tr>

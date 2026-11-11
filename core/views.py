@@ -189,16 +189,21 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('core:dashboard')
 
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
             messages.success(request, f'Selamat datang kembali, {request.user.username}!')
+            from django.utils.http import url_has_allowed_host_and_scheme
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
             return redirect('core:dashboard')
     else:
         form = LoginForm()
 
-    return render(request, 'core/login.html', {'form': form})
+    return render(request, 'core/login.html', {'form': form, 'next': next_url})
 
 
 def logout_view(request):

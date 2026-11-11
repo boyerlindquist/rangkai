@@ -1,40 +1,162 @@
 {% load humanize %}
-<tr>
-  <td><strong>{{ item.name }}</strong></td>
+<tr id="budget-item-{{ item.pk }}"
+    data-item-name="{{ item.name }}"
+    x-show="!payerFilter || payerFilter === '{{ item.get_payer_display }}'"
+    style="transition: background-color 0.4s ease, outline 0.4s ease;">
+  <td style="padding-left: 24px;">
+    <strong>{{ item.name }}</strong>
+    {% if item.notes %}
+    <div class="text-secondary" style="font-size: 0.76rem; margin-top: 2px;">{{ item.notes }}</div>
+    {% endif %}
+  </td>
   <td class="text-muted">{{ item.vendor_name|default:"—" }}</td>
-  <td>Rp {{ item.actual_cost|intcomma }}</td>
-  <td>Rp {{ item.paid_amount|intcomma }}</td>
-  <td>
-    <button
-      class="badge {% if item.payment_status == 'settled' %}badge-sage{% elif item.payment_status == 'unpaid' %}badge-terracotta{% else %}badge-gold{% endif %}"
-      hx-post="{% url 'finances:toggle_status' item.pk %}"
-      hx-target="closest tr"
-      hx-swap="outerHTML"
-      style="cursor: pointer; border: none;"
-    >
-      {{ item.get_payment_status_display }}
-    </button>
+  <td class="num tabular-nums" style="white-space: nowrap;">Rp {{ item.actual_cost|intcomma }}</td>
+  <td class="num tabular-nums" style="white-space: nowrap;">
+    <span style="{% if item.paid_amount >= item.actual_cost and item.actual_cost > 0 %}color: var(--wp-sage-main); font-weight: 600;{% endif %}">
+      Rp {{ item.paid_amount|intcomma }}
+    </span>
   </td>
-  <td class="{% if item.is_overdue %}text-terracotta{% endif %}">
+  <td style="white-space: nowrap;">
+    <form style="margin: 0; display: inline-block;">
+      {% csrf_token %}
+      <div class="wp-dropdown"
+           x-data="customSelect({
+             value: '{{ item.payment_status }}',
+             postUrl: '{% url 'finances:toggle_status' item.pk %}',
+             paramName: 'payment_status',
+             options: [
+               { value: 'unpaid', label: 'Belum Dibayar', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
+               { value: 'dp_paid', label: 'DP Dibayar', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'partial', label: 'Sebagian Dibayar', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'settled', label: 'Lunas', pillClass: 'status-done', dot: 'var(--wp-sage-main)' }
+             ]
+           })"
+           :class="{ 'is-open': open }"
+           @click.outside="open = false"
+           @keydown.escape.window="open = false">
+        <button type="button"
+                x-ref="trigger"
+                class="wp-dropdown-trigger wp-dropdown-pill"
+                :class="currentOption.pillClass"
+                @click="toggle()"
+                title="Pilih status pembayaran">
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="wp-dropdown-dot" :style="'background:' + currentOption.dot"></span>
+            <span x-text="currentOption.label"></span>
+          </span>
+          <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="wp-dropdown-panel"
+             x-ref="panel"
+             :class="{ 'is-dropup': dropUp }"
+             x-show="open"
+             x-transition.opacity.scale.95
+             x-cloak
+             style="min-width: 175px;">
+          <template x-for="opt in options" :key="opt.value">
+            <div class="wp-dropdown-item"
+                 :class="{ 'is-selected': value === opt.value }"
+                 @click="select(opt)">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
+                <span x-text="opt.label"></span>
+              </span>
+              <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </template>
+        </div>
+      </div>
+    </form>
+  </td>
+  <td style="white-space: nowrap;" class="{% if item.is_overdue %}text-terracotta{% endif %}">
     {{ item.due_date|default:"—" }}
-    {% if item.is_overdue %}<span style="font-size: 0.7rem;"> <i data-lucide="alert-triangle"></i> Overdue</span>{% endif %}
+    {% if item.is_overdue %}<span style="font-size: 0.75rem; font-weight: 600;"> · Lewat Jadwal</span>{% endif %}
   </td>
-  <td><span class="badge badge-muted">{{ item.get_payer_display }}</span></td>
-  <td style="display: flex; gap: 4px;">
-    <button
-      class="btn btn-ghost btn-icon btn-sm"
-      hx-get="{% url 'finances:update_item' item.pk %}"
-      hx-target="closest tr"
-      hx-swap="outerHTML"
-      style="color: var(--wp-gold-main);"
-    ><i data-lucide="pencil"></i></button>
-    <button
-      class="btn btn-ghost btn-icon btn-sm"
-      hx-delete="{% url 'finances:delete_item' item.pk %}"
-      hx-confirm="Hapus item {{ item.name }}?"
-      hx-target=".main-content"
-      hx-select=".main-content"
-      hx-swap="outerHTML"
-    ><i data-lucide="trash-2"></i></button>
+  <td style="white-space: nowrap;">
+    <form style="margin: 0; display: inline-block;">
+      {% csrf_token %}
+      <div class="wp-dropdown"
+           x-data="customSelect({
+             value: '{{ item.payer }}',
+             postUrl: '{% url 'finances:toggle_status' item.pk %}',
+             paramName: 'payer',
+             options: [
+               {% for code, label in item.PAYER_CHOICES %}
+               { value: '{{ code }}', label: '{{ label }}' }{% if not forloop.last %},{% endif %}
+               {% endfor %}
+             ]
+           })"
+           :class="{ 'is-open': open }"
+           @click.outside="open = false"
+           @keydown.escape.window="open = false">
+        <button type="button"
+                x-ref="trigger"
+                class="wp-dropdown-trigger wp-dropdown-sm"
+                @click="toggle()"
+                title="Ubah penanggung jawab pembayaran">
+          <span x-text="currentOption.label"></span>
+          <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="wp-dropdown-panel"
+             x-ref="panel"
+             :class="{ 'is-dropup': dropUp }"
+             x-show="open"
+             x-transition.opacity.scale.95
+             x-cloak
+             style="min-width: 175px;">
+          <template x-for="opt in options" :key="opt.value">
+            <div class="wp-dropdown-item"
+                 :class="{ 'is-selected': value === opt.value }"
+                 @click="select(opt)">
+              <span x-text="opt.label"></span>
+              <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </template>
+        </div>
+      </div>
+    </form>
+  </td>
+  <td style="text-align: right; padding-right: 24px; white-space: nowrap;">
+    <div style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+      {% if item.payment_status != 'settled' %}
+      <button
+        class="btn btn-ghost btn-sm"
+        hx-post="{% url 'finances:toggle_status' item.pk %}?settle=1"
+        hx-target=".main-content"
+        hx-select=".main-content"
+        hx-swap="outerHTML show:none"
+        style="color: var(--wp-sage-main); padding: 4px 8px; font-size: 0.76rem; font-weight: 600; white-space: nowrap;"
+        title="Tandai Lunas penuh (Dibayar = Rp {{ item.actual_cost|intcomma }})"
+      >
+        <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> Lunaskan
+      </button>
+      {% endif %}
+      <button
+        class="btn btn-ghost btn-icon btn-sm"
+        hx-get="{% url 'finances:update_item' item.pk %}"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
+        style="color: var(--wp-gold-main);"
+        title="Edit item"
+      ><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></button>
+      <button
+        class="btn btn-ghost btn-icon btn-sm"
+        hx-delete="{% url 'finances:delete_item' item.pk %}"
+        hx-confirm="Hapus item {{ item.name }}?"
+        hx-target=".main-content"
+        hx-select=".main-content"
+        hx-swap="outerHTML show:none"
+        style="color: var(--wp-text-muted);"
+        title="Hapus item"
+      ><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+    </div>
   </td>
 </tr>

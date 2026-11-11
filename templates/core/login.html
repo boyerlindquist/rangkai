@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Login — Rangkai{% endblock %}
 
 {% block body %}
@@ -6,7 +7,7 @@
   <div class="auth-card fade-in">
     <div class="auth-brand">
       <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-        <img src="{% static 'img/logo.svg' %}" alt="Rangkai Logo" style="width: 46px; height: 46px;" />
+        <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" style="width: 52px; height: 52px;" />
       </div>
       <h1>Rangkai</h1>
       <p>Masuk ke workspace pernikahanmu</p>
@@ -14,6 +15,9 @@
 
     <form method="post">
       {% csrf_token %}
+      {% if next or request.GET.next %}
+      <input type="hidden" name="next" value="{{ next|default:request.GET.next }}">
+      {% endif %}
 
       {% if form.errors %}
       <div class="alert alert-danger">

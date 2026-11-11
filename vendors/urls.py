@@ -7,6 +7,7 @@ app_name = 'vendors'
 urlpatterns = [
     path('', views.vendor_compare, name='compare'),
     path('add/', views.add_vendor, name='add'),
+    path('weights/', views.update_vendor_weights, name='update_weights'),
     path('<int:pk>/update/', views.update_vendor, name='update'),
     path('<int:pk>/delete/', views.delete_vendor, name='delete'),
     path('<int:pk>/toggle-status/', views.update_vendor_status, name='toggle_status'),

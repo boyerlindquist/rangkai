@@ -14,9 +14,11 @@ urlpatterns = [
     # Detailed Checklists
     path('details/', views.detail_checklists_view, name='detail_checklists'),
     path('details/doc/add/', views.add_document, name='add_document'),
+    path('details/doc/<int:pk>/toggle/', views.toggle_document_status, name='toggle_document'),
     path('details/doc/<int:pk>/update/', views.update_document, name='update_document'),
     path('details/doc/<int:pk>/delete/', views.delete_document, name='delete_document'),
     path('details/seserahan/add/', views.add_seserahan, name='add_seserahan'),
+    path('details/seserahan/<int:pk>/toggle/', views.toggle_seserahan_status, name='toggle_seserahan'),
     path('details/seserahan/<int:pk>/update/', views.update_seserahan, name='update_seserahan'),
     path('details/seserahan/<int:pk>/delete/', views.delete_seserahan, name='delete_seserahan'),
 ]

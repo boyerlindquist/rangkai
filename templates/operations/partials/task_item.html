@@ -2,72 +2,89 @@
   <button
     class="task-checkbox {% if task.status == 'done' %}done{% elif task.status == 'in_progress' %}in-progress{% endif %}"
     hx-post="{% url 'operations-checklist:toggle_task' task.pk %}"
-    hx-target="closest .task-item"
-    hx-swap="outerHTML"
-    title="Klik untuk ubah status"
+    hx-target=".main-content"
+    hx-select=".main-content"
+    hx-swap="outerHTML show:none"
+    title="Klik sekali untuk menandai Selesai / Belum Selesai"
   >
     {% if task.status == 'done' %}<i data-lucide="check" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% endif %}
   </button>
   <div class="task-title {% if task.status == 'done' %}done{% endif %}" style="flex: 1;">
     {{ task.title }}
     {% if task.is_overdue and task.status != 'done' %}
-      <span class="badge badge-terracotta" style="margin-left: 4px; font-size: 0.72rem; padding: 2px 6px;">
-        <i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i> Tertinggal
+      <span class="badge badge-terracotta" style="margin-left: 4px; font-size: 0.75rem; padding: 2px 6px;">
+        <i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i> Perlu Tindak Lanjut
       </span>
     {% endif %}
-    {% if task.is_critical %}<span class="badge badge-terracotta" style="margin-left: 4px;">Kritis</span>{% endif %}
+    {% if task.is_critical %}<span class="badge badge-terracotta" style="margin-left: 4px;">Prioritas</span>{% endif %}
     {% if task.linked_tool %}<span class="badge badge-gold" style="margin-left: 4px;"><i data-lucide="link"></i> {{ task.linked_tool }}</span>{% endif %}
   </div>
-  <div class="task-meta">
+  <div class="task-meta" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+    <div class="wp-dropdown"
+         x-data="customSelect({
+           value: '{{ task.status }}',
+           postUrl: '{% url 'operations-checklist:toggle_task' task.pk %}',
+           paramName: 'status',
+           options: [
+             { value: 'todo', label: 'Belum Selesai', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
+             { value: 'in_progress', label: 'Dalam Proses', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+             { value: 'done', label: 'Selesai', pillClass: 'status-done', dot: 'var(--wp-sage-main)' }
+           ]
+         })"
+         :class="{ 'is-open': open }"
+         @click.outside="open = false"
+         @keydown.escape.window="open = false">
+      <button type="button"
+              x-ref="trigger"
+              class="wp-dropdown-trigger wp-dropdown-pill"
+              :class="currentOption.pillClass"
+              @click="toggle()"
+              title="Pilih status tugas">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span class="wp-dropdown-dot" :style="'background:' + currentOption.dot"></span>
+          <span x-text="currentOption.label"></span>
+        </span>
+        <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="wp-dropdown-panel"
+           x-ref="panel"
+           :class="{ 'is-dropup': dropUp }"
+           x-show="open"
+           x-transition.opacity.scale.95
+           x-cloak
+           style="min-width: 165px;">
+        <template x-for="opt in options" :key="opt.value">
+          <div class="wp-dropdown-item"
+               :class="{ 'is-selected': value === opt.value }"
+               @click="select(opt)">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
+              <span x-text="opt.label"></span>
+            </span>
+            <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </template>
+      </div>
+    </div>
     <span class="badge badge-muted">{{ task.get_assignee_display }}</span>
     <span class="badge badge-muted">{{ task.get_category_display }}</span>
-        <button class="btn btn-ghost btn-icon btn-sm"
+    <button class="btn btn-ghost btn-icon btn-sm"
             hx-get="{% url 'operations-checklist:update_task' task.pk %}"
             hx-target="closest .task-item"
             hx-swap="outerHTML"
-            style="color: var(--wp-gold-main);"><i data-lucide="pencil"></i></button>
+            title="Edit tugas"
+            style="color: var(--wp-gold-main);"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i></button>
     <button class="btn btn-ghost btn-icon btn-sm"
             hx-delete="{% url 'operations-checklist:delete_task' task.pk %}"
-            hx-confirm="Hapus tugas ini?"
-            hx-target="closest .task-item"
-            hx-swap="outerHTML"
+            hx-confirm="Hapus tugas '{{ task.title }}'?"
+            hx-target=".main-content"
+            hx-select=".main-content"
+            hx-swap="outerHTML show:none"
             title="Hapus tugas"
-            style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
+            style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
   </div>
 </div>
-
-{% if request.htmx %}
-{% if progress is not None %}
-<div class="phase-info" id="phase-info-{{ phase_key }}" hx-swap-oob="true">
-  <div style="min-width: 50px;">
-    <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
-      {{ progress }}%
-    </div>
-  </div>
-  <div style="flex: 1;">
-    <div class="phase-title">{{ phase_label }}</div>
-    <div class="phase-stats">{{ done_count }} / {{ total_count }} selesai</div>
-    <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
-      <div class="progress-fill {% if progress == 100 %}progress-fill-sage{% elif progress > 0 %}progress-fill-gold{% else %}progress-fill-terracotta{% endif %}"
-           style="width: {{ progress }}%"></div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{% if overall_progress is not None %}
-<div class="card-body" id="overall-progress-bar" hx-swap-oob="true" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 12px;">
-  <div style="display: flex; align-items: baseline; justify-content: space-between;">
-    <div style="font-size: 2.4rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main); line-height: 1;">
-      {{ overall_progress }}<span style="font-size: 1.4rem; font-weight: 400; color: var(--wp-text-secondary); margin-left: 2px;">%</span>
-    </div>
-    <div class="text-muted" style="font-size: 0.82rem;">
-      {{ overall_done }} dari {{ overall_total }} tugas tuntas
-    </div>
-  </div>
-  <div class="progress-bar" style="height: 10px;">
-    <div class="progress-fill progress-fill-sage" style="width: {{ overall_progress }}%"></div>
-  </div>
-</div>
-{% endif %}
-{% endif %}

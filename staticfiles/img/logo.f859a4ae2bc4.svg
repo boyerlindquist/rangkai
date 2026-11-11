@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 380 380" width="100%" height="100%">
+  <defs>
+    <!-- Royal Botanical Emerald Gradient (Link 1 - Growth & Devotion) -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#044E3A"/>
+      <stop offset="28%" stop-color="#065F46"/>
+      <stop offset="60%" stop-color="#0D9488"/>
+      <stop offset="85%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#6EE7B7"/>
+    </linearGradient>
+
+    <!-- Brushed Luxury Champagne Gold (Link 2 - Sacred Union & Elegance) -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDF8E7"/>
+      <stop offset="18%" stop-color="#F5D77F"/>
+      <stop offset="45%" stop-color="#CA9E3B"/>
+      <stop offset="70%" stop-color="#916515"/>
+      <stop offset="88%" stop-color="#CFA340"/>
+      <stop offset="100%" stop-color="#FCE6A2"/>
+    </linearGradient>
+
+    <!-- Deep Weave Contact Shadow -->
+    <filter id="linkShadow" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="3" dy="5" stdDeviation="7" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Specular Light Sheen Highlight -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/>
+      <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+      <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+    </linearGradient>
+
+    <!-- Base Elongated Hexagonal Chain Link (Continuous Smooth Chamfered Path) -->
+    <path id="hexLink"
+          d="M -15.59 -100.00 Q 0.00 -109.00 15.59 -100.00 L 51.96 -79.00 Q 67.55 -70.00 67.55 -52.00 L 67.55 52.00 Q 67.55 70.00 51.96 79.00 L 15.59 100.00 Q 0.00 109.00 -15.59 100.00 L -51.96 79.00 Q -67.55 70.00 -67.55 52.00 L -67.55 -52.00 Q -67.55 -70.00 -51.96 -79.00 Z"
+          fill="none"
+          stroke-width="32"
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+
+    <!-- Clip Region for Crossing Point A (Bottom-Right Flank) to achieve 3D Over-Under Weave -->
+    <clipPath id="crossingClip">
+      <circle cx="48" cy="48" r="46"/>
+    </clipPath>
+  </defs>
+
+  <!-- 2 Interlocking Hexagonal Chain Links — Duo-Tone Harmony (Emerald & Gold) -->
+  <g transform="translate(250, 250)">
+    
+    <!-- LINK 1: Bottom-Left Link (Botanical Emerald Teal) -->
+    <g id="linkEmerald" transform="translate(-44, 44) rotate(45)">
+      <use href="#hexLink" stroke="url(#emeraldGrad)"/>
+      <use href="#hexLink" stroke="url(#sheen)" stroke-width="2.5" stroke-dasharray="110 200" stroke-dashoffset="15" opacity="0.75"/>
+    </g>
+
+    <!-- LINK 2: Top-Right Link (Brushed Gold - Passes OVER Link 1 at Top-Left Crossing) -->
+    <g id="linkGold" transform="translate(44, -44) rotate(45)">
+      <use href="#hexLink" stroke="url(#goldGrad)" filter="url(#linkShadow)"/>
+      <use href="#hexLink" stroke="url(#sheen)" stroke-width="2.5" stroke-dasharray="110 200" stroke-dashoffset="55" opacity="0.8"/>
+    </g>
+
+    <!-- OVER-UNDER WEAVE: Link 1 (Emerald) re-rendered at Bottom-Right Crossing OVER Link 2 -->
+    <!-- This completes the true interlocking loop: Gold is OVER at top-left, Emerald is OVER at bottom-right! -->
+    <g clip-path="url(#crossingClip)">
+      <g transform="translate(-44, 44) rotate(45)">
+        <use href="#hexLink" stroke="url(#emeraldGrad)" filter="url(#linkShadow)"/>
+        <use href="#hexLink" stroke="url(#sheen)" stroke-width="2.5" stroke-dasharray="110 200" stroke-dashoffset="15" opacity="0.75"/>
+      </g>
+    </g>
+
+  </g>
+</svg>

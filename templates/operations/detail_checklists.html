@@ -1,79 +1,115 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}Detail Berkas & Seserahan{% endblock %}
+{% block title %}Detail Berkas & Seserahan — Rangkai{% endblock %}
 
 {% block content %}
-<div class="page-header fade-in" id="guide-checklists">
-  <div>
-    <h1>Detail Kelengkapan
-      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-checklists', 'Detail Kelengkapan', 'Daftar periksa khusus untuk item-item administratif (KUA) dan isi seserahan/hantaran.')"></i>
-    </h1>
-    <p class="page-subtitle">Daftar kelengkapan dokumen KUA/Sipil dan rincian barang hantaran/seserahan.</p>
+<div class="workspace-canvas">
+  <div class="page-header fade-in" id="guide-checklists">
+    <div>
+      <h1>Detail Kelengkapan & Logistik</h1>
+      <p class="page-subtitle">Pelacakan komprehensif dokumen resmi KUA/Sipil dan manifest inventaris barang seserahan/hantaran.</p>
+    </div>
   </div>
-</div>
 
-<div class="bento-grid fade-in" style="grid-template-columns: 1fr; margin-bottom: var(--wp-space-xl); gap: var(--wp-space-lg);">
-  
-  <!-- DOKUMEN & BERKAS -->
-  <div class="card" x-data="{ showDocForm: false }">
-    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <h3 style="margin: 0; color: var(--wp-text-main);">
-          <i data-lucide="folder-open" style="color: var(--wp-text-main);"></i> Berkas Administrasi
-        </h3>
-        <span class="badge badge-muted">{{ documents|length }} berkas</span>
+  <!-- Summary Metric Strip -->
+  <div class="metric-strip">
+    <div class="metric-item">
+      <div class="metric-label">
+        <i data-lucide="file-check-2" style="width: 13px; height: 13px;"></i> Kelengkapan Berkas
       </div>
-      <button type="button" class="btn btn-outline btn-sm" @click="showDocForm = !showDocForm">
-        <span x-text="showDocForm ? '✕ Tutup Form' : '+ Tambah Dokumen'"></span>
-      </button>
+      <div class="metric-value" style="color: var(--wp-sage-main);">{{ doc_done_count }} / {{ documents|length }}</div>
+      <div class="metric-sub">dokumen administrasi selesai</div>
     </div>
-
-    <!-- Collapsible Add Document Form -->
-    <div x-show="showDocForm" x-transition x-cloak style="padding: var(--wp-space-lg); background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-border-light);">
-      <h4 style="margin-top: 0; margin-bottom: var(--wp-space-md); font-size: 0.95rem; color: var(--wp-text-main);"><i data-lucide="file-plus" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Tambah Dokumen Baru</h4>
-      <form action="{% url 'operations-checklist:add_document' %}" method="post"
-            hx-post="{% url 'operations-checklist:add_document' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML"
-            @htmx:after-request="if($event.detail.successful) { $el.reset(); showDocForm = false; }">
-        {% csrf_token %}
-        <div class="form-row">
-          <div class="form-group" style="flex: 2; min-width: 200px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Dokumen</label>
-            {{ doc_form.name }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 140px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Pihak</label>
-            {{ doc_form.party }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 140px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
-            {{ doc_form.status }}
-          </div>
-          <div class="form-group" style="flex: 2; min-width: 200px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Catatan</label>
-            {{ doc_form.notes }}
-          </div>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: var(--wp-space-xs);">
-          <button type="submit" class="btn btn-sage"><i data-lucide="save"></i> Simpan Dokumen</button>
-          <button type="button" class="btn btn-ghost" @click="showDocForm = false">Batal</button>
-        </div>
-      </form>
+    <div class="metric-item">
+      <div class="metric-label">
+        <i data-lucide="gift" style="width: 13px; height: 13px;"></i> Kesiapan Seserahan
+      </div>
+      <div class="metric-value" style="color: var(--wp-gold-main);">{{ ses_done_count }} / {{ seserahan|length }}</div>
+      <div class="metric-sub">barang hantaran sudah siap</div>
     </div>
+    <div class="metric-item">
+      <div class="metric-label">
+        <i data-lucide="calculator" style="width: 13px; height: 13px;"></i> Estimasi Seserahan
+      </div>
+      <div class="metric-value">Rp {{ ses_total_est|intcomma }}</div>
+      <div class="metric-sub">total anggaran seserahan</div>
+    </div>
+    <div class="metric-item">
+      <div class="metric-label">
+        <i data-lucide="shopping-bag" style="width: 13px; height: 13px;"></i> Realisasi Seserahan
+      </div>
+      <div class="metric-value">Rp {{ ses_total_actual|intcomma }}</div>
+      <div class="metric-sub">
+        Selisih:
+        <span style="font-weight: 600; color: {% if ses_variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %}">
+          {% if ses_variance >= 0 %}+{% endif %}Rp {{ ses_variance|intcomma }}
+        </span>
+      </div>
+    </div>
+  </div>
 
-    <div class="card-body">
-      {% if documents %}
-      <div class="table-responsive">
-        <table class="wp-table">
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- DOKUMEN & BERKAS -->
+    <div class="surface-panel" x-data="{ showDocForm: false }">
+      <div class="surface-panel-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 style="margin: 0;">
+            <i data-lucide="folder-open" style="color: var(--wp-gold-main);"></i> Berkas Administrasi KUA / Sipil
+          </h3>
+          <span class="status-pill">{{ doc_done_count }} / {{ documents|length }} selesai</span>
+        </div>
+        <button type="button" class="btn btn-gold btn-sm" @click="showDocForm = !showDocForm">
+          <i data-lucide="plus"></i>
+          <span x-text="showDocForm ? 'Tutup Form' : 'Tambah Dokumen'">Tambah Dokumen</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Add Document Form -->
+      <div x-show="showDocForm" x-transition x-cloak style="padding: 20px 24px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+        <h4 style="margin-top: 0; margin-bottom: 14px; font-size: 0.92rem; color: var(--wp-text-main); font-weight: 600;"><i data-lucide="file-plus" style="width: 15px; height: 15px; vertical-align: -2px;"></i> Tambah Dokumen Baru</h4>
+        <form action="{% url 'operations-checklist:add_document' %}" method="post"
+              hx-post="{% url 'operations-checklist:add_document' %}"
+              hx-target=".main-content"
+              hx-select=".main-content"
+              hx-swap="outerHTML show:none"
+              @htmx:after-request="if($event.detail.successful) { $el.reset(); showDocForm = false; }">
+          {% csrf_token %}
+          <div class="form-row">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Dokumen</label>
+              {{ doc_form.name }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 140px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Pihak</label>
+              {{ doc_form.party }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 140px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
+              {{ doc_form.status }}
+            </div>
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Catatan</label>
+              {{ doc_form.notes }}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+            <button type="button" class="btn btn-ghost btn-sm" @click="showDocForm = false">Batal</button>
+            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Dokumen</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="sheet-table-wrap">
+        {% if documents %}
+        <table class="sheet-table">
           <thead>
             <tr>
-              <th>Nama Dokumen</th>
+              <th style="padding-left: 20px;">Nama Dokumen</th>
               <th>Pihak</th>
-              <th>Status</th>
+              <th>Status (Klik untuk Ubah)</th>
               <th>Catatan</th>
-              <th style="text-align: right;">Aksi</th>
+              <th style="text-align: right; padding-right: 20px;">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -82,87 +118,86 @@
             {% endfor %}
           </tbody>
         </table>
-      </div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-icon"><i data-lucide="folder-open"></i></div>
-        <p>Belum ada berkas yang dilacak. Klik <strong>+ Tambah Dokumen</strong> di atas untuk mulai.</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-
-  <!-- SESERAHAN -->
-  <div class="card" x-data="{ showSesForm: false }">
-    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <h3 style="margin: 0; color: var(--wp-text-main);">
-          <i data-lucide="gift" style="color: var(--wp-text-main);"></i> Daftar Seserahan
-        </h3>
-        <span class="badge badge-muted">{{ seserahan|length }} barang</span>
-      </div>
-      <button type="button" class="btn btn-outline btn-sm" @click="showSesForm = !showSesForm">
-        <span x-text="showSesForm ? '✕ Tutup Form' : '+ Tambah Seserahan'"></span>
-      </button>
-    </div>
-
-    <!-- Collapsible Add Seserahan Form -->
-    <div x-show="showSesForm" x-transition x-cloak style="padding: var(--wp-space-lg); background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-border-light);">
-      <h4 style="margin-top: 0; margin-bottom: var(--wp-space-md); font-size: 0.95rem; color: var(--wp-text-main);"><i data-lucide="gift" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Tambah Barang Seserahan</h4>
-      <form action="{% url 'operations-checklist:add_seserahan' %}" method="post"
-            hx-post="{% url 'operations-checklist:add_seserahan' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML"
-            @htmx:after-request="if($event.detail.successful) { $el.reset(); showSesForm = false; }">
-        {% csrf_token %}
-        <div class="form-row">
-          <div class="form-group" style="flex: 2; min-width: 160px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Barang</label>
-            {{ ses_form.name }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 130px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Kategori</label>
-            {{ ses_form.category }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 120px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Est. Harga</label>
-            {{ ses_form.est_price }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 120px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Hrg. Aktual</label>
-            {{ ses_form.actual_price }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 130px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
-            {{ ses_form.status }}
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 120px;">
-            <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">PIC</label>
-            {{ ses_form.pic }}
-          </div>
+        {% else %}
+        <div class="empty-state" style="padding: 40px; text-align: center;">
+          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="folder-open" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
+          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada berkas yang dilacak. Klik <strong>+ Tambah Dokumen</strong> untuk mulai.</p>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: var(--wp-space-xs);">
-          <button type="submit" class="btn btn-sage"><i data-lucide="save"></i> Simpan Seserahan</button>
-          <button type="button" class="btn btn-ghost" @click="showSesForm = false">Batal</button>
-        </div>
-      </form>
+        {% endif %}
+      </div>
     </div>
 
-    <div class="card-body">
-      {% if seserahan %}
-      <div class="table-responsive">
-        <table class="wp-table">
+
+    <!-- SESERAHAN -->
+    <div class="surface-panel" x-data="{ showSesForm: false }">
+      <div class="surface-panel-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 style="margin: 0;">
+            <i data-lucide="gift" style="color: var(--wp-gold-main);"></i> Manifest Hantaran & Seserahan
+          </h3>
+          <span class="status-pill">{{ ses_done_count }} / {{ seserahan|length }} siap</span>
+        </div>
+        <button type="button" class="btn btn-gold btn-sm" @click="showSesForm = !showSesForm">
+          <i data-lucide="plus"></i>
+          <span x-text="showSesForm ? 'Tutup Form' : 'Tambah Seserahan'">Tambah Seserahan</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Add Seserahan Form -->
+      <div x-show="showSesForm" x-transition x-cloak style="padding: 20px 24px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+        <h4 style="margin-top: 0; margin-bottom: 14px; font-size: 0.92rem; color: var(--wp-text-main); font-weight: 600;"><i data-lucide="gift" style="width: 15px; height: 15px; vertical-align: -2px;"></i> Tambah Barang Seserahan</h4>
+        <form action="{% url 'operations-checklist:add_seserahan' %}" method="post"
+              hx-post="{% url 'operations-checklist:add_seserahan' %}"
+              hx-target=".main-content"
+              hx-select=".main-content"
+              hx-swap="outerHTML show:none"
+              @htmx:after-request="if($event.detail.successful) { $el.reset(); showSesForm = false; }">
+          {% csrf_token %}
+          <div class="form-row">
+            <div class="form-group" style="flex: 2; min-width: 160px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Barang</label>
+              {{ ses_form.name }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Kategori</label>
+              {{ ses_form.category }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Est. Harga</label>
+              {{ ses_form.est_price }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Hrg. Aktual</label>
+              {{ ses_form.actual_price }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
+              {{ ses_form.status }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">PIC</label>
+              {{ ses_form.pic }}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+            <button type="button" class="btn btn-ghost btn-sm" @click="showSesForm = false">Batal</button>
+            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Seserahan</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="sheet-table-wrap">
+        {% if seserahan %}
+        <table class="sheet-table">
           <thead>
             <tr>
-              <th>Barang</th>
+              <th style="padding-left: 20px;">Barang</th>
               <th>Kategori</th>
-              <th>Budget</th>
-              <th>Aktual</th>
-              <th>Status</th>
+              <th class="num">Budget</th>
+              <th class="num">Aktual</th>
+              <th>Status (Klik untuk Ubah)</th>
               <th>PIC</th>
-              <th style="text-align: right;">Aksi</th>
+              <th style="text-align: right; padding-right: 20px;">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -170,16 +205,28 @@
               {% include 'operations/partials/ses_row.html' %}
             {% endfor %}
           </tbody>
+          <tfoot>
+            <tr style="background: var(--wp-bg-surface-subtle); font-weight: 700; border-top: 2px solid var(--wp-border-light);">
+              <td colspan="2" style="padding-left: 20px;">Total Manifest Seserahan ({{ seserahan|length }} barang)</td>
+              <td class="num">Rp {{ ses_total_est|intcomma }}</td>
+              <td class="num" style="color: var(--wp-sage-main);">Rp {{ ses_total_actual|intcomma }}</td>
+              <td colspan="3" style="padding-right: 20px;">
+                <span style="font-size: 0.8rem; color: {% if ses_variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %};">
+                  {% if ses_variance >= 0 %}Hemat Rp {{ ses_variance|intcomma }}{% else %}Melebihi Estimasi Rp {{ ses_variance|intcomma }}{% endif %}
+                </span>
+              </td>
+            </tr>
+          </tfoot>
         </table>
+        {% else %}
+        <div class="empty-state" style="padding: 40px; text-align: center;">
+          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="gift" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
+          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada daftar seserahan. Klik <strong>+ Tambah Seserahan</strong> untuk mulai.</p>
+        </div>
+        {% endif %}
       </div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-icon"><i data-lucide="gift"></i></div>
-        <p>Belum ada daftar seserahan. Klik <strong>+ Tambah Seserahan</strong> di atas untuk mulai.</p>
-      </div>
-      {% endif %}
     </div>
-  </div>
 
+  </div>
 </div>
 {% endblock %}

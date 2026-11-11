@@ -1,0 +1,197 @@
+/* ==========================================================================
+   RANGKAI — Design Tokens
+   Modern Indonesian Botanical Luxury (Imperial Emerald, Royal Teal & Pearl Alabaster)
+   ========================================================================== */
+
+:root {
+  /* ── TYPOGRAPHY FAMILIES & SCALE ── */
+  --wp-font-display: 'Cormorant Garamond', 'Instrument Serif', Georgia, serif;
+  --wp-font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --wp-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --wp-text-xs: 0.75rem;     /* 12px — strict legibility floor */
+  --wp-text-sm: 0.84rem;     /* 13.4px — secondary labels & table cells */
+  --wp-text-base: 0.9375rem; /* 15px — dense operational body */
+  --wp-text-md: 1.05rem;     /* 16.8px — lead & card titles */
+  --wp-text-lg: 1.25rem;     /* 20px — section headers */
+  --wp-text-xl: 1.55rem;     /* 24.8px — major KPIs & sub-display */
+  --wp-text-2xl: 2.15rem;    /* 34.4px — page display title */
+
+  /* ── CANVAS & SPATIAL SURFACES (Light: Pearl Alabaster & Botanical Mist) ── */
+  --wp-bg-canvas: #F6FAF8;
+  --wp-bg-base: #F6FAF8;
+  --wp-bg-surface: #FFFFFF;
+  --wp-bg-surface-subtle: #EDF4F0;
+  --wp-bg-surface-muted: #E0ECE6;
+  --wp-surface-panel: #FFFFFF;
+  --wp-surface-elevated: #FFFFFF;
+
+  /* ── SIDEBAR (Deep Imperial Forest Obsidian) ── */
+  --wp-dark-hero: #091C15;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.06);
+  --wp-sidebar-bottom: #05110D;
+  --wp-dark-border: rgba(255, 255, 255, 0.08);
+  --wp-sidebar-border: rgba(255, 255, 255, 0.08);
+  --wp-sidebar-text: #F2FAF6;
+  --wp-sidebar-text-muted: #9CB8AC;
+
+  /* ── PRIMARY BOTANICAL ACCENT — Imperial Emerald ── */
+  --wp-sage-main: #126E51;
+  --wp-sage-dark: #0B4A36;
+  --wp-sage-light: #289E78;
+  --wp-sage-soft: rgba(18, 110, 81, 0.09);
+  --wp-sage-border: rgba(18, 110, 81, 0.24);
+
+  /* ── SECONDARY JEWEL ACCENT — Royal Peacock Teal (Replaces Old Cream/Gold) ── */
+  --wp-gold-main: #0F766E;
+  --wp-gold-dark: #115E59;
+  --wp-gold-light: #14B8A6;
+  --wp-gold-soft: rgba(15, 118, 110, 0.09);
+  --wp-gold-border: rgba(15, 118, 110, 0.24);
+
+  /* ── WARM ALERT ACCENT — Terracotta Rose ── */
+  --wp-terracotta-main: #C2543D;
+  --wp-terracotta-dark: #8C3422;
+  --wp-terracotta-soft: rgba(194, 84, 61, 0.08);
+  --wp-terracotta-border: rgba(194, 84, 61, 0.22);
+
+  /* ── HIGH-CONTRAST INTERACTIVE ACCENTS ── */
+  --wp-accent-contrast: #126E51;
+  --wp-accent-contrast-hover: #0B4A36;
+  --wp-accent-text: #FFFFFF;
+
+  /* ── TYPOGRAPHY COLORS (WCAG AA/AAA Verified) ── */
+  --wp-text-main: #0D1F18;
+  --wp-text-primary: #0D1F18;
+  --wp-text-secondary: #395248;
+  --wp-text-muted: #587368;
+  --wp-text-inverse: #F6FAF8;
+
+  /* ── HAIRLINE BORDERS & DIVIDERS ── */
+  --wp-hairline: rgba(13, 31, 24, 0.10);
+  --wp-border-light: rgba(13, 31, 24, 0.09);
+  --wp-border-hover: var(--wp-sage-main);
+
+  /* ── GLASSMORPHISM & SURFACE ELEVATION ── */
+  --wp-glass-bg: rgba(255, 255, 255, 0.94);
+  --wp-glass-bg-hover: rgba(255, 255, 255, 0.99);
+  --wp-glass-border: rgba(13, 31, 24, 0.09);
+  --wp-glass-border-subtle: rgba(13, 31, 24, 0.06);
+  --wp-glass-shadow: 0 4px 24px -2px rgba(9, 28, 21, 0.05), 0 1px 2px rgba(9, 28, 21, 0.03);
+  --wp-glass-shadow-hover: 0 10px 28px -4px rgba(9, 28, 21, 0.09);
+
+  /* ── RADII ── */
+  --wp-radius-xs: 6px;
+  --wp-radius-sm: 8px;
+  --wp-radius-md: 14px;
+  --wp-radius-lg: 20px;
+  --wp-radius-pill: 9999px;
+
+  /* ── SPATIAL SHADOWS (Offset + Soft Blur) ── */
+  --wp-shadow-sm: 0 2px 8px -1px rgba(9, 28, 21, 0.05);
+  --wp-shadow-card: 0 4px 20px -2px rgba(9, 28, 21, 0.05), 0 1px 3px rgba(9, 28, 21, 0.02);
+  --wp-shadow-elevated: 0 12px 30px -4px rgba(9, 28, 21, 0.09), 0 3px 10px -2px rgba(18, 110, 81, 0.07);
+  --wp-shadow-hero: 0 20px 50px -10px rgba(9, 28, 21, 0.12);
+  --wp-shadow-dropdown: 0 16px 40px -4px rgba(9, 28, 21, 0.12);
+  --wp-shadow-drawer: -12px 0 48px -4px rgba(9, 28, 21, 0.14);
+
+  /* ── TRANSITIONS ── */
+  --wp-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --wp-transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --wp-transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── SPACING ── */
+  --wp-space-xs: 4px;
+  --wp-space-sm: 8px;
+  --wp-space-md: 16px;
+  --wp-space-lg: 24px;
+  --wp-space-xl: 36px;
+  --wp-space-2xl: 54px;
+  --wp-space-3xl: 72px;
+
+  /* ── SPATIAL DIMENSIONS ── */
+  --wp-sidebar-width: 260px;
+  --wp-sidebar-collapsed: 68px;
+  --wp-inspector-width: 440px;
+
+  /* ── BROWSER SURFACES ── */
+  --wp-selection-bg: rgba(18, 110, 81, 0.16);
+  --wp-selection-text: #0D1F18;
+  --wp-focus-ring: rgba(18, 110, 81, 0.35);
+}
+
+/* ==========================================================================
+   DARK MODE — Deep Obsidian Jade, Luminous Emerald & Royal Teal
+   ========================================================================== */
+[data-theme="dark"] {
+  --wp-bg-canvas: #07110D;
+  --wp-bg-base: #07110D;
+  --wp-bg-surface: #0D1C16;
+  --wp-bg-surface-subtle: #12261E;
+  --wp-bg-surface-muted: #193328;
+  --wp-surface-panel: #0D1C16;
+  --wp-surface-elevated: #142A21;
+
+  --wp-dark-hero: #050D0A;
+  --wp-dark-hero-surface: rgba(255, 255, 255, 0.05);
+  --wp-sidebar-bottom: #030806;
+  --wp-dark-border: rgba(167, 243, 208, 0.12);
+  --wp-sidebar-border: rgba(167, 243, 208, 0.10);
+  --wp-sidebar-text: #F0FAF5;
+  --wp-sidebar-text-muted: #94B5A7;
+
+  /* Luminous Botanical Emerald in Dark Mode */
+  --wp-sage-main: #34C796;
+  --wp-sage-dark: #8CEAD0;
+  --wp-sage-light: #A7F3D0;
+  --wp-sage-soft: rgba(52, 199, 150, 0.14);
+  --wp-sage-border: rgba(52, 199, 150, 0.28);
+
+  /* Luminous Royal Teal-Jade in Dark Mode (AAA Contrast on Dark Surfaces) */
+  --wp-gold-main: #2DD4BF;
+  --wp-gold-dark: #99F6E4;
+  --wp-gold-light: #CCFBF1;
+  --wp-gold-soft: rgba(45, 212, 191, 0.13);
+  --wp-gold-border: rgba(45, 212, 191, 0.28);
+
+  /* Luminous Rose-Terracotta in Dark Mode */
+  --wp-terracotta-main: #E07A64;
+  --wp-terracotta-dark: #F7B5A6;
+  --wp-terracotta-soft: rgba(224, 122, 100, 0.14);
+  --wp-terracotta-border: rgba(224, 122, 100, 0.28);
+
+  /* Primary Interactive Accent in Dark Mode — Rich Imperial Emerald */
+  --wp-accent-contrast: #1E9E73;
+  --wp-accent-contrast-hover: #27B585;
+  --wp-accent-text: #FFFFFF;
+
+  /* Crisp Tinted Foregrounds (Zero Cream/Muddy Undertones) */
+  --wp-text-main: #F0FAF5;
+  --wp-text-primary: #F0FAF5;
+  --wp-text-secondary: #B0CCC0;
+  --wp-text-muted: #7FA193;
+  --wp-text-inverse: #07110D;
+
+  /* Architectural Hairlines */
+  --wp-hairline: rgba(176, 204, 192, 0.14);
+  --wp-border-light: rgba(240, 250, 245, 0.10);
+  --wp-border-hover: var(--wp-sage-main);
+
+  --wp-glass-bg: rgba(13, 28, 22, 0.92);
+  --wp-glass-bg-hover: rgba(20, 42, 33, 0.97);
+  --wp-glass-border: rgba(176, 204, 192, 0.14);
+  --wp-glass-border-subtle: rgba(176, 204, 192, 0.08);
+  --wp-glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --wp-glass-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.65);
+
+  --wp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --wp-shadow-card: 0 4px 22px -2px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.35);
+  --wp-shadow-elevated: 0 16px 42px -4px rgba(0, 0, 0, 0.75), 0 4px 18px -2px rgba(52, 199, 150, 0.14);
+  --wp-shadow-hero: 0 24px 60px -10px rgba(0, 0, 0, 0.85);
+  --wp-shadow-dropdown: 0 16px 40px -4px rgba(0, 0, 0, 0.75);
+  --wp-shadow-drawer: -12px 0 48px rgba(0, 0, 0, 0.75);
+
+  --wp-selection-bg: rgba(52, 199, 150, 0.25);
+  --wp-selection-text: #F0FAF5;
+  --wp-focus-ring: rgba(52, 199, 150, 0.45);
+}

@@ -1,2 +1,90 @@
-__pycache__/ 
-*.pyc 
+# ==========================================
+# Credentials, Secrets & Local Overrides
+# ==========================================
+.env
+.env.*
+!.env.example
+*.local.md
+server_credentials*
+credentials*
+secrets/
+*.pem
+*.key
+*.cert
+id_rsa*
+
+# ==========================================
+# AI Tooling, Agents & Scratchpads
+# ==========================================
+.agents/
+.codex/
+.impeccable/
+.gemini/
+PRODUCT.md
+scratch/
+
+# ==========================================
+# Python & Bytecode
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Operating System & IDE Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ==========================================
+# Logs & Testing
+# ==========================================
+*.log
+logs/
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/

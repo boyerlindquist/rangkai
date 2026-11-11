@@ -3,116 +3,173 @@
 {% block title %}Vendor Comparator — Rangkai{% endblock %}
 
 {% block content %}
-<div x-data="{ showForm: false }">
+<div class="workspace-canvas" x-data="{ showForm: false, showWeights: false }">
 
-<div class="page-header fade-in" id="guide-vendors">
-  <div>
-    <h1>Vendors
-      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 20px; height: 20px; margin-left: 8px;" onclick="showFeatureGuide('#guide-vendors', 'Vendor Compare', 'Evaluasi dan bandingkan vendor secara objektif menggunakan sistem skoring berdasarkan Harga, Kualitas, dan Fasilitas.')"></i>
-    </h1>
-    <p class="page-subtitle">Bandingkan dan pilih vendor terbaik untuk pernikahan Anda dengan sistem scoring.</p>
+  <!-- Page Header -->
+  <div class="page-header fade-in" id="guide-vendors">
+    <div>
+      <h1>Direktori & Evaluasi Vendor</h1>
+      <p class="page-subtitle">Bandingkan kandidat vendor secara objektif menggunakan matriks penilaian berbobot (diurutkan dari skor tertinggi).</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm"
+              @click="showWeights = !showWeights; if(showWeights) { showForm = false; $nextTick(() => { const el = document.getElementById('weights-panel'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.classList.add('highlight-pulse'); setTimeout(() => el?.classList.remove('highlight-pulse'), 2000); }); }">
+        <i data-lucide="sliders"></i> Atur Bobot Kriteria (%)
+      </button>
+      <button class="btn btn-gold btn-sm"
+              @click="showForm = !showForm; if(showForm) { showWeights = false; $nextTick(() => { const el = document.getElementById('vendor-form-panel'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.classList.add('highlight-pulse'); setTimeout(() => el?.classList.remove('highlight-pulse'), 2000); el?.querySelector('input[name=\'name\']')?.focus(); }); }">
+        <i data-lucide="plus"></i>
+        <span x-text="showForm ? 'Tutup Form' : 'Tambah Vendor'">Tambah Vendor</span>
+      </button>
+    </div>
   </div>
-  <button class="btn btn-outline btn-sm" style="margin-top: var(--wp-space-md); align-self: flex-end; background: var(--wp-glass-bg);" @click="showForm = !showForm">
-    <i data-lucide="plus"></i>
-    <span x-text="showForm ? 'Tutup' : 'Tambah Vendor'">Tambah Vendor</span>
-  </button>
-</div>
 
-<!-- Inline Add Vendor Form (collapsible) -->
-<div x-show="showForm" x-transition x-cloak class="card mb-lg fade-in">
-  <div class="card-header">
-    <span style="font-weight: 600; font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
-      <i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i>
-      Tambah Vendor Baru
-      <i data-lucide="help-circle" class="text-muted" style="cursor: pointer; width: 14px; height: 14px; margin-left: 6px;" onclick="showFeatureGuide('#guide-vendor-weights', 'Bobot Prioritas', 'Tentukan aspek apa (Harga, Kualitas, dll) yang paling penting saat menambah vendor.')"></i>
-    </span>
-    <button class="btn btn-ghost btn-sm" @click="showForm = false" style="padding: 2px 10px; font-size: 1.1rem;">✕</button>
-  </div>
-  <div class="card-body">
-    <form method="post" action="{% url 'vendors:add' %}"
-          hx-post="{% url 'vendors:add' %}"
-          hx-target=".main-content"
-          hx-select=".main-content"
-          hx-swap="outerHTML"
-          @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
-      {% csrf_token %}
-      <div class="form-row">
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<p class="text-muted" style="font-size: 0.7rem;">{{ field.help_text }}</p>{% endif %}
+  <!-- Collapsible Scoring Weights Config Panel -->
+  <div x-show="showWeights" x-transition x-cloak id="weights-panel" class="surface-panel fade-in" style="border-color: var(--wp-sage-main); scroll-margin-top: 24px;"
+       x-data="{ wPrice: {{ weights.price|default:30 }}, wQuality: {{ weights.quality|default:30 }}, wFacility: {{ weights.facility|default:20 }}, wReputation: {{ weights.reputation|default:20 }}, get totalW() { return (parseInt(this.wPrice)||0) + (parseInt(this.wQuality)||0) + (parseInt(this.wFacility)||0) + (parseInt(this.wReputation)||0); } }">
+    <div class="surface-panel-header">
+      <div>
+        <h3><i data-lucide="sliders" style="color: var(--wp-gold-main);"></i> Bobot Prioritas Evaluasi Vendor</h3>
+        <p class="text-secondary" style="font-size: 0.8rem; margin: 2px 0 0 0;">Sesuaikan bobot kriteria penilaian sesuai prioritas Anda dan pasangan (Total disarankan 100%).</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="status-pill" :class="totalW === 100 ? 'status-done' : 'status-warning'">
+          Total Bobot: <strong class="tabular-nums" x-text="totalW + '%'"></strong>
+        </span>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showWeights = false" title="Tutup">
+          <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+    </div>
+    <div class="surface-panel-body">
+      <form method="post" action="{% url 'vendors:update_weights' %}"
+            hx-post="{% url 'vendors:update_weights' %}"
+            hx-target=".main-content"
+            hx-select=".main-content"
+            hx-swap="outerHTML show:none"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 14px; align-items: flex-end;">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Bobot Harga (%)</label>
+          <input type="number" name="weight_price" class="wp-input tabular-nums" x-model.number="wPrice" min="0" max="100" required>
         </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Bobot Kualitas (%)</label>
+          <input type="number" name="weight_quality" class="wp-input tabular-nums" x-model.number="wQuality" min="0" max="100" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Bobot Fasilitas (%)</label>
+          <input type="number" name="weight_facility" class="wp-input tabular-nums" x-model.number="wFacility" min="0" max="100" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Bobot Reputasi (%)</label>
+          <input type="number" name="weight_reputation" class="wp-input tabular-nums" x-model.number="wReputation" min="0" max="100" required>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=30; wQuality=30; wFacility=20; wReputation=20;" style="height: 38px;">Reset Default</button>
+          <button type="submit" class="btn btn-gold btn-sm" style="height: 38px;"><i data-lucide="check"></i> Terapkan Bobot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Inline Add Vendor Form (collapsible) -->
+  <div x-show="showForm" x-transition x-cloak id="vendor-form-panel" class="surface-panel fade-in" style="scroll-margin-top: 24px;">
+    <div class="surface-panel-header">
+      <span style="font-weight: 600; font-size: 0.82rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+        <i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i>
+        Tambah Vendor Baru
+      </span>
+      <button class="inspector-close-btn" @click="showForm = false" title="Tutup">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+    <div class="surface-panel-body">
+      <form method="post" action="{% url 'vendors:add' %}"
+            hx-post="{% url 'vendors:add' %}"
+            hx-target=".main-content"
+            hx-select=".main-content"
+            hx-swap="outerHTML"
+            @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+        {% csrf_token %}
+        <div class="form-row">
+          {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="form-help-text">{{ field.help_text }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-ghost btn-sm" @click="showForm = false">Batal</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Vendor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scoped Vendor List & Filter Section -->
+  <div id="vendor-list-section" style="display: flex; flex-direction: column; gap: 24px;">
+    <!-- Category Segmented Filter -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;" id="guide-vendor-cards">
+      <div class="filter-segmented" hx-boost="true" hx-target="#vendor-list-section" hx-select="#vendor-list-section" hx-swap="outerHTML show:none">
+        <a href="{% url 'vendors:compare' %}" class="{% if not category_filter %}active{% endif %}">Semua</a>
+        {% for key, label in categories %}
+        <a href="?category={{ key }}" class="{% if category_filter == key %}active{% endif %}">{{ label }}</a>
         {% endfor %}
       </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
-        <button type="button" class="btn btn-ghost btn-sm" @click="showForm = false">Batal</button>
-        <button type="submit" class="btn btn-gold"><i data-lucide="save"></i> Simpan Vendor</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Category Filter -->
-<div class="filter-bar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none" id="guide-vendor-cards" style="position: relative;">
-  <i data-lucide="help-circle" class="text-muted" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); cursor: pointer; width: 16px; height: 16px;" onclick="showFeatureGuide('#guide-vendor-cards', 'Kandidat Vendor', 'Bandingkan Weighted Score tiap vendor untuk mendapatkan rekomendasi paling rasional.')"></i>
-  <a href="{% url 'vendors:compare' %}" class="filter-pill {% if not category_filter %}active{% endif %}">Semua</a>
-  {% for key, label in categories %}
-  <a href="?category={{ key }}" class="filter-pill {% if category_filter == key %}active{% endif %}">{{ label }}</a>
-  {% endfor %}
-</div>
-
-<!-- Vendor Cards by Category -->
-{% for cat_name, cat_vendors in vendor_groups.items %}
-<div class="card mb-lg" x-data="{ open: true }">
-  <div class="card-header" @click="open = !open" style="cursor: pointer; user-select: none; transition: background var(--wp-transition-fast);">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <h3 style="margin: 0;">{{ cat_name }}</h3>
-      <span class="badge badge-muted">{{ cat_vendors|length }} vendor</span>
     </div>
-    <span class="chevron" :style="open ? 'transform: rotate(180deg)' : ''" style="transition: transform var(--wp-transition-normal); font-size: 1.1rem; color: var(--wp-text-muted); display: inline-block;">▼</span>
-  </div>
-  <div class="card-body" x-show="open" x-transition x-cloak>
-    <style>
-      .vendor-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: var(--wp-space-md);
-        align-items: stretch;
-      }
-      @media (max-width: 1200px) {
-        .vendor-cards-grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-      }
-      @media (max-width: 900px) {
-        .vendor-cards-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-      @media (max-width: 580px) {
-        .vendor-cards-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-    <div class="vendor-cards-grid">
-      {% for vendor in cat_vendors %}
-      {% include "vendors/partials/vendor_card.html" %}
+
+    <!-- Vendor Groups by Category -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      {% for cat_name, cat_vendors in vendor_groups.items %}
+      <div class="surface-panel" x-data="{ open: true }">
+        <div class="surface-panel-header" @click="open = !open" style="cursor: pointer; background: var(--wp-bg-surface-subtle);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h3 style="margin: 0; font-size: 1.15rem;">{{ cat_name }}</h3>
+            <span class="status-pill">{{ cat_vendors|length }} vendor</span>
+          </div>
+          <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: var(--wp-text-muted); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0;" :style="open && 'transform: rotate(180deg)'"></i>
+        </div>
+        <div class="surface-panel-body" x-show="open" x-transition x-cloak style="padding: 20px;">
+          <style>
+            .vendor-cards-grid {
+              display: grid;
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+              gap: 16px;
+              align-items: stretch;
+            }
+            @media (max-width: 1200px) {
+              .vendor-cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            }
+            @media (max-width: 900px) {
+              .vendor-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            }
+            @media (max-width: 580px) {
+              .vendor-cards-grid { grid-template-columns: 1fr; }
+            }
+          </style>
+          <div class="vendor-cards-grid">
+            {% for vendor in cat_vendors %}
+            {% include "vendors/partials/vendor_card.html" %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="surface-panel">
+        <div class="surface-panel-body">
+          <div class="empty-state" style="padding: 48px; text-align: center;">
+            <div class="empty-icon" style="margin-bottom: 12px;"><i data-lucide="store" style="width: 44px; height: 44px; color: var(--wp-text-muted);"></i></div>
+            <h4 style="margin-bottom: 6px;">Belum Ada Kandidat Vendor</h4>
+            <p class="text-secondary" style="font-size: 0.9rem;">Klik <strong>+ Tambah Vendor</strong> di atas untuk mulai membandingkan vendor.</p>
+          </div>
+        </div>
+      </div>
       {% endfor %}
     </div>
   </div>
-</div>
-{% empty %}
-<div class="card">
-  <div class="card-body">
-    <div class="empty-state">
-      <div class="empty-icon"><i data-lucide="store"></i></div>
-      <p>Belum ada vendor. Klik <strong>+ Tambah Vendor</strong> di atas untuk mulai.</p>
-    </div>
-  </div>
-</div>
-{% endfor %}
 
 </div>
 {% endblock %}

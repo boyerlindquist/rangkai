@@ -1,17 +1,119 @@
-<div class="task-item">
-  <button
-    class="task-checkbox {% if asset.status == 'handed' or asset.status == 'packed' %}done{% elif asset.status != 'pending' %}in-progress{% endif %}"
-    hx-post="{% url 'operations-hub:toggle_asset' asset.pk %}"
-    hx-target="closest .task-item"
-    hx-swap="outerHTML"
-  >
-    {% if asset.status == 'handed' or asset.status == 'packed' %}<i data-lucide="check"></i>{% elif asset.status != 'pending' %}<i data-lucide="clock"></i>{% endif %}
-  </button>
-  <div style="flex: 1;">
-    <div style="font-weight: 600; font-size: 0.9rem;">{{ asset.name }}</div>
-    <div class="text-muted" style="font-size: 0.75rem;">PIC: {{ asset.pic_name }}</div>
-  </div>
-  <span class="badge {% if asset.status == 'pending' %}badge-terracotta{% elif asset.status == 'handed' or asset.status == 'packed' %}badge-sage{% else %}badge-gold{% endif %}">
-    {{ asset.get_status_display }}
-  </span>
+<div class="task-item" x-data="{ editingAsset: false }">
+  <template x-if="!editingAsset">
+    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+      <button
+        class="task-checkbox {% if asset.status == 'handed' or asset.status == 'packed' %}done{% elif asset.status != 'pending' %}in-progress{% endif %}"
+        hx-post="{% url 'operations-hub:toggle_asset' asset.pk %}"
+        hx-target="closest .task-item"
+        hx-swap="outerHTML"
+        title="Klik untuk mengganti status aset"
+      >
+        {% if asset.status == 'handed' or asset.status == 'packed' %}<i data-lucide="check" style="width: 13px; height: 13px;"></i>{% elif asset.status != 'pending' %}<i data-lucide="clock" style="width: 13px; height: 13px;"></i>{% endif %}
+      </button>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 600; font-size: 0.9rem; color: var(--wp-text-main);">{{ asset.name }}</div>
+        <div class="text-muted" style="font-size: 0.76rem;">
+          PIC: <strong>{{ asset.pic_name }}</strong>
+          {% if asset.pic_contact %} ({{ asset.pic_contact }}){% endif %}
+          {% if asset.vehicle_info %} · <i data-lucide="truck" style="width: 12px; height: 12px; vertical-align: -1px;"></i> {{ asset.vehicle_info }}{% endif %}
+        </div>
+      </div>
+      <div class="wp-dropdown"
+           x-data="customSelect({
+             value: '{{ asset.status }}',
+             postUrl: '{% url 'operations-hub:toggle_asset' asset.pk %}',
+             paramName: 'status',
+             target: 'closest .task-item',
+             swap: 'outerHTML',
+             options: [
+               { value: 'pending', label: 'Belum Disiapkan', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
+               { value: 'loaded', label: 'Masuk Mobil', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'received', label: 'Tiba di Venue', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'handed', label: 'Diserahkan ke WO', pillClass: 'status-done', dot: 'var(--wp-sage-main)' },
+               { value: 'packed', label: 'Diamankan Kembali', pillClass: 'status-done', dot: 'var(--wp-sage-main)' }
+             ]
+           })"
+           :class="{ 'is-open': open }"
+           @click.outside="open = false"
+           @keydown.escape.window="open = false">
+        <button type="button"
+                x-ref="trigger"
+                class="wp-dropdown-trigger wp-dropdown-pill"
+                :class="currentOption.pillClass"
+                @click="toggle()"
+                title="Pilih status aset">
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="wp-dropdown-dot" :style="'background:' + currentOption.dot"></span>
+            <span x-text="currentOption.label"></span>
+          </span>
+          <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="wp-dropdown-panel"
+             x-ref="panel"
+             :class="{ 'is-dropup': dropUp }"
+             x-show="open"
+             x-transition.opacity.scale.95
+             x-cloak
+             style="min-width: 175px;">
+          <template x-for="opt in options" :key="opt.value">
+            <div class="wp-dropdown-item"
+                 :class="{ 'is-selected': value === opt.value }"
+                 @click="select(opt)">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
+                <span x-text="opt.label"></span>
+              </span>
+              <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div style="display: inline-flex; gap: 2px;">
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="editingAsset = true" style="color: var(--wp-gold-main);" title="Edit Aset">
+          <i data-lucide="pencil" style="width: 13px; height: 13px;"></i>
+        </button>
+        <button type="button"
+                class="btn btn-ghost btn-icon btn-sm"
+                hx-post="{% url 'operations-hub:delete_asset' asset.pk %}"
+                hx-confirm="Hapus aset '{{ asset.name }}'?"
+                hx-target=".main-content"
+                hx-select=".main-content"
+                hx-swap="outerHTML show:none"
+                style="color: var(--wp-text-muted);"
+                title="Hapus Aset">
+          <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="editingAsset">
+    <form method="post" action="{% url 'operations-hub:update_asset' asset.pk %}" style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; padding: 8px; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-sm);">
+      {% csrf_token %}
+      <input type="text" name="name" class="wp-input" value="{{ asset.name }}" placeholder="Nama barang" required>
+      <select name="asset_category" class="wp-input">
+        <option value="critical" {% if asset.asset_category == 'critical' %}selected{% endif %}>Aset Kritis</option>
+        <option value="equipment" {% if asset.asset_category == 'equipment' %}selected{% endif %}>Perlengkapan</option>
+      </select>
+      <input type="text" name="pic_name" class="wp-input" value="{{ asset.pic_name }}" placeholder="Nama PIC" required>
+      <input type="text" name="pic_contact" class="wp-input" value="{{ asset.pic_contact }}" placeholder="No. WA PIC">
+      <input type="text" name="vehicle_info" class="wp-input" value="{{ asset.vehicle_info }}" placeholder="Kendaraan / Mobil">
+      <input type="hidden" name="notes" value="{{ asset.notes }}">
+      <select name="status" class="wp-input">
+        <option value="pending" {% if asset.status == 'pending' %}selected{% endif %}>Belum Disiapkan</option>
+        <option value="loaded" {% if asset.status == 'loaded' %}selected{% endif %}>Masuk Mobil</option>
+        <option value="received" {% if asset.status == 'received' %}selected{% endif %}>Tiba di Venue</option>
+        <option value="handed" {% if asset.status == 'handed' %}selected{% endif %}>Diserahkan ke WO</option>
+        <option value="packed" {% if asset.status == 'packed' %}selected{% endif %}>Diamankan Kembali</option>
+      </select>
+      <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
+        <button type="button" class="btn btn-secondary btn-sm" @click="editingAsset = false">Batal</button>
+        <button type="submit" class="btn btn-gold btn-sm">Simpan</button>
+      </div>
+    </form>
+  </template>
 </div>

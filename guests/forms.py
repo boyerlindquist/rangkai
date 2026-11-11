@@ -20,6 +20,13 @@ class GuestForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'wp-input', 'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pax_allocation'].required = False
+
+    def clean_pax_allocation(self):
+        return self.cleaned_data.get('pax_allocation') or 2
+
 
 class CateringConfigForm(forms.ModelForm):
     """Form for configuring catering calculation parameters."""

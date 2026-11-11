@@ -116,55 +116,20 @@ def checklist_view(request):
 @login_required
 @owner_required
 def toggle_task_status(request, pk):
-    """HTMX endpoint: Cycle task status (todo -> in_progress -> done)."""
+    """HTMX endpoint: 1-click toggle (todo <-> done) or select/cycle status."""
     task = get_object_or_404(TaskMilestone, pk=pk, wedding=request.wedding)
-    cycle = ['todo', 'in_progress', 'done']
-    idx = cycle.index(task.status)
-    task.status = cycle[(idx + 1) % len(cycle)]
+    new_status = request.POST.get('status') or request.GET.get('status')
+    if new_status and new_status in dict(TaskMilestone.STATUS_CHOICES):
+        task.status = new_status
+    elif request.GET.get('mode') == 'cycle':
+        cycle = ['todo', 'in_progress', 'done']
+        idx = cycle.index(task.status) if task.status in cycle else 0
+        task.status = cycle[(idx + 1) % len(cycle)]
+    else:
+        task.status = 'done' if task.status != 'done' else 'todo'
     task.save(update_fields=['status'])
-    if request.htmx:
-        # Check if task is in a past phase
-        days_remaining = request.wedding.days_remaining
-        phase_order = ['d360', 'd180', 'd90', 'd30', 'dday']
-        current_phase_idx = -1
-        if days_remaining is not None:
-            if days_remaining > 180:
-                current_phase_key = 'd360'
-            elif days_remaining >= 90:
-                current_phase_key = 'd180'
-            elif days_remaining >= 30:
-                current_phase_key = 'd90'
-            elif days_remaining >= 7:
-                current_phase_key = 'd30'
-            else:
-                current_phase_key = 'dday'
-            current_phase_idx = phase_order.index(current_phase_key)
-        
-        task_idx = phase_order.index(task.phase) if task.phase in phase_order else 0
-        task.is_overdue = (current_phase_idx != -1 and task_idx < current_phase_idx and task.status != 'done')
-
-        phase_tasks = TaskMilestone.objects.filter(wedding=request.wedding, phase=task.phase)
-        total = phase_tasks.count()
-        done = phase_tasks.filter(status='done').count()
-        progress = int((done / total) * 100) if total > 0 else 0
-        
-        all_tasks = TaskMilestone.objects.filter(wedding=request.wedding)
-        overall_total = all_tasks.count()
-        overall_done = all_tasks.filter(status='done').count()
-        overall_progress = int((overall_done / overall_total) * 100) if overall_total > 0 else 0
-        
-        context = {
-            'task': task,
-            'progress': progress,
-            'phase_key': task.phase,
-            'phase_label': task.get_phase_display(),
-            'done_count': done,
-            'total_count': total,
-            'overall_progress': overall_progress,
-            'overall_done': overall_done,
-            'overall_total': overall_total,
-        }
-        return render(request, 'operations/partials/task_item.html', context)
+    if request.GET.get('from') == 'dashboard':
+        return redirect('core:dashboard')
     return redirect('operations-checklist:checklist')
 
 
@@ -179,9 +144,6 @@ def add_task(request):
             task.wedding = request.wedding
             task.is_custom = True
             task.save()
-            if request.htmx:
-                return redirect('operations-checklist:checklist')
-            return redirect('operations-checklist:checklist')
     return redirect('operations-checklist:checklist')
 
 
@@ -190,55 +152,7 @@ def add_task(request):
 def delete_task(request, pk):
     """HTMX endpoint: Delete any task (custom or default)."""
     task = get_object_or_404(TaskMilestone, pk=pk, wedding=request.wedding)
-    phase_key = task.phase
-    phase_label = task.get_phase_display()
     task.delete()
-    if request.htmx:
-        phase_tasks = TaskMilestone.objects.filter(wedding=request.wedding, phase=phase_key)
-        total = phase_tasks.count()
-        done = phase_tasks.filter(status='done').count()
-        progress = int((done / total) * 100) if total > 0 else 0
-        
-        all_tasks = TaskMilestone.objects.filter(wedding=request.wedding)
-        overall_total = all_tasks.count()
-        overall_done = all_tasks.filter(status='done').count()
-        overall_progress = int((overall_done / overall_total) * 100) if overall_total > 0 else 0
-        
-        progress_fill_class = 'progress-fill-sage' if progress == 100 else ('progress-fill-gold' if progress > 0 else 'progress-fill-terracotta')
-        
-        response_html = f"""
-        <div class="phase-info" id="phase-info-{phase_key}" hx-swap-oob="true">
-          <div style="min-width: 50px;">
-            <div style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--wp-text-main);">
-              {progress}%
-            </div>
-          </div>
-          <div style="flex: 1; min-width: 0;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="phase-title">{phase_label}</span>
-            </div>
-            <div class="phase-stats" style="margin-top: 2px;">{done} / {total} selesai</div>
-            <div class="progress-bar mt-md" style="max-width: 200px; height: 4px;">
-              <div class="progress-fill {progress_fill_class}"
-                   style="width: {progress}%"></div>
-            </div>
-          </div>
-        </div>
-        <div class="card-body" id="overall-progress-bar" hx-swap-oob="true" style="padding: var(--wp-space-lg); display: flex; flex-direction: column; justify-content: center; gap: 12px;">
-          <div style="display: flex; align-items: baseline; justify-content: space-between;">
-            <div style="font-size: 2.4rem; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--wp-text-main); line-height: 1;">
-              {overall_progress}<span style="font-size: 1.4rem; font-weight: 400; color: var(--wp-text-secondary); margin-left: 2px;">%</span>
-            </div>
-            <div class="text-muted" style="font-size: 0.82rem;">
-              {overall_done} dari {overall_total} tugas tuntas
-            </div>
-          </div>
-          <div class="progress-bar" style="height: 10px; background: rgba(44, 30, 22, 0.08); border-radius: var(--wp-radius-pill);">
-            <div class="progress-fill progress-fill-sage" style="width: {overall_progress}%"></div>
-          </div>
-        </div>
-        """
-        return HttpResponse(response_html)
     return redirect('operations-checklist:checklist')
 
 
@@ -357,8 +271,17 @@ def add_rundown_event(request):
             event = form.save(commit=False)
             event.wedding = request.wedding
             event.save()
-            if request.htmx:
-                return redirect('operations-hub:operations_hub')
+    return redirect('operations-hub:operations_hub')
+
+
+@login_required
+@owner_required
+def update_rundown_event(request, pk):
+    event = get_object_or_404(RundownEvent, pk=pk, wedding=request.wedding)
+    if request.method == 'POST':
+        form = RundownEventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
     return redirect('operations-hub:operations_hub')
 
 
@@ -367,8 +290,6 @@ def add_rundown_event(request):
 def delete_rundown_event(request, pk):
     event = get_object_or_404(RundownEvent, pk=pk, wedding=request.wedding)
     event.delete()
-    if request.htmx:
-        return HttpResponse('')
     return redirect('operations-hub:operations_hub')
 
 
@@ -382,8 +303,25 @@ def add_asset(request):
             asset = form.save(commit=False)
             asset.wedding = request.wedding
             asset.save()
-            if request.htmx:
-                return redirect('operations-hub:operations_hub')
+    return redirect('operations-hub:operations_hub')
+
+
+@login_required
+@owner_required
+def update_asset(request, pk):
+    asset = get_object_or_404(AssetCustodian, pk=pk, wedding=request.wedding)
+    if request.method == 'POST':
+        form = AssetCustodianForm(request.POST, instance=asset)
+        if form.is_valid():
+            form.save()
+    return redirect('operations-hub:operations_hub')
+
+
+@login_required
+@owner_required
+def delete_asset(request, pk):
+    asset = get_object_or_404(AssetCustodian, pk=pk, wedding=request.wedding)
+    asset.delete()
     return redirect('operations-hub:operations_hub')
 
 
@@ -391,9 +329,13 @@ def add_asset(request):
 @owner_required
 def toggle_asset_status(request, pk):
     asset = get_object_or_404(AssetCustodian, pk=pk, wedding=request.wedding)
-    cycle = ['pending', 'loaded', 'received', 'handed', 'packed']
-    idx = cycle.index(asset.status)
-    asset.status = cycle[(idx + 1) % len(cycle)]
+    new_status = request.POST.get('status') or request.GET.get('status')
+    if new_status and new_status in dict(AssetCustodian.STATUS_CHOICES):
+        asset.status = new_status
+    else:
+        cycle = ['pending', 'loaded', 'received', 'handed', 'packed']
+        idx = cycle.index(asset.status) if asset.status in cycle else 0
+        asset.status = cycle[(idx + 1) % len(cycle)]
     asset.save(update_fields=['status'])
     if request.htmx:
         return render(request, 'operations/partials/asset_item.html', {'asset': asset})
@@ -410,8 +352,17 @@ def add_fabric_entry(request):
             entry = form.save(commit=False)
             entry.wedding = request.wedding
             entry.save()
-            if request.htmx:
-                return redirect('operations-hub:operations_hub')
+    return redirect('operations-hub:operations_hub')
+
+
+@login_required
+@owner_required
+def update_fabric_entry(request, pk):
+    entry = get_object_or_404(FabricEntry, pk=pk, wedding=request.wedding)
+    if request.method == 'POST':
+        form = FabricEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
     return redirect('operations-hub:operations_hub')
 
 
@@ -420,22 +371,26 @@ def add_fabric_entry(request):
 def delete_fabric_entry(request, pk):
     entry = get_object_or_404(FabricEntry, pk=pk, wedding=request.wedding)
     entry.delete()
-    if request.htmx:
-        return HttpResponse('')
     return redirect('operations-hub:operations_hub')
+
 
 @login_required
 @owner_required
 def update_task(request, pk):
     """HTMX endpoint: Update custom or template task."""
     task = get_object_or_404(TaskMilestone, pk=pk, wedding=request.wedding)
+    if request.GET.get('cancel') == '1':
+        return render(request, 'operations/partials/task_item.html', {'task': task})
     if request.method == 'POST':
         form = TaskMilestoneForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
-            if request.htmx:
-                return render(request, 'operations/partials/task_item.html', {'task': task})
             return redirect('operations-checklist:checklist')
+        response = render(request, 'operations/partials/task_form_inline.html', {'form': form, 'task': task})
+        response['HX-Retarget'] = f'#edit-task-{task.pk}'
+        response['HX-Reselect'] = f'#edit-task-{task.pk}'
+        response['HX-Reswap'] = 'outerHTML'
+        return response
     else:
         form = TaskMilestoneForm(instance=task)
     return render(request, 'operations/partials/task_form_inline.html', {'form': form, 'task': task})
@@ -454,12 +409,22 @@ def detail_checklists_view(request):
     documents = DocumentRequirement.objects.filter(wedding=wedding)
     seserahan = SeserahanItem.objects.filter(wedding=wedding)
     
+    doc_done_count = documents.filter(status='done').count()
+    ses_done_count = seserahan.filter(status='done').count()
+    ses_total_est = sum(int(s.est_price or 0) for s in seserahan)
+    ses_total_actual = sum(int(s.actual_price or 0) for s in seserahan)
+    
     doc_form = DocumentRequirementForm()
     ses_form = SeserahanItemForm()
     
     context = {
         'documents': documents,
         'seserahan': seserahan,
+        'doc_done_count': doc_done_count,
+        'ses_done_count': ses_done_count,
+        'ses_total_est': ses_total_est,
+        'ses_total_actual': ses_total_actual,
+        'ses_variance': ses_total_est - ses_total_actual,
         'doc_form': doc_form,
         'ses_form': ses_form,
     }
@@ -494,18 +459,44 @@ def add_seserahan(request):
 
 @login_required
 @owner_required
+def toggle_document_status(request, pk):
+    doc = get_object_or_404(DocumentRequirement, pk=pk, wedding=request.wedding)
+    new_status = request.POST.get('status') or request.GET.get('status')
+    if new_status and new_status in dict(DocumentRequirement.STATUS_CHOICES):
+        doc.status = new_status
+    else:
+        cycle = ['none', 'process', 'done']
+        idx = cycle.index(doc.status) if doc.status in cycle else 0
+        doc.status = cycle[(idx + 1) % len(cycle)]
+    doc.save(update_fields=['status'])
+    return redirect('operations-checklist:detail_checklists')
+
+@login_required
+@owner_required
+def toggle_seserahan_status(request, pk):
+    ses = get_object_or_404(SeserahanItem, pk=pk, wedding=request.wedding)
+    new_status = request.POST.get('status') or request.GET.get('status')
+    if new_status and new_status in dict(SeserahanItem.STATUS_CHOICES):
+        ses.status = new_status
+    else:
+        cycle = ['none', 'process', 'done']
+        idx = cycle.index(ses.status) if ses.status in cycle else 0
+        ses.status = cycle[(idx + 1) % len(cycle)]
+    ses.save(update_fields=['status'])
+    return redirect('operations-checklist:detail_checklists')
+
+@login_required
+@owner_required
 def delete_document(request, pk):
     doc = get_object_or_404(DocumentRequirement, pk=pk, wedding=request.wedding)
-    if request.method == 'POST':
-        doc.delete()
+    doc.delete()
     return redirect('operations-checklist:detail_checklists')
 
 @login_required
 @owner_required
 def delete_seserahan(request, pk):
     ses = get_object_or_404(SeserahanItem, pk=pk, wedding=request.wedding)
-    if request.method == 'POST':
-        ses.delete()
+    ses.delete()
     return redirect('operations-checklist:detail_checklists')
 
 
@@ -513,11 +504,18 @@ def delete_seserahan(request, pk):
 @owner_required
 def update_document(request, pk):
     doc = get_object_or_404(DocumentRequirement, pk=pk, wedding=request.wedding)
+    if request.GET.get('cancel') == '1':
+        return render(request, 'operations/partials/doc_row.html', {'doc': doc})
     if request.method == 'POST':
         form = DocumentRequirementForm(request.POST, instance=doc)
         if form.is_valid():
             form.save()
-            return render(request, 'operations/partials/doc_row.html', {'doc': doc})
+            return redirect('operations-checklist:detail_checklists')
+        response = render(request, 'operations/partials/doc_form_inline.html', {'doc_form': form, 'doc': doc})
+        response['HX-Retarget'] = f'#doc-{doc.pk}'
+        response['HX-Reselect'] = f'#doc-{doc.pk}'
+        response['HX-Reswap'] = 'outerHTML'
+        return response
     else:
         form = DocumentRequirementForm(instance=doc)
     return render(request, 'operations/partials/doc_form_inline.html', {'doc_form': form, 'doc': doc})
@@ -526,11 +524,18 @@ def update_document(request, pk):
 @owner_required
 def update_seserahan(request, pk):
     ses = get_object_or_404(SeserahanItem, pk=pk, wedding=request.wedding)
+    if request.GET.get('cancel') == '1':
+        return render(request, 'operations/partials/ses_row.html', {'ses': ses})
     if request.method == 'POST':
         form = SeserahanItemForm(request.POST, instance=ses)
         if form.is_valid():
             form.save()
-            return render(request, 'operations/partials/ses_row.html', {'ses': ses})
+            return redirect('operations-checklist:detail_checklists')
+        response = render(request, 'operations/partials/ses_form_inline.html', {'ses_form': form, 'ses': ses})
+        response['HX-Retarget'] = f'#ses-{ses.pk}'
+        response['HX-Reselect'] = f'#ses-{ses.pk}'
+        response['HX-Reswap'] = 'outerHTML'
+        return response
     else:
         form = SeserahanItemForm(instance=ses)
     return render(request, 'operations/partials/ses_form_inline.html', {'ses_form': form, 'ses': ses})

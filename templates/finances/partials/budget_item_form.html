@@ -1,23 +1,35 @@
 <tr id="edit-budget-item-{{ item.pk }}">
-  <td colspan="7">
+  <td colspan="8" style="padding: 12px 24px;">
     <form hx-post="{% url 'finances:update_item' item.pk %}"
-          hx-target="closest tr"
-          hx-swap="outerHTML"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML show:none"
+          hx-disinherit="hx-select hx-target hx-swap"
           class="fade-in"
-          style="background: var(--wp-bg-surface-subtle); padding: var(--wp-space-lg); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
+          style="background: var(--wp-bg-surface-subtle); padding: var(--wp-space-lg); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-sage-main);">
       {% csrf_token %}
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--wp-space-md);">
-        <h4 style="margin: 0; color: var(--wp-gold-main);"><i data-lucide="edit"></i> Edit {{ item.name }}</h4>
+        <h4 style="margin: 0; color: var(--wp-gold-main); display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Edit Item: {{ item.name }}
+        </h4>
+        <button type="button"
+                class="btn btn-ghost btn-sm"
+                hx-get="{% url 'finances:update_item' item.pk %}?cancel=1"
+                hx-target="closest tr"
+                hx-select="unset"
+                hx-swap="outerHTML">
+          <i data-lucide="x" style="width: 14px; height: 14px;"></i> Tutup
+        </button>
       </div>
       
-      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--wp-space-md);">
+      <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--wp-space-md);">
         {% for field in form %}
           {% if field.name != 'wedding' %}
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.85rem; font-weight: 600; color: var(--wp-text-secondary); margin-bottom: 4px; display: block;">{{ field.label }}</label>
+            <div class="form-group" style="margin-bottom: 0; {% if field.name == 'notes' %}grid-column: 1 / -1;{% endif %}">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--wp-text-secondary); margin-bottom: 4px; display: block;">{{ field.label }}</label>
               {{ field }}
               {% if field.errors %}
-                <div style="color: var(--wp-terracotta-main); font-size: 0.8rem; margin-top: 4px;">{{ field.errors.0 }}</div>
+                <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 4px;">{{ field.errors.0 }}</div>
               {% endif %}
             </div>
           {% endif %}
@@ -25,16 +37,21 @@
       </div>
       
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--wp-space-md);">
-        <button type="button" class="btn btn-secondary btn-sm" hx-get="{% url 'finances:dashboard' %}" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                hx-get="{% url 'finances:update_item' item.pk %}?cancel=1"
+                hx-target="closest tr"
+                hx-select="unset"
+                hx-swap="outerHTML">
           Batal
         </button>
-        <button type="submit" class="btn btn-primary btn-sm">
-          <i data-lucide="save"></i> Simpan
+        <button type="submit" class="btn btn-gold btn-sm">
+          <i data-lucide="save"></i> Simpan Perubahan
         </button>
       </div>
     </form>
     <script>
-      setTimeout(() => lucide.createIcons(), 50);
+      setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 30);
     </script>
   </td>
 </tr>

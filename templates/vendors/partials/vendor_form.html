@@ -1,79 +1,93 @@
-<div class="card fade-in">
-  <div class="card-header">
-    <h3><i data-lucide="edit"></i> Edit Vendor</h3>
+<div id="edit-vendor-{{ vendor.pk }}" class="surface-panel fade-in" style="grid-column: 1 / -1; border-color: var(--wp-sage-main);">
+  <div class="surface-panel-header">
+    <h3><i data-lucide="edit-3" style="color: var(--wp-gold-main);"></i> Edit Kandidat Vendor: {{ vendor.name }}</h3>
+    <button type="button"
+            class="btn btn-ghost btn-sm"
+            hx-get="{% url 'vendors:update' vendor.pk %}?cancel=1"
+            hx-target="closest .surface-panel"
+            hx-swap="outerHTML"><i data-lucide="x" style="width: 14px; height: 14px;"></i> Tutup</button>
   </div>
   <form hx-post="{% url 'vendors:update' vendor.pk %}"
-        hx-target="closest .card"
-        hx-swap="outerHTML">
+        hx-target=".main-content"
+        hx-select=".main-content"
+        hx-swap="outerHTML show:none"
+        hx-disinherit="hx-select hx-target hx-swap">
     {% csrf_token %}
     {{ form.weight_price.as_hidden }}
     {{ form.weight_quality.as_hidden }}
     {{ form.weight_facility.as_hidden }}
     {{ form.weight_reputation.as_hidden }}
 
-    <div class="card-body" style="max-height: 450px; overflow-y: auto;">
-      <div class="form-row">
-        <div class="form-group" style="flex: 2;">
-          <label>Nama Vendor</label>
+    <div class="surface-panel-body">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Nama Vendor *</label>
           {{ form.name }}
         </div>
-        <div class="form-group" style="flex: 1;">
+        <div class="form-group" style="margin-bottom: 0;">
           <label>Kategori</label>
           {{ form.category }}
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="flex: 1;">
-          <label>Kontak/PIC</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Kontak / PIC</label>
           {{ form.contact_pic }}
         </div>
-        <div class="form-group" style="flex: 1;">
-          <label>Telepon</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Telepon / WhatsApp</label>
           {{ form.phone }}
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="flex: 1;">
-          <label>Estimasi Harga</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Estimasi Harga (Rp)</label>
           {{ form.price_estimate }}
         </div>
-        <div class="form-group" style="flex: 1;">
+        <div class="form-group" style="margin-bottom: 0;">
           <label>Status</label>
           {{ form.status }}
         </div>
       </div>
-      <hr class="section-divider">
-      <div style="font-weight: 500; margin-bottom: var(--wp-space-md); color: var(--wp-text-secondary);">Skoring Subjektif (1-5)</div>
-      <div class="form-row">
-        <div class="form-group" style="flex: 1;">
-          <label>Harga</label>
+
+      <div style="margin: 18px 0 10px 0; padding-top: 14px; border-top: 1px solid var(--wp-hairline); font-weight: 600; font-size: 0.84rem; color: var(--wp-text-secondary);">
+        Skoring Evaluasi (Skala 1 – 5)
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Skor Harga ({{ vendor.weight_price }}%)</label>
           {{ form.score_price }}
         </div>
-        <div class="form-group" style="flex: 1;">
-          <label>Kualitas</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Skor Kualitas ({{ vendor.weight_quality }}%)</label>
           {{ form.score_quality }}
         </div>
-        <div class="form-group" style="flex: 1;">
-          <label>Fasilitas</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Skor Fasilitas ({{ vendor.weight_facility }}%)</label>
           {{ form.score_facility }}
         </div>
-        <div class="form-group" style="flex: 1;">
-          <label>Reputasi</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Skor Reputasi ({{ vendor.weight_reputation }}%)</label>
           {{ form.score_reputation }}
         </div>
       </div>
-      <div class="form-group mt-md">
-        <label>Link Penawaran / GDrive (Opsional)</label>
-        {{ form.offer_link }}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Link Proposal / GDrive (Opsional)</label>
+          {{ form.offer_link }}
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Catatan Tambahan</label>
+          {{ form.notes }}
+        </div>
       </div>
-      <div class="form-group mt-md">
-        <label>Catatan Tambahan</label>
-        {{ form.notes }}
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--wp-hairline);">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                hx-get="{% url 'vendors:update' vendor.pk %}?cancel=1"
+                hx-target="closest .surface-panel"
+                hx-select="unset"
+                hx-swap="outerHTML">Batal</button>
+        <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Perubahan</button>
       </div>
-    </div>
-    <div class="card-footer flex justify-end gap-sm">
-      <button type="button" class="btn btn-secondary" onclick="window.location.reload();">Batal</button>
-      <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Simpan</button>
     </div>
   </form>
 </div>

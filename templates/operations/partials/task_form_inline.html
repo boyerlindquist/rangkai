@@ -1,23 +1,34 @@
-<form class="task-item fade-in" 
+<form id="edit-task-{{ task.pk }}"
+      class="task-item fade-in" 
       hx-post="{% url 'operations-checklist:update_task' task.pk %}" 
-      hx-target="closest .task-item" 
-      hx-swap="outerHTML"
-      style="display: flex; gap: 8px; flex-wrap: wrap; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md);">
+      hx-target=".main-content"
+      hx-select=".main-content"
+      hx-swap="outerHTML show:none"
+      hx-disinherit="hx-select hx-target hx-swap"
+      style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-sage-main);">
   {% csrf_token %}
   <div style="flex: 2; min-width: 200px;">
     {{ form.title }}
   </div>
-  <div style="flex: 1; min-width: 120px;">
+  <div style="flex: 1; min-width: 130px;">
     {{ form.category }}
   </div>
   <div style="flex: 1; min-width: 120px;">
     {{ form.assignee }}
   </div>
-  <div style="flex: 1; min-width: 120px;">
+  <div style="flex: 1; min-width: 130px;">
     {{ form.phase }}
   </div>
-  <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; width: 100%;">
-    <button type="button" class="btn btn-secondary btn-sm" hx-get="{% url 'operations-checklist:checklist' %}" onclick="window.location.reload();">Batal</button>
-    <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="save"></i> Simpan</button>
+  <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--wp-text-secondary); cursor: pointer; padding: 0 6px;">
+    {{ form.is_critical }} Prioritas
+  </label>
+  <div style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
+    <button type="button"
+            class="btn btn-secondary btn-sm"
+            hx-get="{% url 'operations-checklist:update_task' task.pk %}?cancel=1"
+            hx-target="closest .task-item"
+            hx-select="unset"
+            hx-swap="outerHTML">Batal</button>
+    <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan</button>
   </div>
 </form>

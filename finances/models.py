@@ -13,11 +13,17 @@ class BudgetCategory(models.Model):
         related_name='budget_categories',
     )
     name = models.CharField('Nama Kategori', max_length=100)
-    icon = models.CharField('Icon (emoji)', max_length=10, default='💰')
+    icon = models.CharField('Ikon', max_length=100, default='<i data-lucide="folder"></i>', blank=True)
     allocation_percentage = models.DecimalField(
         'Alokasi Default (%)',
         max_digits=5,
         decimal_places=2,
+        default=0,
+    )
+    allocated_budget = models.DecimalField(
+        'Pagu Nominal (Rp)',
+        max_digits=15,
+        decimal_places=0,
         default=0,
     )
     sort_order = models.PositiveIntegerField(default=0)
@@ -32,8 +38,12 @@ class BudgetCategory(models.Model):
 
     @property
     def allocated_amount(self):
-        """Calculate allocated amount from wedding total budget."""
-        return (self.wedding.total_budget * self.allocation_percentage) / 100
+        """Calculate allocated amount from exact nominal ceiling or wedding total budget."""
+        if self.allocated_budget and self.allocated_budget > 0:
+            return self.allocated_budget
+        if self.wedding.total_budget and self.wedding.total_budget > 0:
+            return round((self.wedding.total_budget * self.allocation_percentage) / 100)
+        return self.items.aggregate(total=models.Sum('allocated_amount'))['total'] or 0
 
     @property
     def total_actual(self):

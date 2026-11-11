@@ -1,28 +1,44 @@
 <tr style="border-bottom: 1px solid var(--wp-border-hover); background: var(--wp-bg-surface-subtle);" id="ses-{{ ses.pk }}">
-  <td colspan="7" style="padding: 12px 8px;">
-    <form method="post" action="{% url 'operations-checklist:update_seserahan' ses.pk %}" style="display: flex; gap: 12px; align-items: flex-end; margin: 0; flex-wrap: wrap;">
+  <td colspan="7" style="padding: 12px 20px;">
+    <form hx-post="{% url 'operations-checklist:update_seserahan' ses.pk %}"
+          hx-target=".main-content"
+          hx-select=".main-content"
+          hx-swap="outerHTML show:none"
+          hx-disinherit="hx-select hx-target hx-swap"
+          style="display: flex; gap: 10px; align-items: flex-end; margin: 0; flex-wrap: wrap;">
       {% csrf_token %}
-      <div style="flex: 2; min-width: 100px;">
+      <div style="flex: 2; min-width: 140px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">Nama Barang</label>
         {{ ses_form.name }}
       </div>
-      <div style="flex: 1; min-width: 80px;">
+      <div style="flex: 1; min-width: 110px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">Kategori</label>
         {{ ses_form.category }}
       </div>
-      <div style="flex: 1; min-width: 80px;">
+      <div style="flex: 1; min-width: 110px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">Est. Harga</label>
         {{ ses_form.est_price }}
       </div>
-      <div style="flex: 1; min-width: 80px;">
+      <div style="flex: 1; min-width: 110px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">Hrg. Aktual</label>
         {{ ses_form.actual_price }}
       </div>
-      <div style="flex: 1; min-width: 100px;">
+      <div style="flex: 1; min-width: 120px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">Status</label>
         {{ ses_form.status }}
       </div>
-      <div style="flex: 1; min-width: 80px;">
+      <div style="flex: 1; min-width: 100px;">
+        <label style="font-size: 0.76rem; font-weight: 600; color: var(--wp-text-secondary);">PIC</label>
         {{ ses_form.pic }}
       </div>
-      <div style="white-space: nowrap;">
-        <button type="submit" class="btn btn-secondary btn-sm" hx-post="{% url 'operations-checklist:update_seserahan' ses.pk %}" hx-target="#ses-{{ ses.pk }}" hx-swap="outerHTML">Simpan</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="window.location.reload();">Batal</button>
+      <div style="display: flex; gap: 6px; white-space: nowrap;">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                hx-get="{% url 'operations-checklist:update_seserahan' ses.pk %}?cancel=1"
+                hx-target="#ses-{{ ses.pk }}"
+                hx-select="unset"
+                hx-swap="outerHTML">Batal</button>
+        <button type="submit" class="btn btn-gold btn-sm">Simpan</button>
       </div>
     </form>
   </td>

@@ -13,5 +13,6 @@ urlpatterns = [
     path('<int:pk>/update/', views.update_guest, name='update'),
     path('<int:pk>/delete/', views.delete_guest, name='delete'),
     path('<int:pk>/toggle-rsvp/', views.toggle_rsvp, name='toggle_rsvp'),
+    path('<int:pk>/toggle-checkin/', views.toggle_checkin, name='toggle_checkin'),
     path('catering-config/', views.update_catering_config, name='catering_config'),
 ]

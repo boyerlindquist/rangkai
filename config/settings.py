@@ -13,7 +13,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-insecure-key-change-in-producti
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if h.strip()]
+if 'testserver' not in ALLOWED_HOSTS and (DEBUG or 'test' in os.sys.argv):
+    ALLOWED_HOSTS.append('testserver')
 
 # =============================================================================
 # Application Definition
@@ -77,6 +79,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
 }
 
@@ -111,10 +116,27 @@ STORAGES = {
 }
 
 # =============================================================================
-# Auth
+# Auth & Session Persistence & Security
 # =============================================================================
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+SESSION_COOKIE_NAME = 'rangkai_sessionid'
+CSRF_COOKIE_NAME = 'rangkai_csrftoken'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+
+# Reverse proxy SSL & CSRF support for production
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+csrf_env = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', 'http://43.173.40.113,https://43.173.40.113,http://localhost:8008,http://127.0.0.1:8008')
+CSRF_TRUSTED_ORIGINS = []
+for origin in csrf_env.split(','):
+    origin = origin.strip()
+    if not origin:
+        continue
+    if not origin.startswith(('http://', 'https://')):
+        CSRF_TRUSTED_ORIGINS.append(f'http://{origin}')
+        CSRF_TRUSTED_ORIGINS.append(f'https://{origin}')
+    else:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

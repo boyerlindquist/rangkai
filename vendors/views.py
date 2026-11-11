@@ -22,7 +22,7 @@ def vendor_compare(request):
     if category_filter:
         vendors = vendors.filter(category=category_filter)
 
-    # Group for comparison view
+    # Group for comparison view & sort by weighted_total_score descending
     vendor_groups = {}
     for v in vendors:
         cat = v.get_category_display()
@@ -30,14 +30,52 @@ def vendor_compare(request):
             vendor_groups[cat] = []
         vendor_groups[cat].append(v)
 
+    for cat in vendor_groups:
+        vendor_groups[cat].sort(key=lambda x: x.weighted_total_score, reverse=True)
+
+    first_vendor = VendorCandidate.objects.filter(wedding=wedding).first()
+    weights = {
+        'price': first_vendor.weight_price if first_vendor else 30,
+        'quality': first_vendor.weight_quality if first_vendor else 30,
+        'facility': first_vendor.weight_facility if first_vendor else 20,
+        'reputation': first_vendor.weight_reputation if first_vendor else 20,
+    }
+
     context = {
         'vendors': vendors,
         'vendor_groups': vendor_groups,
-        'form': VendorCandidateForm(),
+        'form': VendorCandidateForm(initial={
+            'weight_price': weights['price'],
+            'weight_quality': weights['quality'],
+            'weight_facility': weights['facility'],
+            'weight_reputation': weights['reputation'],
+        }),
+        'weights': weights,
         'category_filter': category_filter,
         'categories': VendorCandidate.CATEGORY_CHOICES,
     }
     return render(request, 'vendors/vendor_compare.html', context)
+
+
+@login_required
+@owner_required
+def update_vendor_weights(request):
+    """Update scoring weights across all vendor candidates in this workspace."""
+    if request.method == 'POST':
+        try:
+            w_price = max(0, min(100, int(request.POST.get('weight_price', 30))))
+            w_quality = max(0, min(100, int(request.POST.get('weight_quality', 30))))
+            w_facility = max(0, min(100, int(request.POST.get('weight_facility', 20))))
+            w_reputation = max(0, min(100, int(request.POST.get('weight_reputation', 20))))
+            VendorCandidate.objects.filter(wedding=request.wedding).update(
+                weight_price=w_price,
+                weight_quality=w_quality,
+                weight_facility=w_facility,
+                weight_reputation=w_reputation,
+            )
+        except (ValueError, TypeError):
+            pass
+    return redirect('vendors:compare')
 
 
 @login_required
@@ -59,13 +97,18 @@ def add_vendor(request):
 def update_vendor(request, pk):
     """HTMX endpoint: Update vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
+    if request.GET.get('cancel') == '1':
+        return render(request, 'vendors/partials/vendor_card.html', {'vendor': vendor})
     if request.method == 'POST':
         form = VendorCandidateForm(request.POST, instance=vendor)
         if form.is_valid():
             form.save()
-            if request.htmx:
-                return render(request, 'vendors/partials/vendor_card.html', {'vendor': vendor})
             return redirect('vendors:compare')
+        response = render(request, 'vendors/partials/vendor_form.html', {'form': form, 'vendor': vendor})
+        response['HX-Retarget'] = f'#edit-vendor-{vendor.pk}'
+        response['HX-Reselect'] = f'#edit-vendor-{vendor.pk}'
+        response['HX-Reswap'] = 'outerHTML'
+        return response
     else:
         form = VendorCandidateForm(instance=vendor)
     return render(request, 'vendors/partials/vendor_form.html', {'form': form, 'vendor': vendor})
@@ -77,9 +120,6 @@ def delete_vendor(request, pk):
     """HTMX endpoint: Delete vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
     vendor.delete()
-    if request.htmx:
-        vendors = VendorCandidate.objects.filter(wedding=request.wedding)
-        return render(request, 'vendors/partials/vendor_cards.html', {'vendors': vendors})
     return redirect('vendors:compare')
 
 

@@ -1,120 +1,114 @@
 {% load humanize %}
-<div class="card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; background: var(--wp-bg-surface); border: 1px solid {% if vendor.status == 'booked' %}rgba(21, 128, 61, 0.4){% elif vendor.status == 'rejected' %}rgba(220, 38, 38, 0.4){% else %}var(--wp-border-light){% endif %};">
-        <div class="card-body" style="padding: var(--wp-space-md); display: flex; flex-direction: column; flex: 1;">
-          <!-- Header: Title & Status Badge -->
-          <div class="flex justify-between items-start mb-sm" style="gap: 8px; min-height: 38px;">
-            <h4 style="margin: 0; font-size: 0.95rem; line-height: 1.25; word-break: break-word;" title="{{ vendor.name }}">{{ vendor.name }}</h4>
-            <button
-              class="badge {% if vendor.status == 'booked' %}badge-status-booked{% elif vendor.status == 'rejected' %}badge-status-rejected{% else %}badge-status-shortlist{% endif %}"
-              hx-post="{% url 'vendors:toggle_status' vendor.pk %}"
-              hx-target="closest .card"
-              hx-swap="outerHTML"
-              style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; text-transform: capitalize; letter-spacing: 0.02em; flex-shrink: 0;"
-              title="Klik untuk ubah status"
-            >
-              {% if vendor.status == 'booked' %}
-                <i data-lucide="check" style="width: 12px; height: 12px; stroke-width: 2.5;"></i>
-              {% elif vendor.status == 'rejected' %}
-                <i data-lucide="x" style="width: 12px; height: 12px; stroke-width: 2.5;"></i>
-              {% else %}
-                <i data-lucide="clock" style="width: 12px; height: 12px; stroke-width: 2.5;"></i>
-              {% endif %}
-              {{ vendor.get_status_display }}
-            </button>
-          </div>
+<div class="surface-panel" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; border-color: {% if vendor.status == 'booked' %}var(--wp-sage-border){% elif vendor.status == 'rejected' %}var(--wp-terracotta-border){% else %}var(--wp-hairline){% endif %};">
+  <div style="padding: 18px 20px; display: flex; flex-direction: column; flex: 1;">
+    <!-- Header: Title & Status Pill -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; min-height: 38px;">
+      <h4 style="margin: 0; font-size: 0.98rem; font-weight: 600; line-height: 1.3; word-break: break-word; color: var(--wp-text-main);" title="{{ vendor.name }}">{{ vendor.name }}</h4>
+      <button
+        class="status-pill {% if vendor.status == 'booked' %}status-done{% elif vendor.status == 'rejected' %}status-danger{% else %}status-warning{% endif %}"
+        hx-post="{% url 'vendors:toggle_status' vendor.pk %}"
+        hx-target="closest .surface-panel"
+        hx-swap="outerHTML"
+        style="cursor: pointer; flex-shrink: 0;"
+        title="Klik untuk ubah status"
+      >
+        <span class="dot"></span>
+        {{ vendor.get_status_display }}
+      </button>
+    </div>
 
-          <!-- Contact PIC / Phone Slot (Fixed Height for Alignment) -->
-          <div style="min-height: 20px; margin-bottom: var(--wp-space-xs); font-size: 0.78rem;">
-            {% if vendor.contact_pic or vendor.phone %}
-            <p class="text-muted" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              <i data-lucide="phone" style="width: 12px; height: 12px; vertical-align: -1px;"></i>
-              {{ vendor.contact_pic }}{% if vendor.phone %} · {{ vendor.phone }}{% endif %}
-            </p>
-            {% else %}
-            <span class="text-muted" style="opacity: 0.35; font-size: 0.75rem;">—</span>
-            {% endif %}
-          </div>
+    <!-- Contact PIC / Phone Slot -->
+    <div style="min-height: 20px; margin-bottom: 6px; font-size: 0.78rem;">
+      {% if vendor.contact_pic or vendor.phone %}
+      <p class="text-muted" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <i data-lucide="phone" style="width: 12px; height: 12px; vertical-align: -1px;"></i>
+        {{ vendor.contact_pic }}{% if vendor.phone %} · {{ vendor.phone }}{% endif %}
+      </p>
+      {% else %}
+      <span class="text-muted" style="opacity: 0.35; font-size: 0.75rem;">—</span>
+      {% endif %}
+    </div>
 
-          <!-- Price -->
-          <div style="font-size: 1.05rem; font-weight: 600; color: var(--wp-gold-dark); margin: var(--wp-space-xs) 0 var(--wp-space-sm);">
-            Rp {{ vendor.price_estimate|intcomma }}
-          </div>
+    <!-- Price -->
+    <div class="tabular-nums" style="font-size: 1.1rem; font-weight: 700; color: var(--wp-gold-dark); margin: 6px 0 14px 0;">
+      Rp {{ vendor.price_estimate|intcomma }}
+    </div>
 
-          <!-- Score Breakdown -->
-          <div style="display: grid; gap: 6px; margin-top: 2px;">
-            <div>
-              <div class="flex justify-between" style="font-size: 0.72rem; margin-bottom: 2px;">
-                <span class="text-secondary"><i data-lucide="wallet" style="width: 11px; height: 11px;"></i> Harga ({{ vendor.weight_price }}%)</span>
-                <span class="font-mono">{{ vendor.score_price }}/5</span>
-              </div>
-              <div class="progress-bar" style="height: 6px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_price 5 100 %}%"></div></div>
-            </div>
-            <div>
-              <div class="flex justify-between" style="font-size: 0.72rem; margin-bottom: 2px;">
-                <span class="text-secondary"><i data-lucide="star" style="width: 11px; height: 11px;"></i> Kualitas ({{ vendor.weight_quality }}%)</span>
-                <span class="font-mono">{{ vendor.score_quality }}/5</span>
-              </div>
-              <div class="progress-bar" style="height: 6px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_quality 5 100 %}%"></div></div>
-            </div>
-            <div>
-              <div class="flex justify-between" style="font-size: 0.72rem; margin-bottom: 2px;">
-                <span class="text-secondary"><i data-lucide="building" style="width: 11px; height: 11px;"></i> Fasilitas ({{ vendor.weight_facility }}%)</span>
-                <span class="font-mono">{{ vendor.score_facility }}/5</span>
-              </div>
-              <div class="progress-bar" style="height: 6px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_facility 5 100 %}%"></div></div>
-            </div>
-            <div>
-              <div class="flex justify-between" style="font-size: 0.72rem; margin-bottom: 2px;">
-                <span class="text-secondary"><i data-lucide="handshake" style="width: 11px; height: 11px;"></i> Reputasi ({{ vendor.weight_reputation }}%)</span>
-                <span class="font-mono">{{ vendor.score_reputation }}/5</span>
-              </div>
-              <div class="progress-bar" style="height: 6px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_reputation 5 100 %}%"></div></div>
-            </div>
-          </div>
-
-          <!-- Notes Slot (Fixed Height for Alignment) -->
-          <div style="min-height: 32px; margin-top: var(--wp-space-sm); font-size: 0.75rem;">
-            {% if vendor.notes %}
-            <p class="text-muted" style="margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;" title="{{ vendor.notes }}">
-              <i data-lucide="file-text" style="width: 11px; height: 11px; vertical-align: -1px;"></i> {{ vendor.notes }}
-            </p>
-            {% else %}
-            <span class="text-muted" style="opacity: 0.35; font-size: 0.72rem;">—</span>
-            {% endif %}
-          </div>
-
-          <!-- Weighted Total Score (Pinned bottom of card body) -->
-          <div style="margin-top: auto; padding-top: var(--wp-space-sm); border-top: 1px solid var(--wp-border-light);">
-            <div class="flex justify-between items-center">
-              <span style="font-weight: 500; font-size: 0.78rem;">Weighted Score</span>
-              <span style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 600; color: var(--wp-sage-dark);">
-                {{ vendor.weighted_total_score }}
-              </span>
-            </div>
-            <div class="progress-bar" style="margin-top: 6px; height: 6px;">
-              <div class="progress-fill progress-fill-sage"
-                   style="width: {{ vendor.weighted_total_score }}%;"></div>
-            </div>
-          </div>
+    <!-- Score Breakdown -->
+    <div style="display: grid; gap: 8px; margin-top: 2px;">
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 3px;">
+          <span class="text-secondary"><i data-lucide="wallet" style="width: 12px; height: 12px;"></i> Harga ({{ vendor.weight_price }}%)</span>
+          <span class="tabular-nums" style="font-weight: 600;">{{ vendor.score_price }}/5</span>
         </div>
-
-        <!-- Footer Actions -->
-        <div class="card-footer" style="display: flex; align-items: center; justify-content: space-between; padding: var(--wp-space-xs) var(--wp-space-md); gap: 4px;">
-          {% if vendor.offer_link %}
-          <a href="{{ vendor.offer_link }}" target="_blank" class="btn btn-ghost btn-sm" style="padding: 3px 8px; font-size: 0.75rem;"><i data-lucide="file" style="width: 12px; height: 12px;"></i> Penawaran</a>
-          {% else %}
-          <span></span>
-          {% endif %}
-          <div style="display: flex; gap: 4px;">
-            <button class="btn btn-ghost btn-sm" style="color: var(--wp-accent-contrast); padding: 3px 8px; font-size: 0.75rem;"
-                    hx-get="{% url 'vendors:update' vendor.pk %}"
-                    hx-target="closest .card"
-                    hx-swap="outerHTML" title="Edit Vendor"><i data-lucide="pencil" style="width: 12px; height: 12px;"></i> Edit</button>
-            <button class="btn btn-ghost btn-sm" style="color: var(--wp-accent-contrast); padding: 3px 8px; font-size: 0.75rem;"
-                    hx-delete="{% url 'vendors:delete' vendor.pk %}"
-                    hx-confirm="Hapus vendor ini?"
-                    hx-target="closest .card"
-                    hx-swap="outerHTML" title="Hapus Vendor"><i data-lucide="trash-2" style="width: 12px; height: 12px;"></i></button>
-          </div>
+        <div class="progress-bar" style="height: 5px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_price 5 100 %}%"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 3px;">
+          <span class="text-secondary"><i data-lucide="star" style="width: 12px; height: 12px;"></i> Kualitas ({{ vendor.weight_quality }}%)</span>
+          <span class="tabular-nums" style="font-weight: 600;">{{ vendor.score_quality }}/5</span>
         </div>
+        <div class="progress-bar" style="height: 5px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_quality 5 100 %}%"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 3px;">
+          <span class="text-secondary"><i data-lucide="building" style="width: 12px; height: 12px;"></i> Fasilitas ({{ vendor.weight_facility }}%)</span>
+          <span class="tabular-nums" style="font-weight: 600;">{{ vendor.score_facility }}/5</span>
+        </div>
+        <div class="progress-bar" style="height: 5px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_facility 5 100 %}%"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 3px;">
+          <span class="text-secondary"><i data-lucide="handshake" style="width: 12px; height: 12px;"></i> Reputasi ({{ vendor.weight_reputation }}%)</span>
+          <span class="tabular-nums" style="font-weight: 600;">{{ vendor.score_reputation }}/5</span>
+        </div>
+        <div class="progress-bar" style="height: 5px;"><div class="progress-fill progress-fill-sage" style="width: {% widthratio vendor.score_reputation 5 100 %}%"></div></div>
+      </div>
+    </div>
+
+    <!-- Notes Slot -->
+    <div style="min-height: 28px; margin-top: 12px; font-size: 0.78rem;">
+      {% if vendor.notes %}
+      <p class="text-muted" style="margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35;" title="{{ vendor.notes }}">
+        <i data-lucide="file-text" style="width: 12px; height: 12px; vertical-align: -1px;"></i> {{ vendor.notes }}
+      </p>
+      {% else %}
+      <span class="text-muted" style="opacity: 0.35; font-size: 0.75rem;">—</span>
+      {% endif %}
+    </div>
+
+    <!-- Weighted Total Score -->
+    <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--wp-hairline);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--wp-text-secondary);">Skor Evaluasi</span>
+        <span class="tabular-nums" style="font-size: 1.35rem; font-weight: 700; color: var(--wp-sage-dark);">
+          {{ vendor.weighted_total_score }}
+        </span>
+      </div>
+      <div class="progress-bar" style="margin-top: 6px; height: 6px;">
+        <div class="progress-fill progress-fill-sage" style="width: {{ vendor.weighted_total_score }}%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Actions -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--wp-hairline); background: var(--wp-bg-surface-subtle);">
+    {% if vendor.offer_link %}
+    <a href="{{ vendor.offer_link }}" target="_blank" class="btn btn-ghost btn-sm" style="padding: 3px 8px; font-size: 0.75rem;"><i data-lucide="external-link" style="width: 12px; height: 12px;"></i> Proposal</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    <div style="display: flex; gap: 4px;">
+      <button class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-gold-main);"
+              hx-get="{% url 'vendors:update' vendor.pk %}"
+              hx-target="closest .surface-panel"
+              hx-swap="outerHTML" title="Edit Vendor"><i data-lucide="pencil" style="width: 13px; height: 13px;"></i></button>
+      <button class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-text-muted);"
+              hx-delete="{% url 'vendors:delete' vendor.pk %}"
+              hx-confirm="Hapus kandidat vendor '{{ vendor.name }}'?"
+              hx-target=".main-content"
+              hx-select=".main-content"
+              hx-swap="outerHTML show:none" title="Hapus Vendor"><i data-lucide="trash-2" style="width: 13px; height: 13px;"></i></button>
+    </div>
+  </div>
 </div>

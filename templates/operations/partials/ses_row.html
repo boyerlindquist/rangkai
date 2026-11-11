@@ -1,22 +1,87 @@
 {% load humanize %}
 <tr id="ses-{{ ses.pk }}">
-  <td>{{ ses.name }}</td>
-  <td class="text-secondary">{{ ses.category|default:"-" }}</td>
-  <td>Rp {{ ses.est_price|intcomma }}</td>
-  <td>Rp {{ ses.actual_price|intcomma }}</td>
-  <td>
-    <span class="badge {% if ses.status == 'done' %}badge-success{% elif ses.status == 'process' %}badge-warning{% else %}badge-default{% endif %}">
-      {{ ses.get_status_display }}
-    </span>
-  </td>
-  <td class="text-secondary">{{ ses.pic|default:"-" }}</td>
-  <td style="text-align: right;">
-    <button type="button" class="btn btn-ghost btn-sm" hx-get="{% url 'operations-checklist:update_seserahan' ses.pk %}" hx-target="#ses-{{ ses.pk }}" hx-swap="outerHTML">
-      <i data-lucide="edit-3"></i>
-    </button>
-    <form method="post" action="{% url 'operations-checklist:delete_seserahan' ses.pk %}" style="display:inline;">
+  <td style="padding-left: 20px; font-weight: 500;">{{ ses.name }}</td>
+  <td class="text-secondary" style="font-size: 0.82rem;">{{ ses.category|default:"—" }}</td>
+  <td class="num">Rp {{ ses.est_price|intcomma }}</td>
+  <td class="num" style="font-weight: 600;">Rp {{ ses.actual_price|intcomma }}</td>
+  <td style="white-space: nowrap;">
+    <form style="margin: 0; display: inline-block;">
       {% csrf_token %}
-      <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2"></i></button>
+      <div class="wp-dropdown"
+           x-data="customSelect({
+             value: '{{ ses.status }}',
+             postUrl: '{% url 'operations-checklist:toggle_seserahan' ses.pk %}',
+             paramName: 'status',
+             options: [
+               { value: 'none', label: 'Belum Ada', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
+               { value: 'process', label: 'Sedang Dihias', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+               { value: 'done', label: 'Selesai / Siap', pillClass: 'status-done', dot: 'var(--wp-sage-main)' }
+             ]
+           })"
+           :class="{ 'is-open': open }"
+           @click.outside="open = false"
+           @keydown.escape.window="open = false">
+        <button type="button"
+                x-ref="trigger"
+                class="wp-dropdown-trigger wp-dropdown-pill"
+                :class="currentOption.pillClass"
+                @click="toggle()"
+                title="Pilih status seserahan">
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span class="wp-dropdown-dot" :style="'background:' + currentOption.dot"></span>
+            <span x-text="currentOption.label"></span>
+          </span>
+          <svg class="wp-dropdown-chevron" :class="{ 'is-open': open }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px; flex-shrink: 0;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="wp-dropdown-panel"
+             x-ref="panel"
+             :class="{ 'is-dropup': dropUp }"
+             x-show="open"
+             x-transition.opacity.scale.95
+             x-cloak
+             style="min-width: 165px;">
+          <template x-for="opt in options" :key="opt.value">
+            <div class="wp-dropdown-item"
+                 :class="{ 'is-selected': value === opt.value }"
+                 @click="select(opt)">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
+                <span x-text="opt.label"></span>
+              </span>
+              <svg class="wp-dropdown-check" x-show="value === opt.value" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; flex-shrink: 0;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </template>
+        </div>
+      </div>
     </form>
+  </td>
+  <td class="text-secondary" style="font-size: 0.82rem;">{{ ses.pic|default:"—" }}</td>
+  <td style="text-align: right; padding-right: 20px;">
+    <div style="display: inline-flex; gap: 4px;">
+      <button type="button"
+              class="btn btn-ghost btn-icon btn-sm"
+              style="color: var(--wp-gold-main);"
+              hx-get="{% url 'operations-checklist:update_seserahan' ses.pk %}"
+              hx-target="#ses-{{ ses.pk }}"
+              hx-swap="outerHTML"
+              title="Edit Seserahan">
+        <i data-lucide="pencil" style="width: 13px; height: 13px;"></i>
+      </button>
+      <button type="button"
+              class="btn btn-ghost btn-icon btn-sm"
+              style="color: var(--wp-text-muted);"
+              hx-post="{% url 'operations-checklist:delete_seserahan' ses.pk %}"
+              hx-confirm="Hapus barang seserahan '{{ ses.name }}'?"
+              hx-target=".main-content"
+              hx-select=".main-content"
+              hx-swap="outerHTML show:none"
+              title="Hapus Seserahan">
+        <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+      </button>
+    </div>
   </td>
 </tr>

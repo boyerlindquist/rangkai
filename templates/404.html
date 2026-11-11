@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Halaman Tidak Ditemukan — Rangkai{% endblock %}
+
+{% block body %}
+<div class="auth-page" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+  <div class="auth-card fade-in" style="max-width: 480px; width: 100%; text-align: center; padding: 40px 32px;">
+    <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+      <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" style="width: 56px; height: 56px;" />
+    </div>
+    
+    <div style="font-family: var(--font-serif, 'Cormorant Garamond', Georgia, serif); font-size: 4rem; font-weight: 700; line-height: 1; color: var(--color-forest, #2D4A3E); margin-bottom: 8px;">
+      404
+    </div>
+    
+    <h1 style="font-family: var(--font-serif, 'Cormorant Garamond', Georgia, serif); font-size: 1.8rem; font-weight: 600; color: var(--color-text-main, #1F2937); margin-bottom: 12px;">
+      Halaman Tidak Ditemukan
+    </h1>
+    
+    <p style="color: var(--color-text-muted, #6B7280); font-size: 0.95rem; line-height: 1.5; margin-bottom: 28px;">
+      Tautan yang kamu tuju mungkin telah dipindahkan, dihapus, atau alamat URL yang dimasukkan kurang tepat.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <a href="{% url 'core:dashboard' %}" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none;">
+        <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+        <span>Kembali ke Beranda</span>
+      </a>
+      <a href="{% url 'core:guide' %}" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none;">
+        <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+        <span>Buka Panduan Rangkai</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

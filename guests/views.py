@@ -69,6 +69,7 @@ def guest_list(request):
     side_filter = request.GET.get('side', '')
     category_filter = request.GET.get('category', '')
     rsvp_filter = request.GET.get('rsvp', '')
+    search_query = request.GET.get('q', '').strip()
 
     if side_filter:
         guests = guests.filter(relation_side=side_filter)
@@ -76,6 +77,12 @@ def guest_list(request):
         guests = guests.filter(category=category_filter)
     if rsvp_filter:
         guests = guests.filter(rsvp_status=rsvp_filter)
+    if search_query:
+        guests = guests.filter(
+            Q(name__icontains=search_query) |
+            Q(phone__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
 
     # Stats
     all_guests = Guest.objects.filter(wedding=wedding)
@@ -125,6 +132,7 @@ def guest_list(request):
         'side_filter': side_filter,
         'category_filter': category_filter,
         'rsvp_filter': rsvp_filter,
+        'search_query': search_query,
     }
     return render(request, 'guests/guest_list.html', context)
 
@@ -208,7 +216,7 @@ def download_guest_template(request):
     ws.append(headers)
 
     header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="2C1E16", end_color="2C1E16", fill_type="solid")
+    header_fill = PatternFill(start_color="0F2920", end_color="0F2920", fill_type="solid")
     
     for col_num in range(1, len(headers) + 1):
         cell = ws.cell(row=1, column=col_num)
@@ -334,13 +342,18 @@ def import_guests(request):
 def update_guest(request, pk):
     """HTMX endpoint: Update guest."""
     guest = get_object_or_404(Guest, pk=pk, wedding=request.wedding)
+    if request.GET.get('cancel') == '1':
+        return render(request, 'guests/partials/guest_row.html', {'guest': guest})
     if request.method == 'POST':
         form = GuestForm(request.POST, instance=guest)
         if form.is_valid():
             form.save()
-            if request.htmx:
-                return render(request, 'guests/partials/guest_row.html', {'guest': guest})
             return redirect('guests:list')
+        response = render(request, 'guests/partials/guest_form.html', {'form': form, 'guest': guest})
+        response['HX-Retarget'] = f'#edit-guest-{guest.pk}'
+        response['HX-Reselect'] = f'#edit-guest-{guest.pk}'
+        response['HX-Reswap'] = 'outerHTML'
+        return response
     else:
         form = GuestForm(instance=guest)
     return render(request, 'guests/partials/guest_form.html', {'form': form, 'guest': guest})
@@ -358,14 +371,30 @@ def delete_guest(request, pk):
 @login_required
 @owner_required
 def toggle_rsvp(request, pk):
-    """HTMX endpoint: Quick toggle RSVP status."""
+    """HTMX endpoint: Quick toggle or select RSVP status."""
     guest = get_object_or_404(Guest, pk=pk, wedding=request.wedding)
-    cycle = ['pending', 'attending', 'declined']
-    idx = cycle.index(guest.rsvp_status)
-    guest.rsvp_status = cycle[(idx + 1) % len(cycle)]
+    new_status = request.POST.get('rsvp_status') or request.GET.get('rsvp_status')
+    if new_status and new_status in dict(Guest.RSVP_CHOICES):
+        guest.rsvp_status = new_status
+    else:
+        cycle = ['pending', 'attending', 'declined']
+        idx = cycle.index(guest.rsvp_status) if guest.rsvp_status in cycle else 0
+        guest.rsvp_status = cycle[(idx + 1) % len(cycle)]
     guest.save(update_fields=['rsvp_status'])
-    if request.htmx:
-        return render(request, 'guests/partials/guest_row.html', {'guest': guest})
+    return redirect('guests:list')
+
+
+@login_required
+@owner_required
+def toggle_checkin(request, pk):
+    """HTMX endpoint: Quick toggle D-Day Check-In status."""
+    guest = get_object_or_404(Guest, pk=pk, wedding=request.wedding)
+    guest.checked_in = not guest.checked_in
+    if guest.checked_in and guest.rsvp_status == 'pending':
+        guest.rsvp_status = 'attending'
+        guest.save(update_fields=['checked_in', 'rsvp_status'])
+    else:
+        guest.save(update_fields=['checked_in'])
     return redirect('guests:list')
 
 
@@ -378,7 +407,4 @@ def update_catering_config(request):
         form = CateringConfigForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
-            if request.htmx:
-                return render(request, 'guests/partials/catering_summary.html', {'config': config})
-            return redirect('guests:list')
     return redirect('guests:list')

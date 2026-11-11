@@ -45,4 +45,20 @@ class WorkspaceMiddleware:
                     return redirect(reverse('core:join_workspace'))
 
         response = self.get_response(request)
+
+        # If an HTMX request gets redirected to an auth/full-page route (e.g., session expired -> /login/?next=...),
+        # instruct HTMX to perform a full window navigation via HX-Redirect instead of swapping an empty .main-content.
+        if request.headers.get('HX-Request') == 'true':
+            if response.status_code in (301, 302) and 'Location' in response:
+                loc = response['Location']
+                if any(exempt in loc for exempt in EXEMPT_URLS):
+                    from django.http import HttpResponse
+                    htmx_redirect = HttpResponse(status=200)
+                    htmx_redirect['HX-Redirect'] = loc
+                    return htmx_redirect
+            elif any(request.path.startswith(url) for url in EXEMPT_URLS):
+                response['HX-Retarget'] = 'body'
+                response['HX-Reselect'] = 'body'
+                response['HX-Reswap'] = 'innerHTML'
+
         return response

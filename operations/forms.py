@@ -90,3 +90,19 @@ class SeserahanItemForm(forms.ModelForm):
             'pic': forms.TextInput(attrs={'class': 'wp-input'}),
             'notes': forms.Textarea(attrs={'class': 'wp-input', 'rows': 1}),
         }
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for f in ['est_price', 'actual_price', 'status']:
+            if f in self.fields:
+                self.fields[f].required = False
+
+    def clean_est_price(self):
+        return self.cleaned_data.get('est_price') or 0
+
+    def clean_actual_price(self):
+        return self.cleaned_data.get('actual_price') or 0
+
+    def clean_status(self):
+        return self.cleaned_data.get('status') or 'none'

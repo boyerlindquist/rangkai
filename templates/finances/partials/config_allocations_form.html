@@ -1,61 +1,120 @@
-<form hx-post="{% url 'finances:config_allocations' %}" 
+{% load humanize %}
+<form novalidate hx-post="{% url 'finances:config_allocations' %}" 
       hx-target=".main-content" 
       hx-select=".main-content"
-      hx-swap="outerHTML"
-      class="fade-in" 
-      style="background: var(--wp-bg-surface); padding: var(--wp-space-xl); border-radius: var(--wp-radius-lg); margin-bottom: var(--wp-space-xl); box-shadow: var(--wp-shadow-sm); border: 1px solid var(--wp-border-light);"
-      x-data="allocationForm()"
-      @submit="if (total > 100) { $event.preventDefault(); alert('Total alokasi tidak boleh melebihi 100%!'); }">
+      hx-swap="outerHTML show:none"
+      class="surface-panel fade-in" 
+      style="padding: var(--wp-space-xl); margin-bottom: var(--wp-space-lg); border-color: var(--wp-sage-main);"
+      x-data="allocationForm()">
   {% csrf_token %}
   {{ formset.management_form }}
   
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--wp-space-xl); border-bottom: 1px solid var(--wp-border-light); padding-bottom: var(--wp-space-md);">
-    <div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: var(--wp-space-lg); border-bottom: 1px solid var(--wp-border-light); padding-bottom: var(--wp-space-md);">
+    <div style="flex: 1; min-width: 280px;">
       <h3 style="margin-top: 0; color: var(--wp-text-main); display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="pie-chart"></i> Atur Alokasi Kategori (%)
+        <i data-lucide="sliders" style="color: var(--wp-gold-main);"></i> Susun Rencana Anggaran & Pagu per Kategori
       </h3>
-      <p class="text-muted" style="margin-bottom: 0;">Sesuaikan persentase alokasi dana untuk setiap kategori. Total maksimal 100%.</p>
+      <p class="text-secondary" style="margin-bottom: 12px; font-size: 0.84rem;">
+        Langkah 1: Isi <strong>Target Total Anggaran</strong>. Langkah 2: Isi alokasi tiap kategori menggunakan <strong>Nominal (Rp)</strong> <em>atau</em> <strong>Persentase (%)</strong> — keduanya saling menghitung otomatis!
+      </p>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--wp-bg-surface-subtle); padding: 12px 16px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
+        <label for="config_total_budget" style="font-size: 0.82rem; font-weight: 700; color: var(--wp-text-main); white-space: nowrap; margin: 0;">
+          1. Target Total Anggaran (Rp):
+        </label>
+        <input type="number"
+               id="config_total_budget"
+               name="total_budget"
+               class="wp-input tabular-nums"
+               x-model.number="totalBudget"
+               @input="onTotalBudgetChange()"
+               placeholder="Contoh: 100000000"
+               min="0"
+               step="any"
+               style="width: 200px; font-weight: 700; font-size: 0.95rem;">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                @click="syncTotalFromSum()"
+                x-show="totalNominal > 0 && totalNominal !== totalBudget"
+                title="Samakan Target Total Anggaran dengan jumlah nominal seluruh kategori di bawah">
+          Gunakan Jumlah Kategori (Rp <span x-text="formatRpNum(totalNominal)"></span>)
+        </button>
+      </div>
     </div>
-    <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 20px; border-radius: var(--wp-radius-md);">
-      <div style="font-size: 0.85rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Alokasi</div>
-      <div :style="total > 100 ? 'color: var(--wp-terracotta-main);' : (total === 100 ? 'color: var(--wp-sage-main);' : 'color: var(--wp-text-primary);')" 
-           style="font-size: 1.8rem; font-weight: 500; font-family: 'Instrument Serif', serif;">
-        <span x-text="total"></span>%
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
+        <div style="font-size: 0.74rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Rencana Kategori</div>
+        <div class="tabular-nums" :style="totalPct > 100.5 ? 'color: var(--wp-terracotta-main);' : 'color: var(--wp-sage-main);'" 
+             style="font-size: 1.35rem; font-weight: 700;">
+          Rp <span x-text="formatRpNum(totalNominal)"></span>
+          <span style="font-size: 0.88rem; font-weight: 600;">(<span x-text="totalPct"></span>%)</span>
+        </div>
+        <div class="tabular-nums text-secondary" style="font-size: 0.76rem;"
+             x-text="totalBudget >= totalNominal ? ('Sisa Belum Dialokasikan: Rp ' + formatRpNum(totalBudget - totalNominal)) : ('Melebihi Target: Rp ' + formatRpNum(totalNominal - totalBudget))"></div>
+      </div>
+
+      <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
+        <div style="font-size: 0.74rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Dana Terkumpul (Tabungan)</div>
+        <div class="tabular-nums" style="font-size: 1.35rem; font-weight: 700; color: var(--wp-gold-main);">
+          Rp {{ total_saved|intcomma }}
+        </div>
+        <div class="tabular-nums text-secondary" style="font-size: 0.76rem;"
+             x-text="Math.max(totalBudget, totalNominal) > {{ total_saved|default:0 }} ? ('Kurang Dana: Rp ' + formatRpNum(Math.max(totalBudget, totalNominal) - {{ total_saved|default:0 }})) : 'Dana Terkumpul Mencukupi'"></div>
       </div>
     </div>
   </div>
   
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--wp-space-lg);">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--wp-space-md);">
     {% for form in formset %}
-    <div class="form-group" style="margin-bottom: 0; background: var(--wp-bg-base); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); border: 1px solid var(--wp-border-light);">
+    <div class="form-group" style="margin-bottom: 0; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); border: 1px solid var(--wp-border-light);">
       {{ form.id }}
-      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-weight: 600;">
-        <span style="font-size: 1.2rem; background: var(--wp-bg-surface); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: var(--wp-shadow-sm);">{{ form.instance.icon|safe }}</span>
-        {{ form.instance.name }}
+      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: var(--wp-text-main);">
+        <span style="font-size: 1.1rem; background: var(--wp-bg-surface); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--wp-hairline);">{{ form.instance.icon|safe }}</span>
+        <span style="flex: 1;">{{ form.instance.name }}</span>
       </label>
-      <div style="position: relative;">
-        <!-- Injecting Alpine x-model to track input -->
-        <input type="number" 
-               name="{{ form.allocation_percentage.html_name }}" 
-               id="{{ form.allocation_percentage.id_for_label }}"
-               class="wp-input" 
-               style="padding-right: 36px; font-weight: 600; text-align: right;"
-               min="0" max="100"
-               x-model.number="values['{{ form.instance.pk }}']"
-               @input="calculateTotal()">
-        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--wp-text-muted); font-weight: 600;">%</span>
+
+      <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; align-items: end;">
+        <div>
+          <span style="display: block; font-size: 0.72rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Nominal Pagu (Rp)</span>
+          <input type="number"
+                 name="{{ form.allocated_budget.html_name }}"
+                 id="{{ form.allocated_budget.id_for_label }}"
+                 class="wp-input tabular-nums"
+                 style="font-weight: 600; font-size: 0.86rem;"
+                 min="0"
+                 step="any"
+                 placeholder="0"
+                 x-model.number="nominals['{{ form.instance.pk }}']"
+                 @input="onNominalInput('{{ form.instance.pk }}')">
+        </div>
+        <div>
+          <span style="display: block; font-size: 0.72rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Atau Porsi (%)</span>
+          <div style="position: relative;">
+            <input type="number" 
+                   name="{{ form.allocation_percentage.html_name }}" 
+                   id="{{ form.allocation_percentage.id_for_label }}"
+                   class="wp-input tabular-nums" 
+                   style="padding-right: 26px; font-weight: 600; font-size: 0.86rem; text-align: right;"
+                   min="0" max="100" step="any"
+                   x-model.number="pcts['{{ form.instance.pk }}']"
+                   @input="onPctInput('{{ form.instance.pk }}')">
+            <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--wp-text-muted); font-size: 0.78rem; font-weight: 600;">%</span>
+          </div>
+        </div>
       </div>
-      {% if form.allocation_percentage.errors %}
-      <div style="color: var(--wp-terracotta-main); font-size: 0.8rem; margin-top: 4px;">{{ form.allocation_percentage.errors.0 }}</div>
-      {% endif %}
+
+      <div class="tabular-nums text-secondary" style="font-size: 0.74rem; margin-top: 6px; display: flex; justify-content: space-between;">
+        <span>Rencana: <strong>Rp <span x-text="formatRpNum(nominals['{{ form.instance.pk }}'])"></span></strong></span>
+        <span>Realisasi: Rp {{ form.instance.total_actual|intcomma }}</span>
+      </div>
     </div>
     {% endfor %}
   </div>
   
-  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: var(--wp-space-2xl); padding-top: var(--wp-space-lg); border-top: 1px solid var(--wp-border-light);">
-    <button type="button" class="btn btn-secondary" hx-get="{% url 'finances:dashboard' %}" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML">Batal</button>
-    <button type="submit" class="btn btn-primary" :disabled="total > 100">
-      <i data-lucide="save"></i> Simpan Alokasi
+  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: var(--wp-space-xl); padding-top: var(--wp-space-md); border-top: 1px solid var(--wp-border-light);">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('allocation-container').innerHTML = ''">Batal</button>
+    <button type="submit" class="btn btn-gold btn-sm">
+      <i data-lucide="save"></i> Simpan Rencana Anggaran
     </button>
   </div>
 </form>
@@ -63,25 +122,77 @@
 <script>
 function allocationForm() {
     return {
-        values: {
+        totalBudget: {{ total_budget|default:0 }},
+        pcts: {
             {% for form in formset %}
-            '{{ form.instance.pk }}': parseInt('{{ form.instance.allocation_percentage|default:"0" }}') || 0,
+            '{{ form.instance.pk }}': parseFloat('{{ form.instance.allocation_percentage|default:"0" }}') || 0,
             {% endfor %}
         },
-        total: 0,
-        init() {
-            this.calculateTotal();
-            lucide.createIcons();
+        nominals: {
+            {% for form in formset %}
+            '{{ form.instance.pk }}': parseInt('{{ form.instance.allocated_amount|floatformat:0|default:"0" }}') || 0,
+            {% endfor %}
         },
-        calculateTotal() {
-            let sum = 0;
-            for (let key in this.values) {
-                let val = parseInt(this.values[key]);
-                if (!isNaN(val)) {
-                    sum += val;
+        totalPct: 0,
+        totalNominal: 0,
+        init() {
+            for (let key in this.pcts) {
+                if (this.nominals[key] === 0 && this.pcts[key] > 0 && this.totalBudget > 0) {
+                    this.nominals[key] = Math.round((this.pcts[key] / 100) * this.totalBudget);
                 }
             }
-            this.total = sum;
+            this.recalculateTotals();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        },
+        onTotalBudgetChange() {
+            let tb = parseFloat(this.totalBudget) || 0;
+            if (tb > 0) {
+                for (let key in this.pcts) {
+                    let p = parseFloat(this.pcts[key]) || 0;
+                    this.nominals[key] = Math.round((p / 100) * tb);
+                }
+            }
+            this.recalculateTotals();
+        },
+        onNominalInput(key) {
+            let nom = parseFloat(this.nominals[key]) || 0;
+            let tb = parseFloat(this.totalBudget) || 0;
+            if (tb > 0) {
+                this.pcts[key] = Math.min(100, Math.round((nom / tb) * 10000) / 100);
+            }
+            this.recalculateTotals();
+        },
+        onPctInput(key) {
+            let p = parseFloat(this.pcts[key]) || 0;
+            let tb = parseFloat(this.totalBudget) || 0;
+            if (tb > 0) {
+                this.nominals[key] = Math.round((p / 100) * tb);
+            }
+            this.recalculateTotals();
+        },
+        syncTotalFromSum() {
+            this.totalBudget = this.totalNominal;
+            if (this.totalBudget > 0) {
+                for (let key in this.nominals) {
+                    let nom = parseFloat(this.nominals[key]) || 0;
+                    this.pcts[key] = Math.min(100, Math.round((nom / this.totalBudget) * 10000) / 100);
+                }
+            }
+            this.recalculateTotals();
+        },
+        recalculateTotals() {
+            let sumPct = 0;
+            let sumNom = 0;
+            for (let key in this.pcts) {
+                sumPct += (parseFloat(this.pcts[key]) || 0);
+                sumNom += (parseInt(this.nominals[key]) || 0);
+            }
+            this.totalPct = Math.round(sumPct * 10) / 10;
+            this.totalNominal = sumNom;
+        },
+        formatRpNum(val) {
+            let n = Math.round(parseFloat(val) || 0);
+            return n.toLocaleString('id-ID');
         }
     }
 }
