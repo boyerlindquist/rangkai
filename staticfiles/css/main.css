@@ -1238,7 +1238,89 @@ select optgroup {
 }
 
 .wp-dropdown.is-open {
-  z-index: 1060;
+  z-index: 1200 !important;
+}
+
+.wp-dropdown.is-open .wp-dropdown-anchor,
+.wp-dropdown.is-open > div {
+  position: relative;
+  z-index: 1200 !important;
+}
+
+/* ── STACKING & OVERFLOW ESCALATION FOR DROPDOWN CONTAINERS ──
+   Elevate ancestor rows, cards, headers, and wrappers so the dropdown
+   NEVER renders underneath sibling elements or gets clipped by containers */
+.surface-panel:has(.wp-dropdown.is-open),
+.surface-panel.has-open-dropdown {
+  position: relative;
+  z-index: 1100 !important;
+  overflow: visible !important;
+}
+
+.surface-panel-header:has(.wp-dropdown.is-open),
+.surface-panel-header.has-open-dropdown {
+  position: relative;
+  z-index: 1180 !important;
+  overflow: visible !important;
+}
+
+.surface-panel-body:has(.wp-dropdown.is-open),
+.surface-panel-body.has-open-dropdown {
+  position: relative;
+  z-index: 1100 !important;
+  overflow: visible !important;
+}
+
+.cat-md:has(.wp-dropdown.is-open),
+.cat-md.has-open-dropdown {
+  position: relative;
+  z-index: 1100 !important;
+  overflow: visible !important;
+}
+
+.cat-detail:has(.wp-dropdown.is-open),
+.cat-detail.has-open-dropdown {
+  position: relative;
+  z-index: 1100 !important;
+  overflow: visible !important;
+}
+
+.cat-detail-body:has(.wp-dropdown.is-open),
+.cat-detail-body.has-open-dropdown {
+  position: relative;
+  z-index: 1100 !important;
+  overflow: visible !important;
+}
+
+.sheet-table-wrap:has(.wp-dropdown.is-open),
+.sheet-table-wrap.has-open-dropdown {
+  position: relative;
+  z-index: 1110 !important;
+  overflow: visible !important;
+}
+
+tr:has(.wp-dropdown.is-open),
+tr.has-open-dropdown,
+.sheet-table tbody tr:has(.wp-dropdown.is-open),
+.sheet-table tbody tr.has-open-dropdown {
+  position: relative;
+  z-index: 1150 !important;
+}
+
+td:has(.wp-dropdown.is-open),
+td.has-open-dropdown,
+.sheet-table tbody td:has(.wp-dropdown.is-open),
+.sheet-table tbody td.has-open-dropdown {
+  position: relative;
+  z-index: 1150 !important;
+  overflow: visible !important;
+}
+
+.task-item:has(.wp-dropdown.is-open),
+.task-item.has-open-dropdown {
+  position: relative;
+  z-index: 1150 !important;
+  overflow: visible !important;
 }
 
 .wp-dropdown-trigger {
@@ -1358,7 +1440,7 @@ select optgroup {
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  z-index: 1070;
+  z-index: 1250 !important;
   min-width: 100%;
   max-width: 320px;
   max-height: 260px;
@@ -1367,7 +1449,7 @@ select optgroup {
   background: var(--wp-surface-elevated, #FFFFFF);
   border: 1px solid var(--wp-border-light);
   border-radius: var(--wp-radius-sm);
-  box-shadow: var(--wp-shadow-dropdown);
+  box-shadow: 0 16px 36px -4px rgba(9, 28, 21, 0.18), 0 4px 12px -2px rgba(9, 28, 21, 0.08);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   display: flex;
@@ -1381,7 +1463,8 @@ select optgroup {
   bottom: calc(100% + 5px);
 }
 
-.wp-dropdown-panel.wp-dropdown-panel-right {
+.wp-dropdown-panel.wp-dropdown-panel-right,
+.wp-dropdown-panel.is-dropright {
   left: auto;
   right: 0;
 }
@@ -2869,8 +2952,8 @@ textarea.wp-input {
 
 [data-theme="dark"] .wp-dropdown-panel {
   background-color: #142A21;
-  border-color: rgba(167, 243, 208, 0.14);
-  box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.75);
+  border-color: rgba(167, 243, 208, 0.18);
+  box-shadow: 0 20px 48px -4px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(167, 243, 208, 0.16);
 }
 
 [data-theme="dark"] .wp-dropdown-item.is-selected {
@@ -2977,3 +3060,291 @@ textarea.wp-input {
 
 /* Spacer keeps brand visually centered between hamburger and right edge */
 .mobile-header > span:last-child { width: 38px; flex-shrink: 0; }
+
+/* ==========================================================================
+   NAVIGATION SHELL — drawer, bottom tab bar, tablet rail (UX hierarchy)
+   Desktop >1100: full sidebar | Tablet 769-1100: icon rail | Mobile <=768: bottom tabs + drawer
+   ========================================================================== */
+.bottom-nav,
+.drawer-close-btn { display: none; }
+
+@media (max-width: 768px) {
+  /* Drawer: always full labels, never the desktop icon-rail */
+  .sidebar {
+    width: min(86vw, 320px) !important;
+    transform: translateX(-102%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: none;
+    z-index: 1050;
+    padding-top: env(safe-area-inset-top);
+    overscroll-behavior: contain;
+  }
+  .sidebar.open { transform: translateX(0); box-shadow: 0 0 48px rgba(0, 0, 0, 0.45); }
+
+  .sidebar-brand { justify-content: space-between; gap: 8px; }
+  .sidebar-brand .brand-link { width: auto; flex: 1; min-width: 0; }
+
+  /* Explicit close affordance inside the drawer (hamburger is covered by the drawer) */
+  .drawer-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--wp-radius-sm);
+    border: 1px solid var(--wp-sidebar-border);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--wp-sidebar-text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.18s ease;
+  }
+  .drawer-close-btn:active { background: rgba(255, 255, 255, 0.16); }
+  .drawer-close-btn svg { width: 20px; height: 20px; }
+
+  .sidebar-nav a { min-height: 48px; }
+
+  /* Scrim: fades instead of popping, blocks background interaction */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 17, 13, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+    z-index: 1040;
+  }
+  .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+  body.drawer-open { overflow: hidden; touch-action: none; }
+
+  /* Header respects notch */
+  .mobile-header {
+    height: calc(54px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+  .main-content {
+    padding-top: calc(54px + env(safe-area-inset-top) + 14px);
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  /* Bottom tab bar: 4 primary destinations + Menu for everything else */
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 990;
+    height: calc(62px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--wp-glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--wp-hairline);
+    box-shadow: 0 -6px 24px -12px rgba(9, 28, 21, 0.18);
+    transition: transform 0.25s ease;
+  }
+  .bottom-nav a,
+  .bottom-nav button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 6px 2px;
+    background: none;
+    border: 0;
+    color: var(--wp-text-muted);
+    font-family: inherit;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav svg { width: 22px; height: 22px; stroke-width: 1.9; }
+  .bottom-nav a.active,
+  .bottom-nav a:active,
+  .bottom-nav button:active { color: var(--wp-sage-main); }
+  .bottom-nav a.active { font-weight: 700; }
+  .bottom-nav a.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 28px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--wp-sage-main);
+  }
+  /* Typing? get the nav out of the way of the virtual keyboard */
+  body.kbd-open .bottom-nav { transform: translateY(110%); }
+  body.kbd-open .main-content { padding-bottom: 24px; }
+
+  /* Hide the in-header duplicate spacing on tiny screens */
+  .messages-container { top: calc(64px + env(safe-area-inset-top)); }
+}
+
+/* Tablet: sidebar stays as a slim icon rail so content keeps its width */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .main-content { padding: 28px 24px 56px; }
+}
+
+/* ==========================================================================
+   OVERFLOW SAFETY — long text must wrap inside its card, never spill out
+   ========================================================================== */
+.legend-item { display: block; max-width: 100%; min-width: 0; overflow-wrap: anywhere; line-height: 1.45; }
+.legend-item > span:first-child { margin-right: 6px; vertical-align: 0.05em; }
+
+.metric-item,
+.metric-item .metric-sub,
+.surface-panel-body,
+.surface-panel-header h3 { overflow-wrap: anywhere; min-width: 0; }
+
+@media (max-width: 768px) {
+  /* Inline nowrap on prose-like text is what pushes content past the card edge.
+     Keep nowrap only for pills, buttons and table cells (which scroll horizontally). */
+  :where(span, div, strong, p, label)[style*="white-space: nowrap"]:not(.status-pill):not(.btn):not(.badge):not(.tabular-nums) {
+    white-space: normal !important;
+  }
+  .metric-item .metric-value { white-space: normal !important; overflow-wrap: anywhere; }
+  .metric-item .metric-label > span { white-space: normal !important; }
+  .status-pill { white-space: normal; text-align: left; }
+}
+
+/* ==========================================================================
+   CATEGORY MASTER-DETAIL (Rincian Pagu & Pengeluaran per Kategori)
+   Desktop: list left / detail right. Mobile: list screen -> detail screen.
+   ========================================================================== */
+.cat-md {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 420px;
+}
+
+.cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--wp-bg-surface-subtle);
+  border-right: 1px solid var(--wp-hairline);
+  max-height: 80vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 34px 12px 14px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--wp-text-main);
+  background: var(--wp-surface-panel);
+  border: 1px solid var(--wp-hairline);
+  border-radius: var(--wp-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.cat-card:hover { border-color: var(--wp-sage-border); box-shadow: var(--wp-shadow-card); }
+.cat-card:active { transform: scale(0.99); }
+.cat-card.is-active {
+  border-color: var(--wp-sage-main);
+  background: var(--wp-sage-soft);
+  box-shadow: inset 3px 0 0 var(--wp-sage-main);
+}
+
+.cat-card-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cat-card-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: var(--wp-radius-xs);
+  background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline);
+  color: var(--wp-gold-main);
+}
+.cat-card-icon svg { width: 16px; height: 16px; }
+.cat-card-name {
+  flex: 1; min-width: 0;
+  font-weight: 600; font-size: 0.92rem; line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.cat-card-pill { font-size: 0.68rem; padding: 2px 7px; flex-shrink: 0; }
+
+.cat-card-bar {
+  display: block; height: 6px; width: 100%;
+  background: var(--wp-border-light);
+  border-radius: var(--wp-radius-pill);
+  overflow: hidden;
+}
+.cat-card-bar-fill {
+  display: block; height: 100%; max-width: 100%;
+  background: var(--wp-sage-main);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+.cat-card-bar-fill.is-over { background: var(--wp-terracotta-main); }
+
+.cat-card-meta {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px;
+  font-size: 0.74rem; color: var(--wp-text-secondary);
+}
+.cat-card-rest { font-weight: 600; color: var(--wp-sage-main); }
+.cat-card-rest.is-over { color: var(--wp-terracotta-main); }
+
+.cat-card-chevron {
+  display: none;
+  position: absolute; right: 10px; top: 50%;
+  width: 18px; height: 18px; margin-top: -9px;
+  color: var(--wp-text-muted);
+}
+
+.cat-list-empty { padding: 20px 12px; font-size: 0.84rem; color: var(--wp-text-muted); text-align: center; }
+
+.cat-detail { min-width: 0; }
+.cat-detail-head {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 24px;
+  background: var(--wp-bg-surface-subtle);
+  border-bottom: 1px solid var(--wp-hairline);
+}
+.cat-back-btn {
+  display: none;
+  align-items: center; gap: 6px; align-self: flex-start;
+  padding: 6px 10px; margin-left: -4px;
+  font-family: inherit; font-size: 0.8rem; font-weight: 600;
+  color: var(--wp-sage-main);
+  background: transparent; border: 0; border-radius: var(--wp-radius-xs);
+  cursor: pointer;
+}
+.cat-back-btn:active { background: var(--wp-sage-soft); }
+
+/* Tablet: narrower list column */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .cat-md { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr); }
+  .cat-detail-head { padding: 14px 16px; }
+}
+
+/* Mobile: two-step drill-in (list screen -> detail screen) */
+@media (max-width: 768px) {
+  .cat-md { display: block; min-height: 0; }
+  .cat-md.show-list .cat-detail { display: none; }
+  .cat-md.show-detail .cat-list { display: none; }
+  .cat-list { border-right: 0; max-height: none; overflow: visible; padding: 12px; }
+  .cat-card { padding: 14px 38px 14px 14px; min-height: 76px; }
+  .cat-card-chevron { display: block; }
+  .cat-back-btn { display: inline-flex; min-height: 40px; }
+  .cat-detail-head { padding: 10px 14px 14px; }
+}

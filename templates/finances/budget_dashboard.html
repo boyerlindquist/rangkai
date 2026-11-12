@@ -218,15 +218,15 @@
           <div style="width: {{ bar_free_pct|default:0 }}%; background: var(--wp-gold-main); transition: width 0.4s;" title="Sisa Kas Tabungan Siap Pakai: Rp {{ available_cash_positive|intcomma }}"></div>
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 18px; margin-top: 10px; font-size: 0.78rem; color: var(--wp-text-secondary);">
-          <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
             <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-sage-main); display: inline-block; flex-shrink: 0;"></span>
             Sudah Terpakai: <strong class="tabular-nums">Rp {{ total_paid|intcomma }}</strong>
           </span>
-          <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
             <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-gold-main); display: inline-block; flex-shrink: 0;"></span>
             Kas Siap Pakai: <strong class="tabular-nums">Rp {{ available_cash_positive|intcomma }}</strong>
           </span>
-          <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
             <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-border-hover); display: inline-block; flex-shrink: 0;"></span>
             Masih Kurang: <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ shortfall_from_saved|intcomma }}</strong>
             {% if months_needed > 0 %}
@@ -609,14 +609,39 @@
 
         <!-- Explicit Dropdown Filter for PJ -->
         <div class="wp-dropdown"
-             x-data="{ open: false }"
+             x-data="{
+               open: false,
+               dropUp: false,
+               dropRight: false,
+               init() {
+                 this.$watch('open', val => {
+                   try {
+                     const p = this.$el.closest('.surface-panel-header, .surface-panel');
+                     if (p) {
+                       if (val) p.classList.add('has-open-dropdown');
+                       else p.classList.remove('has-open-dropdown');
+                     }
+                   } catch(e) {}
+                   if (val) {
+                     this.$nextTick(() => {
+                       const r = this.$refs.trigger ? this.$refs.trigger.getBoundingClientRect() : null;
+                       if (r) {
+                         this.dropUp = (window.innerHeight - r.bottom < 190) && (r.top > 160);
+                         this.dropRight = (window.innerWidth - r.left < 210);
+                       }
+                     });
+                   }
+                 });
+               }
+             }"
              :class="{ 'is-open': open }"
              @click.outside="open = false"
              @keydown.escape.window="open = false"
              style="display: inline-flex; align-items: center; gap: 6px;">
           <label style="font-size: 0.76rem; color: var(--wp-text-muted); margin-bottom: 0; white-space: nowrap;">Filter PJ:</label>
-          <div style="position: relative;">
+          <div class="wp-dropdown-anchor" style="position: relative;">
             <button type="button"
+                    x-ref="trigger"
                     class="wp-dropdown-trigger wp-dropdown-sm"
                     @click="open = !open"
                     style="min-width: 165px;">
@@ -626,6 +651,7 @@
               </svg>
             </button>
             <div class="wp-dropdown-panel"
+                 :class="{ 'is-dropup': dropUp, 'is-dropright': dropRight }"
                  x-show="open"
                  x-transition.opacity.scale.95
                  x-cloak
@@ -652,32 +678,92 @@
           </div>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="btn btn-ghost btn-sm" @click="$dispatch('toggle-all-categories', { open: true })" style="font-size: 0.78rem;">
-          <i data-lucide="chevrons-down" style="width: 14px; height: 14px;"></i> Buka Semua
-        </button>
-        <button type="button" class="btn btn-ghost btn-sm" @click="$dispatch('toggle-all-categories', { open: false })" style="font-size: 0.78rem;">
-          <i data-lucide="chevrons-up" style="width: 14px; height: 14px;"></i> Tutup Semua
-        </button>
-      </div>
     </div>
-    <div style="padding: 0;">
+    <div class="cat-md"
+         x-data="{
+           selectedCat: null,
+           mobileDetail: false,
+           pks: [{% for cat in categories %}{{ cat.pk }}{% if not forloop.last %},{% endif %}{% endfor %}],
+           init() {
+             const saved = parseInt(sessionStorage.getItem('wp_selected_cat'));
+             this.selectedCat = this.pks.includes(saved) ? saved : (this.pks.length ? this.pks[0] : null);
+           },
+           selectCat(pk, scroll = true) {
+             this.selectedCat = pk;
+             this.mobileDetail = true;
+             sessionStorage.setItem('wp_selected_cat', pk);
+             if (scroll && window.innerWidth <= 768) {
+               this.$nextTick(() => document.getElementById('guide-categories').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+             }
+           },
+           backToList() {
+             this.mobileDetail = false;
+             this.$nextTick(() => document.getElementById('guide-categories').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+           }
+         }"
+         @open-category-accordion.window="
+           const n = ($event.detail.name || '').toLowerCase();
+           const el = [...$el.querySelectorAll('[data-cat-name]')].find(e => e.dataset.catName === n);
+           const pk = $event.detail.pk || (el ? parseInt(el.id.replace('cat-panel-', '')) : null);
+           if (pk) selectCat(pk, false);
+         "
+         :class="mobileDetail ? 'show-detail' : 'show-list'">
+
+      <!-- MASTER: compact category list -->
+      <aside class="cat-list" aria-label="Daftar kategori anggaran">
+        {% for cat in categories %}
+        {% widthratio cat.total_actual cat.allocated_amount 100 as used_pct %}
+        <button type="button"
+                class="cat-card"
+                :class="{ 'is-active': selectedCat === {{ cat.pk }} }"
+                :aria-current="selectedCat === {{ cat.pk }} ? 'true' : 'false'"
+                @click="selectCat({{ cat.pk }})">
+          <span class="cat-card-top">
+            <span class="cat-card-icon">{{ cat.icon|safe }}</span>
+            <span class="cat-card-name">{{ cat.name }}</span>
+            {% if cat.coverage_status == 'settled' %}
+              <span class="status-pill status-done cat-card-pill">Lunas</span>
+            {% elif cat.coverage_status == 'ready' %}
+              <span class="status-pill status-done cat-card-pill">Dana Siap</span>
+            {% elif cat.coverage_status == 'partial' %}
+              <span class="status-pill status-warning cat-card-pill">{{ cat.cat_coverage_pct }}% Siap</span>
+            {% elif cat.coverage_status == 'shortfall' %}
+              <span class="status-pill status-danger cat-card-pill">Kurang Dana</span>
+            {% endif %}
+          </span>
+          <span class="cat-card-bar" aria-hidden="true">
+            <span class="cat-card-bar-fill {% if cat.variance < 0 %}is-over{% endif %}" style="width: {{ used_pct|default:0 }}%;"></span>
+          </span>
+          <span class="cat-card-meta">
+            <span class="tabular-nums">Rp {{ cat.total_actual|intcomma }} <span class="text-muted">/ Rp {{ cat.allocated_amount|floatformat:0|intcomma }}</span></span>
+            <span class="tabular-nums cat-card-rest {% if cat.variance < 0 %}is-over{% endif %}">
+              {% if cat.variance >= 0 %}Sisa Rp {{ cat.variance|floatformat:0|intcomma }}{% else %}Over Rp {{ cat.variance|floatformat:0|intcomma }}{% endif %}
+            </span>
+          </span>
+          <i data-lucide="chevron-right" class="cat-card-chevron"></i>
+        </button>
+        {% empty %}
+        <div class="cat-list-empty">Belum ada kategori. Gunakan tombol <strong>Tambah Kategori</strong> di atas.</div>
+        {% endfor %}
+      </aside>
+
+      <!-- DETAIL: items of the selected category -->
+      <section class="cat-detail">
       {% for cat in categories %}
-      <div x-data="{ open: sessionStorage.getItem('wp_cat_{{ cat.pk }}') !== 'false', showAddForm: false }"
-           x-init="$watch('open', val => sessionStorage.setItem('wp_cat_{{ cat.pk }}', val))"
-           @toggle-all-categories.window="open = $event.detail.open"
-           @open-category-accordion.window="if ($event.detail.name.toLowerCase() === '{{ cat.name|escapejs }}'.toLowerCase() || $event.detail.pk == {{ cat.pk }}) { open = true; }"
+      <div x-data="{ showAddForm: false }"
+           x-show="selectedCat === {{ cat.pk }}"
+           x-cloak
            id="cat-panel-{{ cat.pk }}"
            data-cat-name="{{ cat.name|lower }}"
            data-cat-raw="{{ cat.name }}"
            style="border-bottom: 1px solid var(--wp-hairline); transition: background-color 0.4s ease, outline 0.4s ease;">
-        <div class="accordion-header" @click="open = !open" style="padding: 16px 24px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: var(--wp-bg-surface-subtle);">
+        <div class="cat-detail-head">
+          <button type="button" class="cat-back-btn" @click="backToList()">
+            <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i> Semua kategori
+          </button>
           {% include "finances/partials/budget_category_row.html" %}
-          <i data-lucide="chevron-down"
-             style="width: 16px; height: 16px; color: var(--wp-text-muted); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); margin-left: 12px; flex-shrink: 0;"
-             :style="open && 'transform: rotate(180deg)'"></i>
         </div>
-        <div class="accordion-body" x-show="open" x-transition x-cloak style="padding: 0;">
+        <div class="accordion-body" style="padding: 0;">
           <div class="sheet-table-wrap">
             {% if cat.items.all %}
             <table class="sheet-table">
@@ -804,6 +890,7 @@
         </div>
       </div>
       {% endfor %}
+      </section>
     </div>
   </div>
 

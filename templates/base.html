@@ -5,7 +5,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description"
     content="Rangkai Ã¢â‚¬â€ Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
   <title>{% block title %}Rangkai{% endblock %}</title>
@@ -29,6 +29,7 @@
       return {
         open: false,
         dropUp: false,
+        dropRight: false,
         value: config.value || '',
         options: config.options || [],
         postUrl: config.postUrl || '',
@@ -38,17 +39,59 @@
         get currentOption() {
           return this.options.find(o => o.value === this.value) || this.options[0] || { label: this.value || '', value: this.value || '' };
         },
+        init() {
+          this.$watch('open', (isOpen) => {
+            this.markParents(isOpen);
+            if (isOpen) {
+              this.updatePosition();
+            }
+          });
+        },
+        markParents(isOpen) {
+          try {
+            const el = this.$el;
+            if (!el) return;
+            let current = el.parentElement;
+            while (current && current !== document.body) {
+              if (current.matches && current.matches('tr, td, .task-item, .surface-panel-header, .surface-panel-body, .sheet-table-wrap, .surface-panel, .cat-md, .cat-detail, .cat-detail-body')) {
+                if (isOpen) {
+                  current.classList.add('has-open-dropdown');
+                } else {
+                  current.classList.remove('has-open-dropdown');
+                }
+              }
+              current = current.parentElement;
+            }
+          } catch(e) {}
+        },
         toggle() {
           this.open = !this.open;
-          if (this.open) {
-            this.$nextTick(() => {
-              const trigger = this.$refs.trigger;
-              if (trigger) {
-                const rect = trigger.getBoundingClientRect();
-                this.dropUp = (window.innerHeight - rect.bottom < 210) && (rect.top > 210);
-              }
-            });
-          }
+        },
+        close() {
+          this.open = false;
+        },
+        updatePosition() {
+          this.$nextTick(() => {
+            const trigger = this.$refs.trigger;
+            if (!trigger) return;
+            const rect = trigger.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            
+            // Check enclosing container bottom (e.g. small card or table wrapper)
+            const container = trigger.closest('.sheet-table-wrap, .surface-panel, .surface-panel-body, .cat-list, .cat-detail');
+            let containerSpaceBelow = spaceBelow;
+            if (container) {
+              const cRect = container.getBoundingClientRect();
+              containerSpaceBelow = Math.min(spaceBelow, cRect.bottom - rect.bottom);
+            }
+            
+            // If space below is restricted (< 190px in window or < 130px in container) and space above is sufficient:
+            this.dropUp = (spaceBelow < 190 || containerSpaceBelow < 130) && (spaceAbove > 140);
+            
+            // If near right edge of viewport, align to right edge of trigger
+            this.dropRight = (window.innerWidth - rect.left < 210);
+          });
         },
         select(opt) {
           if (this.value === opt.value) {
@@ -93,8 +136,8 @@
     rel="stylesheet">
 
   <!-- Design System -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=28">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=28">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=32">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=32">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -113,7 +156,19 @@
 
   {% block body %}
   <div class="app-shell" x-data="{ 
-         collapsed: localStorage.getItem('sidebarCollapsed') === 'true',
+         collapsed: (localStorage.getItem('sidebarCollapsed') === null) ? window.innerWidth < 1100 : localStorage.getItem('sidebarCollapsed') === 'true',
+          isMobile: window.innerWidth <= 768,
+          drawerOpen: false,
+          touchX: null,
+          get rail() { return this.collapsed && !this.isMobile; },
+          init() {
+            const mq = window.matchMedia('(max-width: 768px)');
+            const sync = () => { this.isMobile = mq.matches; if (!mq.matches) this.drawerOpen = false; };
+            mq.addEventListener('change', sync); sync();
+            window.addEventListener('toggle-drawer', () => { this.drawerOpen = !this.drawerOpen; });
+            window.addEventListener('close-drawer', () => { this.drawerOpen = false; });
+            this.$watch('drawerOpen', v => { document.body.classList.toggle('drawer-open', v); if (v) this.$nextTick(() => { if (window.lucide) lucide.createIcons(); }); });
+          },
          isDark: document.documentElement.getAttribute('data-theme') === 'dark',
          inspectorOpen: false,
          inspectorTitle: '',
@@ -141,7 +196,7 @@
 
     <!-- Mobile Header -->
     <div class="mobile-header">
-      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu"><i
+      <button class="hamburger-btn" @click="drawerOpen = !drawerOpen" :aria-expanded="drawerOpen" aria-controls="sidebar" aria-label="Buka menu navigasi"><i
           data-lucide="menu"></i></button>
       <div style="display: flex; align-items: center; gap: 4px;">
         <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" style="width: 24px; height: 24px;" />
@@ -151,7 +206,7 @@
     </div>
 
     <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay" :class="{ 'open': drawerOpen }" @click="drawerOpen = false"></div>
 
     <!-- Global Slide-Over Inspector Drawer (Spatial 3-Pane Component) -->
     <div class="inspector-backdrop" x-show="inspectorOpen" x-transition.opacity @click="closeInspector()" x-cloak></div>
@@ -171,21 +226,25 @@
     </aside>
 
     <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar" :class="{ 'collapsed': collapsed }">
+    <aside class="sidebar" id="sidebar" :class="{ 'collapsed': rail, 'open': drawerOpen }"
+      @keydown.escape.window="drawerOpen = false"
+      @touchstart.passive="touchX = $event.touches[0].clientX"
+      @touchend.passive="if (isMobile && touchX !== null && touchX - $event.changedTouches[0].clientX > 60) drawerOpen = false; touchX = null">
       <div class="sidebar-brand">
         <a href="{% url 'core:dashboard' %}" class="brand-link">
           <div class="brand-info">
             <div class="brand-title-row">
               <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" class="brand-logo-icon" />
-              <span class="brand-text" x-show="!collapsed">Rangkai</span>
+              <span class="brand-text" x-show="!rail">Rangkai</span>
             </div>
             {% if wedding %}
-            <div class="couple-names" x-show="!collapsed">
+            <div class="couple-names" x-show="!rail">
               {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
             </div>
             {% endif %}
           </div>
         </a>
+        <button type="button" class="drawer-close-btn" @click="drawerOpen = false" aria-label="Tutup menu navigasi"><i data-lucide="x"></i></button>
       </div>
 
       <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
@@ -230,18 +289,18 @@
         <div class="sidebar-theme-toggle-row" @click="toggleTheme()"
           :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
           <span class="nav-icon"><i :data-lucide="isDark ? 'moon' : 'sun'"></i></span>
-          <span class="nav-text" x-show="!collapsed" x-text="isDark ? 'Mode Gelap' : 'Mode Terang'">Mode Gelap</span>
-          <div class="theme-switch" x-show="!collapsed">
+          <span class="nav-text" x-show="!rail" x-text="isDark ? 'Mode Gelap' : 'Mode Terang'">Mode Gelap</span>
+          <div class="theme-switch" x-show="!rail">
             <span class="theme-switch-slider" :class="{ 'active': isDark }"></span>
           </div>
         </div>
       </nav>
 
-      <div class="sidebar-footer" :style="collapsed ? 'padding: 16px 8px;' : ''">
+      <div class="sidebar-footer" :style="rail ? 'padding: 16px 8px;' : ''">
         {% if user.is_authenticated %}
         <div class="user-profile-row">
           <!-- Profile Info (Left) Ã¢â‚¬â€ Avatar on Left, Name & Role stacked on Right -->
-          <div class="user-info" x-show="!collapsed">
+          <div class="user-info" x-show="!rail">
             <div class="user-avatar">
               {{ user.username|first|upper }}
             </div>
@@ -259,7 +318,7 @@
 
           <!-- Logout Button (Right when expanded, Centered when collapsed) -->
           <a href="{% url 'core:logout' %}" class="btn btn-ghost logout-btn" title="Logout"
-            :style="collapsed ? 'width: 100%; display: flex; justify-content: center;' : ''">
+            :style="rail ? 'width: 100%; display: flex; justify-content: center;' : ''">
             <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
           </a>
         </div>
@@ -269,17 +328,36 @@
 
     <!-- Floating Sidebar Toggle -->
     <button class="floating-sidebar-toggle"
-      :style="collapsed ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
+      :style="rail ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
       @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);">
-      <i x-show="!collapsed" data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
-      <i x-show="collapsed" data-lucide="chevron-right" style="width: 14px; height: 14px; display: none;"></i>
+      <i x-show="!rail" data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+      <i x-show="rail" data-lucide="chevron-right" style="width: 14px; height: 14px; display: none;"></i>
     </button>
 
     <!-- Main Content Area -->
-    <main class="main-content" :class="{ 'collapsed': collapsed }">
+    <main class="main-content" :class="{ 'collapsed': rail }">
       {% block content %}{% endblock %}
     </main>
-  </div>
+
+    <!-- Mobile Bottom Navigation (primary destinations within thumb reach) -->
+    <nav class="bottom-nav" aria-label="Navigasi utama"
+         hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
+      <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
+        <i data-lucide="layout-dashboard"></i><span>Ringkasan</span>
+      </a>
+      <a href="{% url 'finances:dashboard' %}" class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
+        <i data-lucide="wallet"></i><span>Anggaran</span>
+      </a>
+      <a href="{% url 'operations-checklist:checklist' %}" class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
+        <i data-lucide="check-square"></i><span>Tugas</span>
+      </a>
+      <a href="{% url 'guests:list' %}" class="{% if '/guests/' in request.path %}active{% endif %}">
+        <i data-lucide="users"></i><span>Tamu</span>
+      </a>
+      <button type="button" @click="drawerOpen = true" aria-label="Buka menu lengkap">
+        <i data-lucide="layout-grid"></i><span>Menu</span>
+      </button>
+    </nav>  </div>
   {% endblock %}
 
   <!-- Google Charts -->
@@ -317,19 +395,9 @@
       google.charts.load('current', { 'packages': ['sankey'] });
     }
     // Sidebar toggle for mobile
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('sidebarOverlay').classList.toggle('open');
-    }
+    function toggleSidebar() { window.dispatchEvent(new Event('toggle-drawer')); }
 
-    function closeSidebarOnMobile() {
-      if (window.innerWidth <= 768) {
-        var sb = document.getElementById('sidebar');
-        var ov = document.getElementById('sidebarOverlay');
-        if (sb) sb.classList.remove('open');
-        if (ov) ov.classList.remove('open');
-      }
-    }
+    function closeSidebarOnMobile() { window.dispatchEvent(new Event('close-drawer')); }
 
     // Auto close mobile sidebar on navigation click
     document.addEventListener('click', function(e) {
@@ -338,6 +406,23 @@
       }
     });
 
+
+    // Mobile: sync bottom-nav active state & hide it while a field is focused (virtual keyboard)
+    document.body.addEventListener('htmx:pushedIntoHistory', function () {
+      var path = window.location.pathname;
+      var items = Array.from(document.querySelectorAll('.bottom-nav a'));
+      items.forEach(function (a) { a.classList.remove('active'); });
+      items.sort(function (a, b) { return b.getAttribute('href').length - a.getAttribute('href').length; });
+      for (var i = 0; i < items.length; i++) {
+        var href = items[i].getAttribute('href');
+        if (href === path || (href !== '/' && path.indexOf(href) === 0)) { items[i].classList.add('active'); break; }
+      }
+      if (path === '/' || path === '/dashboard/') { var h = document.querySelector('.bottom-nav a[href="/"]'); if (h) h.classList.add('active'); }
+    });
+    document.addEventListener('focusin', function (e) {
+      if (window.innerWidth <= 768 && e.target.matches && e.target.matches('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea, select')) document.body.classList.add('kbd-open');
+    });
+    document.addEventListener('focusout', function () { document.body.classList.remove('kbd-open'); });
     // Auto-dismiss messages
     document.addEventListener('DOMContentLoaded', function () {
       setTimeout(function () {
