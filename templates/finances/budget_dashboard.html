@@ -467,23 +467,37 @@
   window.__sankeyMeta = {{ sankey_meta_json|safe }};
   window.sankeyStudio = function() {
     const meta = window.__sankeyMeta || { target_budget: 0, unused_amount: 0, categories: [], items: [] };
-    const defaultCat = (meta.categories && meta.categories.length > 0) ? meta.categories[0] : null;
+    const serverActiveCatPk = {{ active_cat_pk|default:"null" }};
+    let initialCat = null;
+    if (serverActiveCatPk) {
+      initialCat = meta.categories.find(c => c.pk === serverActiveCatPk);
+    }
+    if (!initialCat && meta.categories && meta.categories.length > 0) {
+      initialCat = meta.categories[0];
+    }
     return {
       meta: meta,
-      mode: defaultCat ? 'category' : (meta.unused_amount > 0 ? 'unused' : 'target'),
-      selectedCat: defaultCat ? defaultCat.pk : null,
-      activeCat: defaultCat,
+      mode: initialCat ? 'category' : (meta.unused_amount > 0 ? 'unused' : 'target'),
+      selectedCat: initialCat ? initialCat.pk : null,
+      activeCat: initialCat,
       activeItem: null,
       showCatEdit: false,
       showCatAddItem: false,
       targetFormVal: meta.target_budget || 0,
       catForm: { name: '', nominal: 0, pct: 0 },
       itemForm: { name: '', category_pk: null, vendor_name: '', actual_cost: 0, paid_amount: 0, allocated_amount: 0, payment_status: 'unpaid', payer: 'joint', due_date: '', notes: '' },
-      newItemCatPk: defaultCat ? defaultCat.pk : null,
-      unusedTargetCatPk: defaultCat ? defaultCat.pk : null,
+      newItemCatPk: initialCat ? initialCat.pk : null,
+      unusedTargetCatPk: initialCat ? initialCat.pk : null,
       unusedTransferAmount: meta.unused_amount || 0,
 
       init() {
+        if (serverActiveCatPk) {
+          const srvCat = this.meta.categories.find(c => c.pk === serverActiveCatPk);
+          if (srvCat) {
+            this.selectCategoryObj(srvCat, false);
+            return;
+          }
+        }
         try {
           const raw = sessionStorage.getItem('wp_sankey_studio_state');
           if (raw) {
@@ -1344,18 +1358,17 @@
       <!-- 6. DEFAULT / CATEGORY MODE: FULL-WIDTH CATEGORY HEADER & SPREADSHEET ITEM TABLE -->
       <section class="cat-detail" x-show="mode === 'category' || mode === 'item'">
         {% for cat in categories %}
-        <div x-data="{ showAddForm: false }"
-             x-show="selectedCat === {{ cat.pk }}"
+        <div x-show="selectedCat === {{ cat.pk }}"
              x-cloak
              id="cat-panel-{{ cat.pk }}"
              data-cat-name="{{ cat.name|lower }}"
              data-cat-raw="{{ cat.name }}"
-             style="transition: background-color 0.4s ease, outline 0.4s ease;">
+             style="transition: background-color 0.4s ease, outline 0.4s ease; {% if active_cat_pk and cat.pk != active_cat_pk %}display: none;{% elif not active_cat_pk and not forloop.first %}display: none;{% endif %}">
           <div class="cat-detail-head">
             {% include "finances/partials/budget_category_row.html" %}
           </div>
           <div class="accordion-body" style="padding: 0; overflow: visible;">
-            <div class="sheet-table-wrap">
+            <div class="sheet-table-wrap cat-detail-table-scroll">
               {% if cat.items.all %}
               <table class="sheet-table">
                 <thead>
@@ -1383,7 +1396,7 @@
               {% endif %}
 
               {# ── Inline Add Item ── #}
-              <div style="padding: 10px 20px 14px; background: var(--wp-surface-panel); border-top: 1px dashed var(--wp-hairline);">
+              <div x-data="{ showAddForm: false }" style="padding: 10px 20px 14px; background: var(--wp-surface-panel); border-top: 1px dashed var(--wp-hairline);">
                 <button class="btn btn-ghost btn-sm"
                         @click.stop="showAddForm = !showAddForm; if (showAddForm) {
                           $nextTick(() => {

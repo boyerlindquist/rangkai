@@ -58,6 +58,7 @@
             hx-get="{% url 'finances:update_category' cat.pk %}"
             hx-target="#category-header-{{ cat.pk }}"
             hx-swap="outerHTML"
+            @click="sessionStorage.setItem('wp_sankey_studio_state', JSON.stringify({ mode: 'category', pk: {{ cat.pk }} }))"
             style="color: var(--wp-gold-main);"
             title="Edit Nominal / % Pagu Kategori {{ cat.name }}">
       <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>

@@ -324,6 +324,18 @@ def budget_dashboard(request):
     has_sankey_data = len(sankey_raw_data) > 0 or static_target > 0 or len(categories) > 0
     sankey_data_json = json.dumps(sankey_raw_data)
 
+    active_cat_pk = None
+    raw_cat = request.GET.get('cat')
+    if raw_cat:
+        try:
+            val = int(raw_cat)
+            if any(c.pk == val for c in categories):
+                active_cat_pk = val
+        except (ValueError, TypeError):
+            pass
+    if not active_cat_pk and categories:
+        active_cat_pk = categories[0].pk
+
     # Rich metadata for full interactive CRUD inside the Sankey panel
     sankey_categories_meta = []
     sankey_items_meta = []
@@ -382,6 +394,7 @@ def budget_dashboard(request):
         'total_cat_planned': int(state.get('total_cat_planned', 0)),
         'unused_amount': remaining_target,
         'over_amount': total_unfunded,
+        'active_cat_pk': active_cat_pk,
         'update_total_budget_url': reverse('finances:update_total_budget'),
         'add_category_url': reverse('finances:add_category'),
         'add_item_url': reverse('finances:add_item'),
@@ -402,6 +415,7 @@ def budget_dashboard(request):
         'has_sankey_data': has_sankey_data,
         'form': BudgetItemForm(wedding=wedding),
         'category_forms': category_forms,
+        'active_cat_pk': active_cat_pk,
     }
     return render(request, 'finances/budget_dashboard.html', context)
 
@@ -417,6 +431,9 @@ def add_budget_item(request):
             item = form.save(commit=False)
             item.wedding = wedding
             item.save()
+            cat_pk = item.category.pk if item.category else None
+            if cat_pk:
+                return redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}")
             return redirect('finances:dashboard')
         else:
             return render(request, 'finances/partials/budget_item_form.html', {
@@ -437,13 +454,13 @@ def add_item_to_category(request, category_pk):
             item = form.save(commit=False)
             item.wedding = wedding
             item.save()
-            return redirect('finances:dashboard')
+            return redirect(f"{reverse('finances:dashboard')}?cat={category.pk}")
         # On validation error, re-render the inline form
         return render(request, 'finances/partials/inline_item_form.html', {
             'form': form,
             'category': category,
         })
-    return redirect('finances:dashboard')
+    return redirect(f"{reverse('finances:dashboard')}?cat={category.pk}")
 
 
 @login_required
@@ -462,6 +479,9 @@ def update_budget_item(request, pk):
             elif updated.paid_amount >= updated.actual_cost > 0:
                 updated.payment_status = 'settled'
             updated.save()
+            cat_pk = updated.category.pk if updated.category else None
+            if cat_pk:
+                return redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}")
             return redirect('finances:dashboard')
         response = render(request, 'finances/partials/budget_item_form.html', {'form': form, 'item': item})
         response['HX-Retarget'] = f'#edit-budget-item-{item.pk}'
@@ -478,7 +498,10 @@ def update_budget_item(request, pk):
 def delete_budget_item(request, pk):
     """HTMX endpoint: Delete a budget item."""
     item = get_object_or_404(BudgetItem, pk=pk, wedding=request.wedding)
+    cat_pk = item.category.pk if item.category else None
     item.delete()
+    if cat_pk:
+        return redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}")
     return redirect('finances:dashboard')
 
 
@@ -527,6 +550,9 @@ def toggle_payment_status(request, pk):
 
     if request.GET.get('from') == 'dashboard':
         return redirect('core:dashboard')
+    cat_pk = item.category.pk if item.category else None
+    if cat_pk:
+        return redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}")
     return redirect('finances:dashboard')
 
 
@@ -559,6 +585,7 @@ def add_budget_category(request):
             if not request.wedding.total_budget and cat.allocated_budget > 0:
                 request.wedding.total_budget = sum(c.allocated_amount for c in BudgetCategory.objects.filter(wedding=request.wedding))
                 request.wedding.save(update_fields=['total_budget'])
+            return redirect(f"{reverse('finances:dashboard')}?cat={cat.pk}")
     return redirect('finances:dashboard')
 
 
@@ -580,7 +607,7 @@ def update_budget_category(request, pk):
             if not request.wedding.total_budget and cat.allocated_budget > 0:
                 request.wedding.total_budget = sum(c.allocated_amount for c in BudgetCategory.objects.filter(wedding=request.wedding))
                 request.wedding.save(update_fields=['total_budget'])
-            return redirect('finances:dashboard')
+            return redirect(f"{reverse('finances:dashboard')}?cat={cat.pk}")
         response = render(request, 'finances/partials/budget_category_form.html', {'form': form, 'cat': category})
         response['HX-Retarget'] = f'#category-header-{category.pk}'
         response['HX-Reselect'] = f'#category-header-{category.pk}'

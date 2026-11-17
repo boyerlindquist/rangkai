@@ -5,6 +5,7 @@
           hx-select=".main-content"
           hx-swap="outerHTML show:none"
           hx-disinherit="hx-select hx-target hx-swap"
+          @submit="sessionStorage.setItem('wp_sankey_studio_state', JSON.stringify({ mode: 'category', pk: {{ item.category.pk }} }))"
           class="fade-in"
           style="background: var(--wp-bg-surface-subtle); padding: var(--wp-space-lg); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-sage-main);">
       {% csrf_token %}

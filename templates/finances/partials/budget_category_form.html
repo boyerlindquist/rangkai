@@ -7,6 +7,7 @@
       hx-disinherit="hx-select hx-target hx-swap"
       novalidate
       @click.stop
+      @submit="sessionStorage.setItem('wp_sankey_studio_state', JSON.stringify({ mode: 'category', pk: {{ cat.pk }} }))"
       x-data="{
         totalBudget: {{ cat.wedding.total_budget|default:0|floatformat:0 }},
         nominal: {{ cat.allocated_amount|default:0|floatformat:0 }},

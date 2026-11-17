@@ -3592,6 +3592,41 @@ textarea.wp-input {
   background: var(--wp-bg-surface-subtle);
   border-bottom: 1px solid var(--wp-hairline);
 }
+/* ── Category Detail Spreadsheet Table Scroll & Max Height ── */
+.cat-detail-table-scroll {
+  width: 100%;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cat-detail-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--wp-bg-surface-subtle);
+  box-shadow: 0 1px 0 var(--wp-hairline);
+}
+
+.cat-detail-table-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.cat-detail-table-scroll::-webkit-scrollbar-track {
+  background: var(--wp-bg-surface-subtle);
+}
+
+.cat-detail-table-scroll::-webkit-scrollbar-thumb {
+  background: var(--wp-border-strong);
+  border-radius: 999px;
+}
+
+.cat-detail-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--wp-gold-main);
+}
+
 .cat-back-btn {
   display: none;
   align-items: center; gap: 5px; align-self: flex-start;

@@ -693,10 +693,22 @@
     window.addEventListener('scroll', syncOpenDropdownPositions, { capture: true, passive: true });
     window.addEventListener('resize', syncOpenDropdownPositions, { passive: true });
 
-    // Re-initialize icons, custom selects, and close mobile drawer after HTMX swaps
+    // Re-initialize Alpine, icons, custom selects, and close mobile drawer after HTMX swaps
     document.body.addEventListener('htmx:afterSwap', function (evt) {
-      lucide.createIcons();
-      window.enhanceNativeSelects(evt.detail.elt || document);
+      var target = evt.detail.target || evt.detail.elt;
+      if (window.Alpine && target) {
+        try {
+          window.Alpine.initTree(target);
+        } catch (e) {
+          console.warn('[Alpine] initTree afterSwap:', e);
+        }
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+      if (typeof window.enhanceNativeSelects === 'function') {
+        window.enhanceNativeSelects(target || document);
+      }
       closeSidebarOnMobile();
     });
 
