@@ -4,7 +4,7 @@ from django.urls import reverse
 import datetime
 import json
 from core.models import Wedding, WeddingMembership
-from finances.models import SavingsGoal, SavingsDeposit
+from finances.models import BudgetCategory, BudgetItem, SavingsGoal, SavingsDeposit
 
 class SavingsTrackerTests(TestCase):
     def setUp(self):
@@ -91,3 +91,45 @@ class SavingsTrackerTests(TestCase):
         response = self.client.post(reverse('finances:delete_savings_deposit', kwargs={'pk': deposit.pk}))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(SavingsDeposit.objects.count(), 0)
+
+    def test_sankey_static_target_and_unused_branch_on_category_delete(self):
+        SavingsGoal.objects.create(
+            wedding=self.wedding,
+            target_amount=100000000,
+            monthly_deposit=5000000
+        )
+        cat_catering = BudgetCategory.objects.create(
+            wedding=self.wedding,
+            name='Catering & F&B',
+            allocated_budget=95000000,
+            allocation_percentage=95
+        )
+        cat_ent = BudgetCategory.objects.create(
+            wedding=self.wedding,
+            name='Entertainment & MC',
+            allocated_budget=5000000,
+            allocation_percentage=5
+        )
+
+        # Delete Entertainment (5 juta)
+        del_res = self.client.post(reverse('finances:delete_category', kwargs={'pk': cat_ent.pk}))
+        self.assertEqual(del_res.status_code, 302)
+
+        # Load budget dashboard and inspect sankey data
+        res = self.client.get(reverse('finances:dashboard'))
+        self.assertEqual(res.status_code, 200)
+        sankey_data = json.loads(res.context['sankey_data_json'])
+        sankey_meta = json.loads(res.context['sankey_meta_json'])
+
+        # 1. Source is 'Total Tabungan (Target)' with static 100M
+        self.assertEqual(sankey_meta['source_node'], 'Total Tabungan (Target)')
+        self.assertEqual(sankey_meta['target_budget'], 100000000)
+        self.assertEqual(sankey_meta['unused_amount'], 5000000)
+
+        # 2. Layer 1 links from 'Total Tabungan (Target)' sum to static 100M and include 'Belum Dialokasikan (Unused)' = 5M
+        layer1_links = [d for d in sankey_data if d['layer'] == 1 and d['from'] == 'Total Tabungan (Target)']
+        self.assertEqual(sum(d['weight'] for d in layer1_links), 100000000)
+        unused_links = [d for d in layer1_links if d['to'] == 'Belum Dialokasikan (Unused)']
+        self.assertEqual(len(unused_links), 1)
+        self.assertEqual(unused_links[0]['weight'], 5000000)
+

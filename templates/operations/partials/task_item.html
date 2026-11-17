@@ -1,10 +1,11 @@
-<div class="task-item fade-in">
+<div class="task-item"
+     data-assignee="{{ task.assignee }}"
+     x-show="!selectedAssignee || selectedAssignee === '{{ task.assignee }}'">
   <button
     class="task-checkbox {% if task.status == 'done' %}done{% elif task.status == 'in_progress' %}in-progress{% endif %}"
     hx-post="{% url 'operations-checklist:toggle_task' task.pk %}"
-    hx-target=".main-content"
-    hx-select=".main-content"
-    hx-swap="outerHTML show:none"
+    hx-target="closest .task-item"
+    hx-swap="outerHTML"
     title="Klik sekali untuk menandai Selesai / Belum Selesai"
   >
     {% if task.status == 'done' %}<i data-lucide="check" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% endif %}
@@ -25,6 +26,8 @@
            value: '{{ task.status }}',
            postUrl: '{% url 'operations-checklist:toggle_task' task.pk %}',
            paramName: 'status',
+           target: 'closest .task-item',
+           swap: 'outerHTML',
            options: [
              { value: 'todo', label: 'Belum Selesai', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
              { value: 'in_progress', label: 'Dalam Proses', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
@@ -81,9 +84,8 @@
     <button class="btn btn-ghost btn-icon btn-sm"
             hx-delete="{% url 'operations-checklist:delete_task' task.pk %}"
             hx-confirm="Hapus tugas '{{ task.title }}'?"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML show:none"
+            hx-target="closest .task-item"
+            hx-swap="outerHTML"
             title="Hapus tugas"
             style="color: var(--wp-terracotta-main);"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
   </div>

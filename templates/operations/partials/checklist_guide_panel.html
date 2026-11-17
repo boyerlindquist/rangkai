@@ -1,0 +1,67 @@
+<div id="checklist-guide-catalog" {% if oob_guide_update %}hx-swap-oob="true"{% endif %}>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+    {% for topic in guide_catalog %}
+    <div class="surface-panel" style="border: 1px solid var(--wp-hairline); background: var(--wp-bg-surface); display: flex; flex-direction: column;">
+      <div style="padding: 10px 14px; border-bottom: 1px solid var(--wp-hairline); background: var(--wp-bg-surface-subtle); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="{{ topic.icon }}" style="width: 14px; height: 14px; color: var(--wp-gold-main); flex-shrink: 0;"></i>
+            <span style="font-weight: 700; font-size: 0.83rem; color: var(--wp-text-main);">{{ topic.title }}</span>
+          </div>
+          <div class="text-muted" style="font-size: 0.72rem; margin-top: 2px;">{{ topic.desc }}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;">
+          <span class="badge {% if topic.added_count == topic.total_count %}badge-sage{% else %}badge-muted{% endif %} tabular-nums" style="font-size: 0.68rem;">
+            {{ topic.added_count }}/{{ topic.total_count }} masuk
+          </span>
+          {% if topic.added_count < topic.total_count %}
+          <form method="post" action="{% url 'operations-checklist:add_guide_task' %}"
+                hx-post="{% url 'operations-checklist:add_guide_task' %}"
+                hx-swap="none"
+                style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="topic_key" value="{{ topic.key }}">
+            <input type="hidden" name="item_idx" value="all">
+            <input type="hidden" name="phase" :value="selectedPhase === 'all' ? (phaseKeys[0] || 'd360') : selectedPhase">
+            <button type="submit" class="btn btn-ghost btn-sm" style="padding: 2px 7px; font-size: 0.69rem; color: var(--wp-gold-dark);">
+              + Semua Topik Ini
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
+        {% for item in topic.items %}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 6px; border-radius: var(--wp-radius-xs); background: {% if item.already_added %}var(--wp-bg-surface-subtle){% else %}transparent{% endif %}; border-bottom: 1px dashed var(--wp-hairline);">
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 0.78rem; color: {% if item.already_added %}var(--wp-text-muted){% else %}var(--wp-text-main){% endif %}; {% if item.already_added %}text-decoration: line-through;{% endif %}">
+              {{ item.title }}
+              {% if item.is_critical %}
+                <span class="badge badge-terracotta" style="font-size: 0.63rem; padding: 1px 4px; margin-left: 3px;">Penting</span>
+              {% endif %}
+            </div>
+          </div>
+          {% if item.already_added %}
+            <span class="status-pill status-done" style="font-size: 0.65rem; padding: 1px 6px; flex-shrink: 0;">✓ Ada</span>
+          {% else %}
+            <form method="post" action="{% url 'operations-checklist:add_guide_task' %}"
+                  hx-post="{% url 'operations-checklist:add_guide_task' %}"
+                  hx-swap="none"
+                  style="margin: 0; flex-shrink: 0;">
+              {% csrf_token %}
+              <input type="hidden" name="topic_key" value="{{ topic.key }}">
+              <input type="hidden" name="item_idx" value="{{ item.idx }}">
+              <input type="hidden" name="phase" :value="selectedPhase === 'all' ? (phaseKeys[0] || 'd360') : selectedPhase">
+              <button type="submit" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.7rem;" title="Tambahkan ke fase yang sedang dibuka">
+                + Tambah
+              </button>
+            </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>

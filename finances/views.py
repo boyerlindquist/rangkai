@@ -6,6 +6,7 @@ import datetime
 import json
 from collections import defaultdict
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
@@ -26,20 +27,28 @@ def _compute_financial_state(wedding):
     """
     goal, _ = SavingsGoal.objects.get_or_create(wedding=wedding)
 
-    # Auto-initialize total_budget from savings target if total_budget is still 0
+    # Auto-initialize total_budget & savings target so they stay static even if categories are later deleted
     if not wedding.total_budget and goal.target_amount and goal.target_amount > 0:
         wedding.total_budget = goal.target_amount
         wedding.save(update_fields=['total_budget'])
+    elif not goal.target_amount and wedding.total_budget and wedding.total_budget > 0:
+        goal.target_amount = wedding.total_budget
+        goal.save(update_fields=['target_amount'])
 
     categories = list(BudgetCategory.objects.filter(wedding=wedding).prefetch_related('items'))
     items = list(BudgetItem.objects.filter(wedding=wedding).select_related('category'))
 
+    total_cat_planned = int(sum(int(c.allocated_amount or 0) for c in categories))
+    if not wedding.total_budget and not goal.target_amount and total_cat_planned > 0:
+        wedding.total_budget = total_cat_planned
+        wedding.save(update_fields=['total_budget'])
+        goal.target_amount = total_cat_planned
+        goal.save(update_fields=['target_amount'])
+
     total_saved = int(goal.total_saved or 0)
     monthly_saving_rate = int(goal.monthly_deposit or 0)
-    savings_target = int(goal.target_amount or 0)
-
-    total_cat_planned = int(sum(int(c.allocated_amount or 0) for c in categories))
-    total_allocated = int(wedding.total_budget or total_cat_planned or 0)
+    savings_target = int(goal.target_amount or wedding.total_budget or 0)
+    total_allocated = int(goal.target_amount or wedding.total_budget or total_cat_planned or 0)
     total_actual = int(sum(int(i.actual_cost or 0) for i in items))
     total_paid = int(sum(int(i.paid_amount or 0) for i in items))
     total_remaining = max(0, total_actual - total_paid)
@@ -213,25 +222,29 @@ def budget_dashboard(request):
     for payer in payer_breakdown:
         payer_breakdown[payer]['remaining'] = payer_breakdown[payer]['actual'] - payer_breakdown[payer]['paid']
 
-    # 3-Layer Sankey: Sumber Dana (Payer) -> Kategori (Category) -> Item Pengeluaran
-    payer_cat_map = defaultdict(int)
+    # 3-Layer Sankey:
+    # Layer 1: Total Tabungan (Target) [Static Target Amount] (+Belum Ada Sumber Dana if over-allocated)
+    # Layer 2: Kategori Anggaran + Belum Dialokasikan (Unused)
+    # Layer 3: Rincian Item Pengeluaran
+    SOURCE_NODE_NAME = 'Total Tabungan (Target)'
+    UNUSED_NODE_NAME = 'Belum Dialokasikan (Unused)'
+    OVER_NODE_NAME = 'Belum Ada Sumber Dana'
+
+    static_target = int(state.get('savings_target') or wedding.total_budget or 0)
+    remaining_target = static_target
+    total_unfunded = 0
+
     cat_item_links = []
-    seen_nodes = set()
-
-    payer_display_names = set(dict(BudgetItem.PAYER_CHOICES).values())
-    payer_display_names.add('Belum Ada Sumber Dana')
-    cat_names = set(c.name for c in categories)
-    seen_nodes.update(payer_display_names)
-    seen_nodes.update(cat_names)
-
     sankey_raw_data = []
-    category_unallocated = []
+    seen_nodes = {SOURCE_NODE_NAME, UNUSED_NODE_NAME, OVER_NODE_NAME}
+    seen_nodes.update(c.name for c in categories)
+    item_id_to_label = {}
 
     for cat in categories:
         cat_alloc = int(cat.allocated_amount or 0)
-        items = list(cat.items.all())
+        cat_items = list(cat.items.all())
         valid_items = [
-            i for i in items
+            i for i in cat_items
             if (i.actual_cost and i.actual_cost > 0) or (i.allocated_amount and i.allocated_amount > 0)
         ]
 
@@ -245,13 +258,12 @@ def budget_dashboard(request):
             amount = int(item.actual_cost if item.actual_cost and item.actual_cost > 0 else item.allocated_amount)
             payer = item.get_payer_display()
 
-            payer_cat_map[(payer, cat.name)] += amount
-
             # Disambiguate item name if it collides with another node
             item_label = item.name.strip() or f"Item #{item.id}"
             while item_label in seen_nodes:
                 item_label += '\u200b'
             seen_nodes.add(item_label)
+            item_id_to_label[item.pk] = item_label
 
             cat_item_links.append({
                 'from': cat.name,
@@ -259,47 +271,123 @@ def budget_dashboard(request):
                 'weight': amount,
                 'payer': payer,
                 'layer': 2,
+                'item_pk': item.pk,
+                'cat_pk': cat.pk,
             })
 
-        unallocated_in_cat = max(0, cat_alloc - total_items_cost)
-        if unallocated_in_cat > 0:
-            category_unallocated.append((cat.name, unallocated_in_cat))
+        # Category effective weight in Layer 2
+        cat_effective = max(cat_alloc, total_items_cost)
+        if cat_effective > 0:
+            if static_target > 0:
+                funded = min(cat_effective, remaining_target)
+                unfunded = cat_effective - funded
+                remaining_target -= funded
+            else:
+                funded = cat_effective
+                unfunded = 0
 
-    # Allocate unallocated ceiling portions:
-    # First from Tabungan Bersama up to its target budget capacity,
-    # and any excess (over-allocation) from 'Belum Ada Sumber Dana'
-    total_joint_budget = int(wedding.total_budget or state.get('savings_target', 0) or 0)
-    tabungan_spent_on_items = sum(amount for (payer, cat_name), amount in payer_cat_map.items() if payer == 'Tabungan Bersama')
-    remaining_tabungan = max(0, total_joint_budget - tabungan_spent_on_items)
+            if funded > 0:
+                sankey_raw_data.append({
+                    'from': SOURCE_NODE_NAME,
+                    'to': cat.name,
+                    'weight': funded,
+                    'payer': 'Tabungan Bersama',
+                    'layer': 1,
+                    'kind': 'category',
+                    'cat_pk': cat.pk,
+                })
+            if unfunded > 0:
+                total_unfunded += unfunded
+                sankey_raw_data.append({
+                    'from': OVER_NODE_NAME,
+                    'to': cat.name,
+                    'weight': unfunded,
+                    'payer': OVER_NODE_NAME,
+                    'layer': 1,
+                    'kind': 'over',
+                    'cat_pk': cat.pk,
+                })
 
-    for cat_name, unalloc_amt in category_unallocated:
-        if total_joint_budget > 0:
-            funded = min(unalloc_amt, remaining_tabungan)
-            unfunded = unalloc_amt - funded
-            remaining_tabungan -= funded
-        else:
-            funded = unalloc_amt
-            unfunded = 0
-
-        if funded > 0:
-            payer_cat_map[('Tabungan Bersama', cat_name)] += funded
-        if unfunded > 0:
-            payer_cat_map[('Belum Ada Sumber Dana', cat_name)] += unfunded
-
-    # Layer 1 -> Layer 2 records
-    for (payer, cat_name), amount in payer_cat_map.items():
-        if amount > 0:
-            sankey_raw_data.append({
-                'from': payer,
-                'to': cat_name,
-                'weight': amount,
-                'payer': payer,
-                'layer': 1,
-            })
+    # If remaining_target > 0 (e.g. a category was deleted or total category pagu < static target),
+    # flow the remaining balance into the Layer 2 'Belum Dialokasikan (Unused)' branch so it never disappears!
+    if remaining_target > 0:
+        sankey_raw_data.append({
+            'from': SOURCE_NODE_NAME,
+            'to': UNUSED_NODE_NAME,
+            'weight': remaining_target,
+            'payer': 'Tabungan Bersama',
+            'layer': 1,
+            'kind': 'unused',
+        })
 
     sankey_raw_data.extend(cat_item_links)
-    has_sankey_data = len(sankey_raw_data) > 0
+    has_sankey_data = len(sankey_raw_data) > 0 or static_target > 0 or len(categories) > 0
     sankey_data_json = json.dumps(sankey_raw_data)
+
+    # Rich metadata for full interactive CRUD inside the Sankey panel
+    sankey_categories_meta = []
+    sankey_items_meta = []
+    for cat in categories:
+        cat_items_list = []
+        for item in cat.items.all():
+            item_amount = int(item.actual_cost if item.actual_cost and item.actual_cost > 0 else (item.allocated_amount or 0))
+            item_label = item_id_to_label.get(item.pk, item.name.strip() or f"Item #{item.pk}")
+            item_meta = {
+                'pk': item.pk,
+                'label': item_label,
+                'name': item.name,
+                'category_pk': cat.pk,
+                'category_name': cat.name,
+                'vendor_name': item.vendor_name or '',
+                'allocated_amount': int(item.allocated_amount or 0),
+                'actual_cost': int(item.actual_cost or 0),
+                'paid_amount': int(item.paid_amount or 0),
+                'remaining': max(0, int(item.actual_cost or 0) - int(item.paid_amount or 0)),
+                'amount': item_amount,
+                'payment_status': item.payment_status,
+                'payment_status_display': item.get_payment_status_display(),
+                'payer': item.payer,
+                'payer_display': item.get_payer_display(),
+                'due_date': item.due_date.strftime('%Y-%m-%d') if item.due_date else '',
+                'notes': item.notes or '',
+                'update_url': reverse('finances:update_item', args=[item.pk]),
+                'delete_url': reverse('finances:delete_item', args=[item.pk]),
+                'toggle_status_url': reverse('finances:toggle_status', args=[item.pk]),
+            }
+            cat_items_list.append(item_meta)
+            sankey_items_meta.append(item_meta)
+
+        sankey_categories_meta.append({
+            'pk': cat.pk,
+            'name': cat.name,
+            'allocated_budget': int(cat.allocated_budget or 0),
+            'allocated_amount': int(cat.allocated_amount or 0),
+            'allocation_percentage': float(cat.allocation_percentage or 0),
+            'total_actual': int(cat.total_actual or 0),
+            'total_paid': int(cat.total_paid or 0),
+            'variance': int(cat.variance or 0),
+            'coverage_status': cat.coverage_status,
+            'update_url': reverse('finances:update_category', args=[cat.pk]),
+            'delete_url': reverse('finances:delete_category', args=[cat.pk]),
+            'add_item_url': reverse('finances:add_item_to_category', args=[cat.pk]),
+            'items': cat_items_list,
+        })
+
+    sankey_meta_json = json.dumps({
+        'source_node': SOURCE_NODE_NAME,
+        'unused_node': UNUSED_NODE_NAME,
+        'over_node': OVER_NODE_NAME,
+        'target_budget': static_target,
+        'total_saved': int(state.get('total_saved', 0)),
+        'total_cat_planned': int(state.get('total_cat_planned', 0)),
+        'unused_amount': remaining_target,
+        'over_amount': total_unfunded,
+        'update_total_budget_url': reverse('finances:update_total_budget'),
+        'add_category_url': reverse('finances:add_category'),
+        'add_item_url': reverse('finances:add_item'),
+        'categories': sankey_categories_meta,
+        'items': sankey_items_meta,
+    })
 
     category_forms = {cat.pk: BudgetItemForm(wedding=wedding, initial={'category': cat.pk}) for cat in categories}
 
@@ -309,6 +397,8 @@ def budget_dashboard(request):
         'shares': shares,
         'payer_breakdown': payer_breakdown,
         'sankey_data_json': sankey_data_json,
+        'sankey_meta_json': sankey_meta_json,
+        'unused_budget_amount': remaining_target,
         'has_sankey_data': has_sankey_data,
         'form': BudgetItemForm(wedding=wedding),
         'category_forms': category_forms,

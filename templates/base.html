@@ -23,6 +23,44 @@
   </style>
 
   <script>
+    // Universal fixed-layer positioner so dropdown panels float on the very top layer
+    // and NEVER expand parent rows, table cells, or scroll containers.
+    window.positionDropdownPanel = function(trigger, panel) {
+      if (!trigger || !panel) return { dropUp: false, dropRight: false };
+      var rect = trigger.getBoundingClientRect();
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var spaceBelow = vh - rect.bottom;
+      var spaceAbove = rect.top;
+      var panelHeight = Math.min(panel.scrollHeight || 190, 220);
+      var dropUp = (spaceBelow < panelHeight + 16) && (spaceAbove > spaceBelow);
+      var dropRight = (vw - rect.left < 200);
+      var minW = Math.max(rect.width, 155);
+
+      panel.classList.add('is-fixed-layer');
+      panel.style.minWidth = minW + 'px';
+      panel.style.width = 'max-content';
+      panel.style.maxWidth = Math.min(310, vw - 20) + 'px';
+      panel.style.bottom = 'auto';
+      panel.style.right = 'auto';
+
+      var targetTop = dropUp ? Math.max(8, rect.top - panelHeight - 4) : (rect.bottom + 4);
+      var panelW = Math.max(panel.offsetWidth || minW, minW);
+      var targetLeft = dropRight ? Math.max(8, rect.right - panelW) : Math.max(8, Math.min(rect.left, vw - panelW - 12));
+
+      panel.style.top = targetTop + 'px';
+      panel.style.left = targetLeft + 'px';
+
+      // Compensate if an ancestor creates a local fixed containing block (e.g. transform/filter)
+      var actual = panel.getBoundingClientRect();
+      if (Math.abs(actual.top - targetTop) > 1 || Math.abs(actual.left - targetLeft) > 1) {
+        panel.style.top = (targetTop - (actual.top - targetTop)) + 'px';
+        panel.style.left = (targetLeft - (actual.left - targetLeft)) + 'px';
+      }
+
+      return { dropUp: dropUp, dropRight: dropRight };
+    };
+
     // Global customSelect helper for Alpine.js (Instant lookup on window, no race conditions)
     window.customSelect = function(config) {
       config = config || {};
@@ -53,7 +91,7 @@
             if (!el) return;
             let current = el.parentElement;
             while (current && current !== document.body) {
-              if (current.matches && current.matches('tr, td, .task-item, .surface-panel-header, .surface-panel-body, .sheet-table-wrap, .surface-panel, .cat-md, .cat-detail, .cat-detail-body')) {
+              if (current.matches && current.matches('tr, td, .task-item, .surface-panel-header, .surface-panel-body, .sheet-table-wrap, .surface-panel, .cat-md, .cat-detail, .cat-detail-body, .card, .card-body, .form-row, .form-group, .phase-detail-header')) {
                 if (isOpen) {
                   current.classList.add('has-open-dropdown');
                 } else {
@@ -73,24 +111,11 @@
         updatePosition() {
           this.$nextTick(() => {
             const trigger = this.$refs.trigger;
-            if (!trigger) return;
-            const rect = trigger.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-            
-            // Check enclosing container bottom (e.g. small card or table wrapper)
-            const container = trigger.closest('.sheet-table-wrap, .surface-panel, .surface-panel-body, .cat-list, .cat-detail');
-            let containerSpaceBelow = spaceBelow;
-            if (container) {
-              const cRect = container.getBoundingClientRect();
-              containerSpaceBelow = Math.min(spaceBelow, cRect.bottom - rect.bottom);
-            }
-            
-            // If space below is restricted (< 190px in window or < 130px in container) and space above is sufficient:
-            this.dropUp = (spaceBelow < 190 || containerSpaceBelow < 130) && (spaceAbove > 140);
-            
-            // If near right edge of viewport, align to right edge of trigger
-            this.dropRight = (window.innerWidth - rect.left < 210);
+            const panel = this.$refs.panel;
+            if (!trigger || !panel) return;
+            const pos = window.positionDropdownPanel(trigger, panel);
+            this.dropUp = pos.dropUp;
+            this.dropRight = pos.dropRight;
           });
         },
         select(opt) {
@@ -136,8 +161,8 @@
     rel="stylesheet">
 
   <!-- Design System -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=32">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=32">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=41">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=41">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -149,7 +174,12 @@
   <div class="messages-container" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show"
     x-transition>
     {% for message in messages %}
-    <div class="message-toast {{ message.tags }}">{{ message }}</div>
+    <div class="message-toast {{ message.tags }}" x-data="{ itemShow: true }" x-show="itemShow" x-transition>
+      <span>{{ message }}</span>
+      <button type="button" @click="itemShow = false" style="background: transparent; border: 0; color: currentColor; opacity: 0.65; cursor: pointer; padding: 2px; display: inline-flex; align-items: center;" aria-label="Tutup notifikasi">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
     {% endfor %}
   </div>
   {% endif %}
@@ -231,19 +261,27 @@
       @touchstart.passive="touchX = $event.touches[0].clientX"
       @touchend.passive="if (isMobile && touchX !== null && touchX - $event.changedTouches[0].clientX > 60) drawerOpen = false; touchX = null">
       <div class="sidebar-brand">
-        <a href="{% url 'core:dashboard' %}" class="brand-link">
+        <a href="{% url 'core:dashboard' %}" class="brand-link" x-show="!rail">
           <div class="brand-info">
             <div class="brand-title-row">
               <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" class="brand-logo-icon" />
-              <span class="brand-text" x-show="!rail">Rangkai</span>
+              <span class="brand-text">Rangkai</span>
             </div>
             {% if wedding %}
-            <div class="couple-names" x-show="!rail">
+            <div class="couple-names">
               {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
             </div>
             {% endif %}
           </div>
         </a>
+        <button type="button"
+                class="sidebar-collapse-btn"
+                @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);"
+                :title="rail ? 'Perluas Sidebar' : 'Kecilkan Sidebar'"
+                :aria-label="rail ? 'Perluas Sidebar' : 'Kecilkan Sidebar'">
+          <i x-show="!rail" data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
+          <i x-show="rail" data-lucide="panel-left-open" style="width: 17px; height: 17px;"></i>
+        </button>
         <button type="button" class="drawer-close-btn" @click="drawerOpen = false" aria-label="Tutup menu navigasi"><i data-lucide="x"></i></button>
       </div>
 
@@ -325,14 +363,6 @@
         {% endif %}
       </div>
     </aside>
-
-    <!-- Floating Sidebar Toggle -->
-    <button class="floating-sidebar-toggle"
-      :style="rail ? 'left: calc(var(--wp-sidebar-collapsed) + 8px)' : 'left: calc(var(--wp-sidebar-width) + 8px)'"
-      @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);">
-      <i x-show="!rail" data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
-      <i x-show="rail" data-lucide="chevron-right" style="width: 14px; height: 14px; display: none;"></i>
-    </button>
 
     <!-- Main Content Area -->
     <main class="main-content" :class="{ 'collapsed': rail }">
@@ -476,10 +506,202 @@
       window.location.reload();
     });
 
-    // Re-initialize icons and close mobile drawer after HTMX swaps
+    // Universal Native <select> -> Rangkai Custom Dropdown Enhancer
+    window.enhanceNativeSelects = function (root) {
+      var scope = root || document;
+      var selects = scope.querySelectorAll ? scope.querySelectorAll('select:not([multiple]):not([data-wp-enhanced="1"])') : [];
+      var selectValueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+
+      selects.forEach(function (selectEl) {
+        if (selectEl.dataset.wpEnhanced === '1' || selectEl.dataset.noCustomSelect === '1') return;
+        selectEl.dataset.wpEnhanced = '1';
+
+        var isInline = selectEl.style.width === 'auto';
+        var isSm = selectEl.classList.contains('wp-select-sm');
+        var minW = selectEl.style.minWidth || '';
+        var flexVal = selectEl.style.flex || '';
+
+        selectEl.classList.add('wp-select-native-hidden');
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'wp-dropdown wp-select-enhanced' + (isInline ? ' is-inline' : '') + (isSm ? ' is-sm' : '');
+        if (minW) wrapper.style.minWidth = minW;
+        if (flexVal) wrapper.style.flex = flexVal;
+
+        var trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'wp-dropdown-trigger' + (isSm ? ' wp-dropdown-sm' : '');
+
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'wp-dropdown-label-text';
+
+        var chevronSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        chevronSvg.setAttribute('class', 'wp-dropdown-chevron');
+        chevronSvg.setAttribute('width', '12');
+        chevronSvg.setAttribute('height', '12');
+        chevronSvg.setAttribute('viewBox', '0 0 24 24');
+        chevronSvg.setAttribute('fill', 'none');
+        chevronSvg.setAttribute('stroke', 'currentColor');
+        chevronSvg.setAttribute('stroke-width', '2');
+        chevronSvg.setAttribute('stroke-linecap', 'round');
+        chevronSvg.setAttribute('stroke-linejoin', 'round');
+        chevronSvg.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+
+        trigger.appendChild(labelSpan);
+        trigger.appendChild(chevronSvg);
+
+        var panel = document.createElement('div');
+        panel.className = 'wp-dropdown-panel';
+        panel.style.display = 'none';
+
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(panel);
+        selectEl.insertAdjacentElement('afterend', wrapper);
+
+        var isOpen = false;
+
+        function markAncestors(openState) {
+          var curr = wrapper.parentElement;
+          while (curr && curr !== document.body) {
+            if (curr.matches && curr.matches('tr, td, .task-item, .surface-panel-header, .surface-panel-body, .sheet-table-wrap, .surface-panel, .cat-md, .cat-detail, .cat-detail-body, .card, .card-body, .form-row, .form-group, .phase-detail-header')) {
+              curr.classList.toggle('has-open-dropdown', openState);
+            }
+            curr = curr.parentElement;
+          }
+        }
+
+        function renderOptions() {
+          var opts = Array.from(selectEl.options || []);
+          var selectedOpt = selectEl.options[selectEl.selectedIndex] || opts[0];
+          labelSpan.textContent = selectedOpt ? selectedOpt.text : '';
+          panel.innerHTML = '';
+
+          opts.forEach(function (opt) {
+            var item = document.createElement('div');
+            var selected = opt.value === selectEl.value;
+            item.className = 'wp-dropdown-item' + (selected ? ' is-selected' : '');
+
+            var textSpan = document.createElement('span');
+            textSpan.textContent = opt.text;
+            item.appendChild(textSpan);
+
+            if (selected) {
+              var checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              checkSvg.setAttribute('class', 'wp-dropdown-check');
+              checkSvg.setAttribute('width', '13');
+              checkSvg.setAttribute('height', '13');
+              checkSvg.setAttribute('viewBox', '0 0 24 24');
+              checkSvg.setAttribute('fill', 'none');
+              checkSvg.setAttribute('stroke', 'currentColor');
+              checkSvg.setAttribute('stroke-width', '2.5');
+              checkSvg.setAttribute('stroke-linecap', 'round');
+              checkSvg.setAttribute('stroke-linejoin', 'round');
+              checkSvg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+              item.appendChild(checkSvg);
+            }
+
+            item.addEventListener('click', function (e) {
+              e.stopPropagation();
+              if (selectEl.value !== opt.value) {
+                selectValueDescriptor.set.call(selectEl, opt.value);
+                renderOptions();
+                selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+              setOpen(false);
+            });
+
+            panel.appendChild(item);
+          });
+        }
+
+        function setOpen(nextOpen) {
+          if (isOpen === nextOpen) return;
+          isOpen = nextOpen;
+          wrapper.classList.toggle('is-open', isOpen);
+          chevronSvg.classList.toggle('is-open', isOpen);
+          markAncestors(isOpen);
+
+          if (isOpen) {
+            document.querySelectorAll('.wp-dropdown.wp-select-enhanced.is-open').forEach(function (other) {
+              if (other !== wrapper && other._closeDropdown) other._closeDropdown();
+            });
+            renderOptions();
+            panel.style.display = 'flex';
+            var pos = window.positionDropdownPanel(trigger, panel);
+            panel.classList.toggle('is-dropup', pos.dropUp);
+            panel.classList.toggle('is-dropright', pos.dropRight);
+          } else {
+            panel.style.display = 'none';
+          }
+        }
+
+        wrapper._closeDropdown = function () { setOpen(false); };
+        wrapper._repositionDropdown = function () {
+          if (isOpen) window.positionDropdownPanel(trigger, panel);
+        };
+
+        trigger.addEventListener('click', function (e) {
+          e.stopPropagation();
+          setOpen(!isOpen);
+        });
+
+        try {
+          Object.defineProperty(selectEl, 'value', {
+            get: function () { return selectValueDescriptor.get.call(this); },
+            set: function (val) {
+              selectValueDescriptor.set.call(this, val);
+              renderOptions();
+            }
+          });
+        } catch (err) {}
+
+        selectEl.addEventListener('change', renderOptions);
+        if (selectEl.form) {
+          selectEl.form.addEventListener('reset', function () {
+            setTimeout(renderOptions, 0);
+          });
+        }
+
+        renderOptions();
+      });
+    };
+
+    document.addEventListener('click', function (e) {
+      document.querySelectorAll('.wp-dropdown.wp-select-enhanced.is-open').forEach(function (w) {
+        if (!w.contains(e.target) && w._closeDropdown) w._closeDropdown();
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.wp-dropdown.wp-select-enhanced.is-open').forEach(function (w) {
+          if (w._closeDropdown) w._closeDropdown();
+        });
+      }
+    });
+
+    function syncOpenDropdownPositions() {
+      document.querySelectorAll('.wp-dropdown.is-open').forEach(function (w) {
+        var trig = w.querySelector('.wp-dropdown-trigger');
+        var pan = w.querySelector('.wp-dropdown-panel');
+        if (trig && pan && window.positionDropdownPanel) {
+          window.positionDropdownPanel(trig, pan);
+        }
+      });
+    }
+    window.addEventListener('scroll', syncOpenDropdownPositions, { capture: true, passive: true });
+    window.addEventListener('resize', syncOpenDropdownPositions, { passive: true });
+
+    // Re-initialize icons, custom selects, and close mobile drawer after HTMX swaps
     document.body.addEventListener('htmx:afterSwap', function (evt) {
       lucide.createIcons();
+      window.enhanceNativeSelects(evt.detail.elt || document);
       closeSidebarOnMobile();
+    });
+
+    document.body.addEventListener('htmx:afterSettle', function (evt) {
+      window.enhanceNativeSelects(evt.detail.elt || document);
     });
 
     // Add fresh CSRF token to all HTMX requests
@@ -518,13 +740,31 @@
       window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
     }
 
-    // Set initial icon state based on theme
+    // Set initial icon state based on theme and enhance all native selects
     document.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('theme') === 'dark') {
         const themeIcon = document.getElementById('themeIcon');
         if (themeIcon) {
           themeIcon.setAttribute('data-lucide', 'sun');
         }
+      }
+      if (window.enhanceNativeSelects) {
+        window.enhanceNativeSelects(document);
+      }
+      if (window.MutationObserver && document.body) {
+        var selectObserver = new MutationObserver(function (mutations) {
+          var needsEnhance = false;
+          for (var i = 0; i < mutations.length; i++) {
+            if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+              needsEnhance = true;
+              break;
+            }
+          }
+          if (needsEnhance && window.enhanceNativeSelects) {
+            window.enhanceNativeSelects(document);
+          }
+        });
+        selectObserver.observe(document.body, { childList: true, subtree: true });
       }
     });
   </script>

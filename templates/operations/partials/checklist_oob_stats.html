@@ -1,0 +1,134 @@
+<!-- Out-of-band live updates for Checklist metrics & phase progress -->
+<div id="checklist-metrics" class="metric-strip" hx-swap-oob="true">
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="check-circle-2" style="width: 13px; height: 13px;"></i> Progres Keseluruhan
+    </div>
+    <div class="metric-value" style="color: var(--wp-sage-main);">{{ overall_progress }}%</div>
+    <div class="metric-sub">{{ done_tasks }} dari {{ total_tasks }} tugas tuntas</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="compass" style="width: 13px; height: 13px;"></i> Fase Aktif
+    </div>
+    <div class="metric-value" style="font-size: 1.15rem;">{{ current_phase_label|default:"Fase Awal" }}</div>
+    <div class="metric-sub">
+      {% if days_remaining is not None %}
+        <span style="font-weight: 600; color: var(--wp-gold-main);">D-{{ days_remaining }} Hari</span>
+      {% else %}
+        Tanggal belum diset
+      {% endif %}
+    </div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="flag" style="width: 13px; height: 13px;"></i> Fokus Penyelesaian
+    </div>
+    <div class="metric-value" style="{% if total_overdue_tasks > 0 %}color: var(--wp-gold-dark);{% else %}color: var(--wp-sage-main);{% endif %}">
+      {% if total_overdue_tasks > 0 %}{{ total_overdue_tasks }} Perlu Tindak Lanjut{% else %}Semua Terkendali{% endif %}
+    </div>
+    <div class="metric-sub">
+      {% if total_overdue_tasks > 0 %}Prioritaskan bersama pasangan{% else %}Jadwal berjalan sesuai rencana{% endif %}
+    </div>
+  </div>
+</div>
+
+{% for phase_key, phase_data in grouped_tasks.items %}
+<span id="phase-rail-dot-inner-{{ phase_key }}" hx-swap-oob="true">{% if phase_data.progress == 100 and phase_data.total > 0 %}✓{% else %}{{ phase_data.step_num }}{% endif %}</span>
+
+<div id="phase-rail-card-{{ phase_key }}" class="phase-rail-card" hx-swap-oob="true">
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+    <span style="font-weight: 600; font-size: 0.84rem; color: var(--wp-text-main); line-height: 1.3;">
+      {{ phase_data.label }}
+    </span>
+    <span class="tabular-nums"
+          style="font-size: 0.76rem; font-weight: 700; flex-shrink: 0; color: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-text-secondary){% endif %};">
+      {{ phase_data.progress }}%
+    </span>
+  </div>
+
+  <div style="height: 4px; width: 100%; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
+    <div style="height: 100%; width: {{ phase_data.progress }}%; background: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-gold-main){% endif %}; transition: width 0.3s ease;"></div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+    <span class="text-muted tabular-nums" style="font-size: 0.72rem;">
+      {{ phase_data.done }}/{{ phase_data.total }} selesai
+    </span>
+    {% if phase_data.is_current %}
+      <span class="status-pill status-done" style="font-size: 0.66rem; padding: 1px 6px;"><span class="dot"></span> Fase Aktif</span>
+    {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
+      <span class="status-pill status-warning" style="font-size: 0.66rem; padding: 1px 6px;"><span class="dot"></span> {{ phase_data.overdue_count }} Tertunda</span>
+    {% elif phase_data.progress == 100 and phase_data.total > 0 %}
+      <span class="status-pill status-done" style="font-size: 0.66rem; padding: 1px 6px;">Tuntas</span>
+    {% endif %}
+  </div>
+</div>
+
+<div id="phase-detail-header-stats-{{ phase_key }}" hx-swap-oob="true">
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+    <span class="badge badge-sage tabular-nums" style="font-size: 0.72rem;">Tahap {{ phase_data.step_num }} dari {{ phase_count }}</span>
+    <h2 style="margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--wp-text-main);">
+      {{ phase_data.label }}
+    </h2>
+    {% if phase_data.is_current %}
+      <span class="status-pill status-done"><span class="dot"></span> Fase Aktif Saat Ini</span>
+    {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
+      <span class="status-pill status-warning"><span class="dot"></span> {{ phase_data.overdue_count }} Perlu Tindak Lanjut</span>
+    {% elif phase_data.progress == 100 and phase_data.total > 0 %}
+      <span class="status-pill status-done"><span class="dot"></span> Semua Tugas Tuntas</span>
+    {% endif %}
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+    <span class="text-muted tabular-nums" style="font-size: 0.78rem;">
+      <strong>{{ phase_data.done }}</strong> dari <strong>{{ phase_data.total }}</strong> tugas selesai ({{ phase_data.progress }}%)
+    </span>
+    <div style="width: 180px; max-width: 100%; height: 6px; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
+      <div style="height: 100%; width: {{ phase_data.progress }}%; background: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-gold-main){% endif %}; transition: width 0.3s ease;"></div>
+    </div>
+  </div>
+</div>
+
+<span id="all-phase-header-stats-{{ phase_key }}" class="text-muted tabular-nums" style="font-size: 0.76rem;" hx-swap-oob="true">{{ phase_data.done }}/{{ phase_data.total }} selesai ({{ phase_data.progress }}%)</span>
+{% endfor %}
+
+{% if oob_guide_update %}
+  {% include 'operations/partials/checklist_guide_panel.html' %}
+{% endif %}
+
+{% if oob_phase_list_key %}
+  {% for phase_key, phase_data in grouped_tasks.items %}
+    {% if phase_key == oob_phase_list_key or phase_key == oob_second_phase_list_key %}
+    <div id="phase-tasks-{{ phase_key }}" hx-swap-oob="true">
+      {% for task in phase_data.tasks %}
+        {% include 'operations/partials/task_item.html' with task=task %}
+      {% empty %}
+      <div style="padding: 28px 20px; text-align: center; color: var(--wp-text-muted); border: 1px dashed var(--wp-border-strong); border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle);">
+        <i data-lucide="lightbulb" style="width: 24px; height: 24px; margin-bottom: 6px; color: var(--wp-gold-main);"></i>
+        <p style="margin: 0 0 6px; font-size: 0.88rem; font-weight: 600; color: var(--wp-text-main);">
+          Fase <strong>{{ phase_data.label }}</strong> masih kosong (0 tugas)
+        </p>
+        <p style="margin: 0 0 12px; font-size: 0.78rem;">
+          Tambahkan tugas manual atau pilih rekomendasi dari <strong>Panduan & Ide Tugas Penting</strong> agar tidak ada persiapan yang terlewat.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-gold btn-sm" @click="openAddTask('{{ phase_key }}')">
+            <i data-lucide="plus"></i> Tambah Tugas Manual
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="showGuide = true; $nextTick(() => document.getElementById('smart-guide-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))">
+            <i data-lucide="book-open"></i> Buka Panduan Tugas Penting
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div id="all-phase-tasks-{{ phase_key }}" hx-swap-oob="true">
+      {% for task in phase_data.tasks %}
+        {% include 'operations/partials/task_item.html' with task=task %}
+      {% empty %}
+        <p class="text-muted" style="font-size: 0.8rem; margin: 6px 0;">Tidak ada tugas di fase ini.</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}

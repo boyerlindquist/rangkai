@@ -5,8 +5,30 @@ from django.db import models
 from core.models import Wedding
 
 
+class TimelinePhase(models.Model):
+    """Customizable timeline phase per wedding workspace."""
+    wedding = models.ForeignKey(
+        Wedding,
+        on_delete=models.CASCADE,
+        related_name='timeline_phases',
+    )
+    key = models.CharField('Kode Fase', max_length=40)
+    label = models.CharField('Nama Fase', max_length=120)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active_override = models.BooleanField('Fase Aktif Manual', default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+        unique_together = [('wedding', 'key')]
+        verbose_name = 'Timeline Phase'
+
+    def __str__(self):
+        return f"{self.label} ({self.key})"
+
+
 class TaskMilestone(models.Model):
-    """Phased checklist item from D-360 to D-Day."""
+    """Phased checklist item from D-360 to D-Day (or custom phases)."""
     PHASE_CHOICES = [
         ('d360', 'Fase 1: D-360 s/d D-180'),
         ('d180', 'Fase 2: D-180 s/d D-90'),
@@ -49,8 +71,8 @@ class TaskMilestone(models.Model):
     )
     phase = models.CharField(
         'Fase',
-        max_length=10,
-        choices=PHASE_CHOICES,
+        max_length=40,
+        default='d360',
     )
     category = models.CharField(
         'Kategori',
@@ -85,6 +107,12 @@ class TaskMilestone(models.Model):
     class Meta:
         ordering = ['phase', 'sort_order', 'title']
         verbose_name = 'Task Milestone'
+
+    def get_phase_display(self):
+        custom = self.wedding.timeline_phases.filter(key=self.phase).first() if self.wedding_id else None
+        if custom:
+            return custom.label
+        return dict(self.PHASE_CHOICES).get(self.phase, self.phase)
 
     def __str__(self):
         return f"[{self.get_phase_display()}] {self.title}"

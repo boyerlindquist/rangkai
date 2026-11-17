@@ -1,9 +1,8 @@
 <form id="edit-task-{{ task.pk }}"
-      class="task-item fade-in" 
+      class="task-item" 
       hx-post="{% url 'operations-checklist:update_task' task.pk %}" 
-      hx-target=".main-content"
-      hx-select=".main-content"
-      hx-swap="outerHTML show:none"
+      hx-target="closest .task-item"
+      hx-swap="outerHTML"
       hx-disinherit="hx-select hx-target hx-swap"
       style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-sage-main);">
   {% csrf_token %}

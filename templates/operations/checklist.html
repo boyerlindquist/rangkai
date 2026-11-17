@@ -3,24 +3,260 @@
 {% block title %}Checklist — Rangkai{% endblock %}
 
 {% block content %}
-<div class="workspace-canvas" x-data="{ showForm: false }">
+<div class="workspace-canvas"
+     x-data="{
+       showForm: false,
+       showPhaseManager: false,
+       managerTab: 'edit',
+       showInlineAddPhase: false,
+       editingPhaseKey: null,
+       deletingPhaseKey: null,
+       deleteTaskAction: 'move',
+       showGuide: {{ total_tasks|yesno:'false,true' }},
+       customZeroPhases: ['Tahap 1: Persiapan & Anggaran', 'Tahap 2: Venue & Vendor Utama', 'Tahap 3: Finalisasi & Hari-H'],
+       selectedAssignee: '{{ assignee_filter|default:'' }}',
+       phaseKeys: {{ phase_keys_json|default:'[\"d360\",\"d180\",\"d90\",\"d30\",\"dday\"]' }},
+       selectedPhase: (function() {
+         const keys = {{ phase_keys_json|default:'[\"d360\",\"d180\",\"d90\",\"d30\",\"dday\"]' }};
+         const saved = sessionStorage.getItem('wp_selected_phase');
+         if (saved === 'all' || keys.includes(saved)) return saved;
+         return '{{ current_phase_key|default:'d360' }}';
+       })(),
+       get selectedIdx() {
+         if (this.selectedPhase === 'all') return Math.max(this.phaseKeys.length - 1, 0);
+         const idx = this.phaseKeys.indexOf(this.selectedPhase);
+         return idx !== -1 ? idx : 0;
+       },
+       selectPhase(key) {
+         this.selectedPhase = key;
+         this.editingPhaseKey = null;
+         this.deletingPhaseKey = null;
+         sessionStorage.setItem('wp_selected_phase', key);
+         this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+       },
+       openAddTask(phaseKey) {
+         if (phaseKey && this.phaseKeys.includes(phaseKey)) {
+           this.selectPhase(phaseKey);
+         }
+         this.showForm = true;
+         this.$nextTick(() => {
+           const el = document.getElementById('task-form-panel');
+           if (el) {
+             const phaseSelect = el.querySelector('select[name=\'phase\']');
+             if (phaseSelect && this.phaseKeys.includes(this.selectedPhase)) {
+               phaseSelect.value = this.selectedPhase;
+             }
+             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             el.classList.add('highlight-pulse');
+             setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
+             el.querySelector('input[name=\'title\']')?.focus();
+           }
+         });
+       }
+     }">
 
   <!-- Page Header -->
   <div class="page-header fade-in">
     <div>
       <h1>Checklist & Roadmap</h1>
-      <p class="page-subtitle">Pantau progress persiapan pernikahan dari D-360 sampai D-Day.</p>
+      <p class="page-subtitle">Pantau & kustomisasi tahapan persiapan pernikahan sesuai kebutuhan Anda.</p>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-gold btn-sm"
-              @click="showForm = !showForm; if(showForm) { $nextTick(() => { const el = document.getElementById('task-form-panel'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.classList.add('highlight-pulse'); setTimeout(() => el?.classList.remove('highlight-pulse'), 2000); el?.querySelector('input[name=\'title\']')?.focus(); }); }">
+    <div class="header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <button type="button"
+              class="btn btn-sm"
+              :class="showGuide ? 'btn-sage' : 'btn-secondary'"
+              @click="showGuide = !showGuide; if(showGuide) { $nextTick(() => { if(window.lucide) lucide.createIcons(); document.getElementById('smart-guide-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }); }">
+        <i data-lucide="lightbulb" style="width: 14px; height: 14px;"></i>
+        <span x-text="showGuide ? 'Tutup Panduan Tugas' : 'Panduan & Ide Tugas'">Panduan & Ide Tugas</span>
+      </button>
+      <button type="button"
+              class="btn btn-secondary btn-sm"
+              @click="showPhaseManager = !showPhaseManager; $nextTick(() => { if(window.lucide) lucide.createIcons(); })">
+        <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
+        <span x-text="showPhaseManager ? 'Tutup Pengaturan Fase' : 'Atur / Rombak Timeline'">Atur / Rombak Timeline</span>
+      </button>
+      <button type="button"
+              class="btn btn-gold btn-sm"
+              @click="showForm ? (showForm = false) : openAddTask(selectedPhase)">
         <i data-lucide="plus"></i>
         <span x-text="showForm ? 'Tutup Form' : 'Tambah Tugas'">Tambah Tugas</span>
       </button>
     </div>
   </div>
 
-  <!-- Inline Add Task Form (collapsible) -->
+  <!-- ============================================================
+       PENDEKATAN 2: ATUR & ROMBAK TIMELINE WORKSPACE PANEL
+       ============================================================ -->
+  <div x-show="showPhaseManager" x-transition x-cloak class="surface-panel fade-in" style="border-color: var(--wp-gold-border); box-shadow: var(--wp-shadow-elevated);">
+    <div class="surface-panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span style="font-weight: 700; font-size: 0.86rem; color: var(--wp-text-main); display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="sliders-horizontal" style="width: 15px; height: 15px; color: var(--wp-gold-main);"></i>
+          Kelola & Rombak Tahapan Timeline
+        </span>
+        <div class="filter-segmented" style="padding: 2px;">
+          <a href="#" @click.prevent="managerTab = 'edit'" :class="{ 'active': managerTab === 'edit' }" style="font-size: 0.75rem; padding: 4px 10px;">1. Susun & Edit Fase</a>
+          <a href="#" @click.prevent="managerTab = 'preset'" :class="{ 'active': managerTab === 'preset' }" style="font-size: 0.75rem; padding: 4px 10px;">2. Ganti Preset Timeline</a>
+          <a href="#" @click.prevent="managerTab = 'zero'" :class="{ 'active': managerTab === 'zero' }" style="font-size: 0.75rem; padding: 4px 10px;">3. Mulai dari 0 (Rombak Total)</a>
+        </div>
+      </div>
+      <button type="button" class="inspector-close-btn" @click="showPhaseManager = false" title="Tutup">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <div class="surface-panel-body">
+      <!-- TAB 1: BULK EDIT & REORDER PHASES -->
+      <div x-show="managerTab === 'edit'">
+        <p class="text-muted" style="margin: 0 0 12px; font-size: 0.8rem;">
+          Ubah nama tahapan, atur nomor urut (angka lebih kecil tampil lebih dulu), pilih mana yang menjadi <strong>Fase Aktif</strong>, atau tambahkan fase baru.
+        </p>
+        <form method="post" action="{% url 'operations-checklist:bulk_manage_phases' %}">
+          {% csrf_token %}
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            {% for p in phase_objs %}
+            <div style="display: grid; grid-template-columns: 70px minmax(180px, 1fr) auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle); border: 1px solid var(--wp-hairline);">
+              <div>
+                <label style="font-size: 0.68rem; color: var(--wp-text-muted); display: block; margin-bottom: 2px;">Urutan</label>
+                <input type="number" name="order_{{ p.key }}" value="{{ forloop.counter }}" min="1" max="30" class="wp-input tabular-nums" style="padding: 5px 8px; font-size: 0.8rem;">
+              </div>
+              <div>
+                <label style="font-size: 0.68rem; color: var(--wp-text-muted); display: block; margin-bottom: 2px;">Nama Fase</label>
+                <input type="text" name="label_{{ p.key }}" value="{{ p.label }}" required class="wp-input" style="padding: 5px 10px; font-size: 0.82rem;">
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 14px;">
+                <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; cursor: pointer; color: var(--wp-text-secondary);">
+                  <input type="radio" name="active_phase_key" value="{{ p.key }}" {% if p.key == current_phase_key %}checked{% endif %}>
+                  Fase Aktif
+                </label>
+              </div>
+            </div>
+            {% endfor %}
+
+            <!-- Optional New Phase Row in Bulk Form -->
+            <div style="display: grid; grid-template-columns: 70px minmax(180px, 1fr); gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--wp-radius-sm); border: 1px dashed var(--wp-border-strong);">
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--wp-gold-dark); text-align: center;">+ Baru</div>
+              <div>
+                <input type="text" name="new_phase_label" placeholder="Ketik nama fase baru jika ingin menambah tahapan (opsional)..." class="wp-input" style="padding: 5px 10px; font-size: 0.82rem;">
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-ghost btn-sm" @click="showPhaseManager = false">Batal</button>
+            <button type="submit" class="btn btn-gold btn-sm">
+              <i data-lucide="save"></i> Simpan Susunan Fase
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- TAB 2: PRESET TIMELINE TEMPLATES -->
+      <div x-show="managerTab === 'preset'" x-cloak>
+        <p class="text-muted" style="margin: 0 0 12px; font-size: 0.8rem;">
+          Pilih gaya tahapan yang paling cocok dengan durasi atau konsep persiapan pernikahan Anda:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+          {% for p_key, preset in timeline_presets.items %}
+          <form method="post" action="{% url 'operations-checklist:reset_or_apply_preset' %}"
+                style="padding: 12px 14px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline); background: var(--wp-bg-surface-subtle); display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+            {% csrf_token %}
+            <input type="hidden" name="mode" value="preset">
+            <input type="hidden" name="preset_key" value="{{ p_key }}">
+            <div>
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--wp-text-main); margin-bottom: 4px;">{{ preset.name }}</div>
+              <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 8px;">{{ preset.desc }}</p>
+              <ol style="margin: 0; padding-left: 16px; font-size: 0.75rem; color: var(--wp-text-secondary); display: flex; flex-direction: column; gap: 3px;">
+                {% for _, ph_label in preset.phases %}
+                <li>{{ ph_label }}</li>
+                {% endfor %}
+              </ol>
+            </div>
+            <div style="border-top: 1px solid var(--wp-hairline); padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 0.7rem; font-weight: 600; color: var(--wp-text-secondary);">Perlakuan terhadap tugas:</label>
+              <select name="task_handling" class="wp-input" style="padding: 4px 8px; font-size: 0.76rem;">
+                <option value="remap">Pertahankan tugas saya saat ini (Petakan otomatis)</option>
+                <option value="template">Reset dengan 44 tugas rekomendasi bawaan</option>
+                <option value="empty">Hanya terapkan fasenya saja (Kosongkan 0 tugas)</option>
+              </select>
+              <button type="submit" class="btn btn-gold btn-sm" style="width: 100%; justify-content: center; margin-top: 4px;">
+                Terapkan Preset Ini
+              </button>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- TAB 3: START FROM ZERO / ROMBAK TOTAL -->
+      <div x-show="managerTab === 'zero'" x-cloak>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          <!-- Option A: Clear only tasks, keep phases -->
+          <div style="padding: 14px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline); background: var(--wp-bg-surface-subtle); display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.88rem; color: var(--wp-text-main); margin-bottom: 6px;">
+                <i data-lucide="eraser" style="width: 16px; height: 16px; color: var(--wp-gold-main);"></i>
+                Opsi A: Bersihkan Semua Tugas (Mulai dari 0 Tugas)
+              </div>
+              <p class="text-muted" style="font-size: 0.78rem; margin: 0;">
+                Menghapus seluruh daftar tugas saat ini hingga bersih (<strong>0 tugas</strong>), namun <strong>tetap mempertahankan tahapan fase</strong> yang sudah ada. Setelah bersih, <em>Panduan & Ide Tugas Penting</em> akan terbuka agar Anda bisa memilih atau menulis tugas dari nol.
+              </p>
+            </div>
+            <form method="post" action="{% url 'operations-checklist:reset_or_apply_preset' %}"
+                  onsubmit="return confirm('Bersihkan semua tugas menjadi 0 tugas? Tahapan fase Anda tetap disimpan.');">
+              {% csrf_token %}
+              <input type="hidden" name="mode" value="clear_tasks">
+              <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; border-color: var(--wp-terracotta-main); color: var(--wp-terracotta-main);">
+                <i data-lucide="trash-2"></i> Kosongkan Semua Tugas (0 Tugas)
+              </button>
+            </form>
+          </div>
+
+          <!-- Option B: Wipe Phases + Tasks & Build Custom Phases from Scratch -->
+          <div style="padding: 14px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-gold-border); background: var(--wp-bg-surface-subtle); display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+            <form method="post" action="{% url 'operations-checklist:reset_or_apply_preset' %}"
+                  onsubmit="return confirm('Rombak total seluruh fase dan tugas dari 0?');">
+              {% csrf_token %}
+              <input type="hidden" name="mode" value="start_from_zero">
+              <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.88rem; color: var(--wp-text-main); margin-bottom: 6px;">
+                <i data-lucide="sparkles" style="width: 16px; height: 16px; color: var(--wp-gold-main);"></i>
+                Opsi B: Rombak Total Fase & Tugas dari 0
+              </div>
+              <p class="text-muted" style="font-size: 0.76rem; margin: 0 0 10px;">
+                Buat daftar tahapan versi Anda sendiri dari nol (0 tugas). Anda tetap akan ditemani <strong>Panduan Tugas Penting</strong> setelah reset:
+              </p>
+
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                <template x-for="(lbl, idx) in customZeroPhases" :key="idx">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="badge badge-muted tabular-nums" style="font-size: 0.7rem;" x-text="idx + 1"></span>
+                    <input type="text" name="custom_phase_labels" x-model="customZeroPhases[idx]" required class="wp-input" style="padding: 4px 8px; font-size: 0.78rem; flex: 1;" placeholder="Nama tahapan...">
+                    <button type="button" class="btn btn-ghost btn-icon btn-sm"
+                            x-show="customZeroPhases.length > 1"
+                            @click="customZeroPhases.splice(idx, 1)"
+                            title="Hapus baris">
+                      <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+                    </button>
+                  </div>
+                </template>
+                <button type="button" class="btn btn-ghost btn-sm"
+                        style="align-self: flex-start; font-size: 0.74rem;"
+                        @click="customZeroPhases.push('Tahap ' + (customZeroPhases.length + 1) + ': ')">
+                  + Tambah Baris Fase
+                </button>
+              </div>
+
+              <button type="submit" class="btn btn-gold btn-sm" style="width: 100%; justify-content: center;">
+                <i data-lucide="refresh-cw"></i> Mulai dari 0 dengan Fase Ini
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline Add Task Form (collapsible, updates in-place via OOB without page reload) -->
   <div x-show="showForm" x-transition x-cloak id="task-form-panel" class="surface-panel fade-in" style="scroll-margin-top: 24px;">
     <div class="surface-panel-header">
       <span style="font-weight: 600; font-size: 0.82rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
@@ -34,10 +270,8 @@
     <div class="surface-panel-body">
       <form method="post" action="{% url 'operations-checklist:add_task' %}"
             hx-post="{% url 'operations-checklist:add_task' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML"
-            @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
+            hx-swap="none"
+            @htmx:after-request="if($event.detail.successful) { const addedPhase = $el.querySelector('select[name=\'phase\']')?.value; if (addedPhase) selectPhase(addedPhase); $el.reset(); showForm = false; }">
         {% csrf_token %}
         <div class="form-row">
           {% for field in task_form %}
@@ -56,8 +290,8 @@
     </div>
   </div>
 
-  <!-- Roadmap & Progress Metric Strip -->
-  <div class="metric-strip">
+  <!-- Roadmap & Progress Metric Strip (Live OOB Target) -->
+  <div id="checklist-metrics" class="metric-strip">
     <div class="metric-item">
       <div class="metric-label">
         <i data-lucide="check-circle-2" style="width: 13px; height: 13px;"></i> Progres Keseluruhan
@@ -91,72 +325,380 @@
     </div>
   </div>
 
-  <!-- Task List & Filter Section (Scoped HTMX Target) -->
-  <div id="task-list-section" style="display: flex; flex-direction: column; gap: 16px;">
-    <!-- Assignee Segmented Filter Bar -->
+  <!-- Task List & Filter Section -->
+  <div id="task-list-section" style="display: flex; flex-direction: column; gap: 14px;">
+    <!-- Assignee Instant Filter Bar (No Page Reload) -->
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div class="filter-segmented" hx-boost="true" hx-target="#task-list-section" hx-select="#task-list-section" hx-swap="outerHTML show:none">
-        <a href="{% url 'operations-checklist:checklist' %}" class="{% if not assignee_filter %}active{% endif %}">Semua</a>
-        <a href="?assignee=groom" class="{% if assignee_filter == 'groom' %}active{% endif %}">Pria</a>
-        <a href="?assignee=bride" class="{% if assignee_filter == 'bride' %}active{% endif %}">Wanita</a>
-        <a href="?assignee=both" class="{% if assignee_filter == 'both' %}active{% endif %}">Berdua</a>
-        <a href="?assignee=family" class="{% if assignee_filter == 'family' %}active{% endif %}">Keluarga / WO</a>
+      <div class="filter-segmented">
+        <a href="#" @click.prevent="selectedAssignee = ''" :class="{ 'active': selectedAssignee === '' }">Semua PJ</a>
+        <a href="#" @click.prevent="selectedAssignee = 'groom'" :class="{ 'active': selectedAssignee === 'groom' }">Pria</a>
+        <a href="#" @click.prevent="selectedAssignee = 'bride'" :class="{ 'active': selectedAssignee === 'bride' }">Wanita</a>
+        <a href="#" @click.prevent="selectedAssignee = 'both'" :class="{ 'active': selectedAssignee === 'both' }">Berdua</a>
+        <a href="#" @click.prevent="selectedAssignee = 'family'" :class="{ 'active': selectedAssignee === 'family' }">Keluarga / WO</a>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="btn btn-ghost btn-sm" @click="$dispatch('toggle-all-phases', { open: true })" style="font-size: 0.78rem;">
-          <i data-lucide="chevrons-down" style="width: 14px; height: 14px;"></i> Buka Semua Fase
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button type="button"
+                class="btn btn-sm"
+                :class="selectedPhase === 'all' ? 'btn-gold' : 'btn-ghost'"
+                @click="selectPhase(selectedPhase === 'all' ? '{{ current_phase_key|default:'d360' }}' : 'all')"
+                style="font-size: 0.78rem;">
+          <i data-lucide="layers" style="width: 13px; height: 13px;"></i>
+          <span x-text="selectedPhase === 'all' ? 'Kembali per Fase' : 'Lihat Semua Fase'"></span>
         </button>
-        <button type="button" class="btn btn-ghost btn-sm" @click="$dispatch('toggle-all-phases', { open: false })" style="font-size: 0.78rem;">
-          <i data-lucide="chevrons-up" style="width: 14px; height: 14px;"></i> Tutup Semua
-        </button>
-        <span class="status-pill">{{ total_tasks }} Tugas</span>
       </div>
     </div>
 
-    <!-- Phase Timeline Groups (Linear-style Surfaces) -->
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      {% for phase_key, phase_data in grouped_tasks.items %}
-      <div class="surface-panel"
-           style="{% if phase_data.is_current %}border-color: var(--wp-sage-border); box-shadow: var(--wp-shadow-elevated);{% elif phase_data.is_past and phase_data.overdue_count > 0 %}border-color: var(--wp-gold-border);{% endif %}"
-           x-data="{ open: sessionStorage.getItem('wp_phase_{{ phase_key }}') !== null ? sessionStorage.getItem('wp_phase_{{ phase_key }}') === 'true' : {% if phase_data.is_current or phase_data.overdue_count > 0 %}true{% else %}{{ phase_data.progress|yesno:'false,true,true' }}{% endif %} }"
-           x-init="$watch('open', val => sessionStorage.setItem('wp_phase_{{ phase_key }}', val))"
-           @toggle-all-phases.window="open = $event.detail.open">
-        <div class="surface-panel-header" @click="open = !open" style="cursor: pointer; background: var(--wp-bg-surface-subtle);">
-          <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
-            <div class="tabular-nums" style="font-size: 1.15rem; font-weight: 700; color: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-text-main){% endif %}; min-width: 52px;">
-              {{ phase_data.progress }}%
+    <!-- Split Master-Detail Panel: Fixed Height with Scrollable Task Rows -->
+    <div class="surface-panel phase-md-panel">
+      <div class="phase-md-workspace">
+
+        <!-- LEFT: Connected Timeline Rail + Inline Add Phase -->
+        <aside class="phase-rail" aria-label="Tahapan Timeline Pernikahan">
+          <div class="phase-rail-header">
+            <span style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--wp-text-secondary);">
+              Tahapan Timeline
+            </span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="badge badge-muted tabular-nums" style="font-size: 0.68rem;"
+                    x-text="selectedPhase === 'all' ? 'Semua ({{ phase_count }}/{{ phase_count }})' : ('Tahap ' + (selectedIdx + 1) + ' / {{ phase_count }}')">
+                Tahap 1 / {{ phase_count }}
+              </span>
+              <button type="button"
+                      class="btn btn-ghost btn-icon btn-sm"
+                      style="width: 22px; height: 22px; min-width: 22px; min-height: 22px;"
+                      @click="showInlineAddPhase = !showInlineAddPhase; $nextTick(() => $refs.newPhaseInput?.focus())"
+                      title="Tambah Fase Baru">
+                <i data-lucide="plus" style="width: 13px; height: 13px;"></i>
+              </button>
+              <button type="button"
+                      class="btn btn-ghost btn-icon btn-sm"
+                      style="width: 22px; height: 22px; min-width: 22px; min-height: 22px;"
+                      @click="showPhaseManager = !showPhaseManager"
+                      title="Atur / Rombak Urutan Fase">
+                <i data-lucide="settings-2" style="width: 13px; height: 13px;"></i>
+              </button>
             </div>
-            <div style="flex: 1; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="font-weight: 600; font-size: 0.95rem; color: var(--wp-text-main);">{{ phase_data.label }}</span>
-                {% if phase_data.is_current %}
-                  <span class="status-pill status-done"><span class="dot"></span> Fase Aktif</span>
-                {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
-                  <span class="status-pill status-warning"><span class="dot"></span> {{ phase_data.overdue_count }} Perlu Tindak Lanjut</span>
-                {% elif phase_data.is_past and phase_data.overdue_count == 0 %}
-                  <span class="status-pill status-done"><span class="dot"></span> Tuntas</span>
+          </div>
+
+          <div class="phase-rail-steps">
+            {% for phase_key, phase_data in grouped_tasks.items %}
+            <div class="phase-rail-item"
+                 :class="{
+                   'is-selected': selectedPhase === '{{ phase_key }}',
+                   'is-passed': selectedIdx >= {{ phase_data.phase_idx }}
+                 }"
+                 @click="selectPhase('{{ phase_key }}')">
+
+              <!-- Connected Vertical Line + Step Circle -->
+              <div class="phase-rail-track">
+                {% if not forloop.first %}
+                <span class="phase-rail-line-top"
+                      :class="{ 'is-filled': selectedIdx >= {{ phase_data.phase_idx }} }"></span>
                 {% endif %}
+                {% if not forloop.last %}
+                <span class="phase-rail-line-bottom"
+                      :class="{ 'is-filled': selectedIdx >= {{ phase_data.phase_idx|add:'1' }} }"></span>
+                {% endif %}
+                <span class="phase-rail-dot tabular-nums"
+                      :class="{
+                        'is-filled': selectedIdx >= {{ phase_data.phase_idx }},
+                        'is-active-target': selectedPhase === '{{ phase_key }}'
+                      }">
+                  <span id="phase-rail-dot-inner-{{ phase_key }}">{% if phase_data.progress == 100 and phase_data.total > 0 %}✓{% else %}{{ phase_data.step_num }}{% endif %}</span>
+                </span>
               </div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
-                <span class="text-muted tabular-nums" style="font-size: 0.76rem;">{{ phase_data.done }} / {{ phase_data.total }} selesai</span>
-                <div style="flex: 1; max-width: 180px; height: 5px; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
+
+              <!-- Phase Card (Live OOB Target) -->
+              <div id="phase-rail-card-{{ phase_key }}" class="phase-rail-card">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                  <span style="font-weight: 600; font-size: 0.84rem; color: var(--wp-text-main); line-height: 1.3;">
+                    {{ phase_data.label }}
+                  </span>
+                  <span class="tabular-nums"
+                        style="font-size: 0.76rem; font-weight: 700; flex-shrink: 0; color: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-text-secondary){% endif %};">
+                    {{ phase_data.progress }}%
+                  </span>
+                </div>
+
+                <div style="height: 4px; width: 100%; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
                   <div style="height: 100%; width: {{ phase_data.progress }}%; background: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-gold-main){% endif %}; transition: width 0.3s ease;"></div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                  <span class="text-muted tabular-nums" style="font-size: 0.72rem;">
+                    {{ phase_data.done }}/{{ phase_data.total }} selesai
+                  </span>
+                  {% if phase_data.is_current %}
+                    <span class="status-pill status-done" style="font-size: 0.66rem; padding: 1px 6px;"><span class="dot"></span> Fase Aktif</span>
+                  {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
+                    <span class="status-pill status-warning" style="font-size: 0.66rem; padding: 1px 6px;"><span class="dot"></span> {{ phase_data.overdue_count }} Tertunda</span>
+                  {% elif phase_data.progress == 100 and phase_data.total > 0 %}
+                    <span class="status-pill status-done" style="font-size: 0.66rem; padding: 1px 6px;">Tuntas</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
+            {% endfor %}
           </div>
-          <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: var(--wp-text-muted); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0;" :style="open && 'transform: rotate(180deg)'"></i>
-        </div>
-        <div class="surface-panel-body" x-show="open" x-transition x-cloak style="padding: 12px 20px;">
-          {% for task in phase_data.tasks %}
-            {% include 'operations/partials/task_item.html' with task=task %}
-          {% empty %}
-          <p class="text-muted" style="padding: 12px 0; font-size: 0.85rem;">Tidak ada tugas di fase ini{% if assignee_filter %} untuk filter ini{% endif %}.</p>
+
+          <!-- Inline Quick Add Phase Footer inside Left Rail -->
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--wp-hairline); flex-shrink: 0;">
+            <button type="button"
+                    x-show="!showInlineAddPhase"
+                    @click="showInlineAddPhase = true; $nextTick(() => $refs.newPhaseInput?.focus())"
+                    class="btn btn-ghost btn-sm"
+                    style="width: 100%; justify-content: center; font-size: 0.75rem; border: 1px dashed var(--wp-border-strong);">
+              <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Tambah Fase Baru
+            </button>
+            <form x-show="showInlineAddPhase" x-cloak method="post" action="{% url 'operations-checklist:add_phase' %}" style="display: flex; flex-direction: column; gap: 6px;">
+              {% csrf_token %}
+              <input type="text" x-ref="newPhaseInput" name="label" required placeholder="Contoh: Tahap 6: Pasca-Acara" class="wp-input" style="padding: 5px 8px; font-size: 0.78rem;">
+              <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                <button type="button" class="btn btn-ghost btn-sm" style="padding: 3px 8px; font-size: 0.72rem;" @click="showInlineAddPhase = false">Batal</button>
+                <button type="submit" class="btn btn-gold btn-sm" style="padding: 3px 10px; font-size: 0.72rem;">Tambah</button>
+              </div>
+            </form>
+          </div>
+        </aside>
+
+        <!-- RIGHT: Active Phase Checklist Detail Pane (Fixed Height + Scrollable Task List) -->
+        <div class="phase-detail-pane">
+          {% for phase_key, phase_data in grouped_tasks.items %}
+          <div class="phase-detail-view" x-show="selectedPhase === '{{ phase_key }}'" x-cloak>
+            <!-- Selected Phase Pinned Header -->
+            <div class="phase-detail-header">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div id="phase-detail-header-stats-{{ phase_key }}">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="badge badge-sage tabular-nums" style="font-size: 0.72rem;">Tahap {{ phase_data.step_num }} dari {{ phase_count }}</span>
+                    <h2 style="margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--wp-text-main);">
+                      {{ phase_data.label }}
+                    </h2>
+                    {% if phase_data.is_current %}
+                      <span class="status-pill status-done"><span class="dot"></span> Fase Aktif Saat Ini</span>
+                    {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
+                      <span class="status-pill status-warning"><span class="dot"></span> {{ phase_data.overdue_count }} Perlu Tindak Lanjut</span>
+                    {% elif phase_data.progress == 100 and phase_data.total > 0 %}
+                      <span class="status-pill status-done"><span class="dot"></span> Semua Tugas Tuntas</span>
+                    {% endif %}
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <span class="text-muted tabular-nums" style="font-size: 0.78rem;">
+                      <strong>{{ phase_data.done }}</strong> dari <strong>{{ phase_data.total }}</strong> tugas selesai ({{ phase_data.progress }}%)
+                    </span>
+                    <div style="width: 180px; max-width: 100%; height: 6px; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
+                      <div style="height: 100%; width: {{ phase_data.progress }}%; background: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-gold-main){% endif %}; transition: width 0.3s ease;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Header Quick Actions: Inline Phase Edit / Delete / Set Active + Add Task -->
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  {% if not phase_data.is_current %}
+                  <form method="post" action="{% url 'operations-checklist:update_phase' phase_key %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_active">
+                    <button type="submit" class="btn btn-ghost btn-sm" title="Jadikan fase ini sebagai Fase Aktif saat ini" style="font-size: 0.74rem;">
+                      <i data-lucide="compass" style="width: 13px; height: 13px;"></i> Set Aktif
+                    </button>
+                  </form>
+                  {% endif %}
+
+                  <button type="button" class="btn btn-ghost btn-sm"
+                          @click="editingPhaseKey = (editingPhaseKey === '{{ phase_key }}' ? null : '{{ phase_key }}'); deletingPhaseKey = null"
+                          title="Edit nama atau geser urutan fase ini"
+                          style="font-size: 0.74rem;">
+                    <i data-lucide="pencil" style="width: 13px; height: 13px;"></i> Edit Fase
+                  </button>
+
+                  {% if phase_count > 1 %}
+                  <button type="button" class="btn btn-ghost btn-sm"
+                          @click="deletingPhaseKey = (deletingPhaseKey === '{{ phase_key }}' ? null : '{{ phase_key }}'); editingPhaseKey = null; deleteTaskAction = 'move'"
+                          title="Hapus fase ini (dengan opsi pindah tugas)"
+                          style="font-size: 0.74rem; color: var(--wp-terracotta-main);">
+                    <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                  </button>
+                  {% endif %}
+
+                  <button type="button" class="btn btn-gold btn-sm"
+                          @click="openAddTask('{{ phase_key }}')">
+                    <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Tambah Tugas
+                  </button>
+                </div>
+              </div>
+
+              <!-- INLINE EDIT PHASE BAR (Rename + Move Up/Down) -->
+              <div x-show="editingPhaseKey === '{{ phase_key }}'" x-transition x-cloak
+                   style="margin-top: 6px; padding: 10px 12px; border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface); border: 1px solid var(--wp-sage-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                <form method="post" action="{% url 'operations-checklist:update_phase' phase_key %}" style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="rename">
+                  <input type="text" name="label" value="{{ phase_data.label }}" required class="wp-input" style="padding: 5px 10px; font-size: 0.8rem; flex: 1;">
+                  <button type="submit" class="btn btn-gold btn-sm">Simpan Nama</button>
+                </form>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  {% if not forloop.first %}
+                  <form method="post" action="{% url 'operations-checklist:update_phase' phase_key %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="move_up">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Geser urutan fase ke atas">↑ Geser Naik</button>
+                  </form>
+                  {% endif %}
+                  {% if not forloop.last %}
+                  <form method="post" action="{% url 'operations-checklist:update_phase' phase_key %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="move_down">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Geser urutan fase ke bawah">↓ Geser Turun</button>
+                  </form>
+                  {% endif %}
+                  <button type="button" class="btn btn-ghost btn-sm" @click="editingPhaseKey = null">Tutup</button>
+                </div>
+              </div>
+
+              <!-- SAFE DELETE PHASE CONTROL BOX (Move tasks to another phase OR delete) -->
+              <div x-show="deletingPhaseKey === '{{ phase_key }}'" x-transition x-cloak
+                   style="margin-top: 6px; padding: 12px 14px; border-radius: var(--wp-radius-sm); background: var(--wp-terracotta-bg); border: 1px solid var(--wp-terracotta-border);">
+                <form method="post" action="{% url 'operations-checklist:delete_phase' phase_key %}">
+                  {% csrf_token %}
+                  {% if phase_data.total > 0 %}
+                  <div style="font-weight: 700; font-size: 0.82rem; color: var(--wp-text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="alert-triangle" style="width: 15px; height: 15px; color: var(--wp-terracotta-main);"></i>
+                    Fase "{{ phase_data.label }}" masih memiliki {{ phase_data.total }} tugas!
+                  </div>
+                  <p style="margin: 0 0 8px; font-size: 0.76rem; color: var(--wp-text-secondary);">
+                    Agar tugas Anda tidak hilang diam-diam, pilih tindakan untuk <strong>{{ phase_data.total }} tugas</strong> di fase ini sebelum fase dihapus:
+                  </p>
+                  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; cursor: pointer; flex-wrap: wrap;">
+                      <input type="radio" name="task_action" value="move" x-model="deleteTaskAction">
+                      <span><strong>Pindahkan {{ phase_data.total }} tugas</strong> ke fase:</span>
+                      <select name="target_phase_key" class="wp-input" style="padding: 3px 8px; font-size: 0.76rem; width: auto; min-width: 180px;">
+                        {% for other_key, other_label in phases %}
+                          {% if other_key != phase_key %}
+                          <option value="{{ other_key }}">{{ other_label }}</option>
+                          {% endif %}
+                        {% endfor %}
+                      </select>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; cursor: pointer; color: var(--wp-terracotta-main);">
+                      <input type="radio" name="task_action" value="delete" x-model="deleteTaskAction">
+                      <span>Hapus fase ini beserta seluruh {{ phase_data.total }} tugas di dalamnya</span>
+                    </label>
+                  </div>
+                  {% else %}
+                  <div style="font-size: 0.8rem; color: var(--wp-text-main); margin-bottom: 8px;">
+                    Hapus fase kosong <strong>"{{ phase_data.label }}"</strong> dari timeline?
+                  </div>
+                  <input type="hidden" name="task_action" value="delete">
+                  {% endif %}
+                  <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="btn btn-ghost btn-sm" @click="deletingPhaseKey = null">Batal</button>
+                    <button type="submit" class="btn btn-sm" style="background: var(--wp-terracotta-main); color: #fff; border: 0;">
+                      <span x-text="deleteTaskAction === 'move' && {{ phase_data.total }} > 0 ? 'Pindahkan Tugas & Hapus Fase' : 'Ya, Hapus Fase'">Konfirmasi Hapus</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Scrollable Selected Phase Tasks List -->
+            <div class="phase-detail-body">
+              <div id="phase-tasks-{{ phase_key }}">
+                {% for task in phase_data.tasks %}
+                  {% include 'operations/partials/task_item.html' with task=task %}
+                {% empty %}
+                <div style="padding: 28px 20px; text-align: center; color: var(--wp-text-muted); border: 1px dashed var(--wp-border-strong); border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle);">
+                  <i data-lucide="lightbulb" style="width: 24px; height: 24px; margin-bottom: 6px; color: var(--wp-gold-main);"></i>
+                  <p style="margin: 0 0 6px; font-size: 0.88rem; font-weight: 600; color: var(--wp-text-main);">
+                    Fase <strong>{{ phase_data.label }}</strong> masih kosong (0 tugas)
+                  </p>
+                  <p style="margin: 0 0 12px; font-size: 0.78rem;">
+                    Tambahkan tugas manual atau pilih rekomendasi dari <strong>Panduan & Ide Tugas Penting</strong> di bawah agar tidak ada persiapan yang terlewat.
+                  </p>
+                  <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-gold btn-sm" @click="openAddTask('{{ phase_key }}')">
+                      <i data-lucide="plus"></i> Tambah Tugas Manual
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            @click="showGuide = true; $nextTick(() => { if(window.lucide) lucide.createIcons(); document.getElementById('smart-guide-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); })">
+                      <i data-lucide="book-open"></i> Lihat Panduan Tugas Penting
+                    </button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
           {% endfor %}
+
+          <!-- ALL PHASES COMBINED VIEW (when user clicks "Lihat Semua Fase") -->
+          <div class="phase-detail-view" x-show="selectedPhase === 'all'" x-cloak>
+            <div class="phase-detail-header">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div>
+                  <span class="badge badge-gold" style="font-size: 0.72rem;">Tampilan Gabungan</span>
+                  <h2 style="margin: 4px 0 0; font-size: 1.05rem; font-weight: 700;">Semua Fase Timeline</h2>
+                </div>
+                <button type="button" class="btn btn-gold btn-sm" @click="openAddTask('{{ current_phase_key|default:'d360' }}')">
+                  <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Tambah Tugas
+                </button>
+              </div>
+            </div>
+            <div class="phase-detail-body" style="display: flex; flex-direction: column; gap: 18px;">
+              {% for phase_key, phase_data in grouped_tasks.items %}
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--wp-hairline);">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 700; font-size: 0.86rem; color: var(--wp-text-main);">{{ phase_data.label }}</span>
+                    {% if phase_data.is_current %}
+                      <span class="status-pill status-done" style="font-size: 0.68rem; padding: 1px 6px;"><span class="dot"></span> Aktif</span>
+                    {% endif %}
+                  </div>
+                  <span id="all-phase-header-stats-{{ phase_key }}" class="text-muted tabular-nums" style="font-size: 0.76rem;">{{ phase_data.done }}/{{ phase_data.total }} selesai ({{ phase_data.progress }}%)</span>
+                </div>
+                <div id="all-phase-tasks-{{ phase_key }}">
+                  {% for task in phase_data.tasks %}
+                    {% include 'operations/partials/task_item.html' with task=task %}
+                  {% empty %}
+                    <p class="text-muted" style="font-size: 0.8rem; margin: 6px 0;">Tidak ada tugas di fase ini.</p>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
         </div>
       </div>
-      {% endfor %}
     </div>
+
+    <!-- ============================================================
+         SMART TASK GUIDE ("PANDUAN & KATALOG TUGAS PENTING")
+         Auto-opens when checklist is empty (0 tasks) or toggled anytime
+         ============================================================ -->
+    <div id="smart-guide-panel" x-show="showGuide" x-transition x-cloak class="surface-panel" style="border-color: var(--wp-gold-border); scroll-margin-top: 20px;">
+      <div class="surface-panel-header" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="lightbulb" style="width: 16px; height: 16px; color: var(--wp-gold-main);"></i>
+            <span style="font-weight: 700; font-size: 0.9rem; color: var(--wp-text-main);">
+              Panduan & Katalog Tugas Penting Pernikahan
+            </span>
+            <span class="badge badge-gold">Referensi Anti-Lupa</span>
+          </div>
+          <p class="text-muted" style="margin: 3px 0 0; font-size: 0.76rem;">
+            Sedang merombak timeline dari 0? Klik <strong>+ Tambah</strong> pada item mana pun untuk langsung memasukkannya ke fase yang sedang Anda pilih di atas tanpa takut ada persiapan krusial yang terlewat.
+          </p>
+        </div>
+        <button type="button" class="inspector-close-btn" @click="showGuide = false" title="Sembunyikan Panduan">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+      <div class="surface-panel-body">
+        {% include 'operations/partials/checklist_guide_panel.html' %}
+      </div>
+    </div>
+
   </div>
 
 </div>
