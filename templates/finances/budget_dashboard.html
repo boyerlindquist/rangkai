@@ -913,7 +913,7 @@
     <!-- ── TOP SPLIT ROW: LEFT CATEGORY TABS + RIGHT SANKEY DIAGRAM ── -->
     <div class="cat-md" style="min-height: 360px;">
       <!-- LEFT COLUMN: Clickable Category Tabs (Master List) -->
-      <aside class="cat-list" aria-label="Daftar kategori anggaran" style="max-height: 480px;">
+      <aside class="cat-list" aria-label="Daftar kategori anggaran">
         <!-- Static Target Summary Card -->
         <button type="button"
                 class="cat-card"
@@ -986,11 +986,16 @@
         {% endfor %}
       </aside>
 
-      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Rigid Fixed Size, Never Scrollable, Full Branches) -->
-      <div style="padding: 12px 18px; position: relative; overflow: hidden !important; height: 480px; min-height: 480px; max-height: 480px; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Full Size with Horizontal Scroll on Mobile) -->
+      <div class="sankey-outer-wrapper" style="padding: 12px 18px; position: relative; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start;">
+        <!-- Mobile scroll hint -->
+        <div class="sankey-mobile-hint text-muted" style="display: none; align-items: center; gap: 5px; font-size: 0.72rem; padding: 2px 4px 8px 4px; border-bottom: 1px dashed var(--wp-hairline); margin-bottom: 6px; flex-shrink: 0;">
+          <i data-lucide="chevrons-right" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i>
+          <span>Geser horizontal &rarr; untuk melihat seluruh alur anggaran</span>
+        </div>
         <div id="sankey-tooltip" class="sankey-tooltip-card"></div>
         {% if has_sankey_data %}
-          <div id="budget_sankey_chart" style="width: 100%; height: 450px; min-height: 450px; max-height: 450px; overflow: hidden !important;"></div>
+          <div id="budget_sankey_chart" style="width: 100%; min-width: 740px; height: 450px; min-height: 450px; max-height: 450px; flex-shrink: 0;"></div>
           <div id="budget_sankey_empty_filter" class="empty-state" style="display: none; padding: 36px 20px; text-align: center; height: 340px; flex-direction: column; align-items: center; justify-content: center;">
             <div class="empty-icon" style="margin-bottom: 10px;">
               <i data-lucide="filter-x" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i>
@@ -1696,14 +1701,15 @@
         return { id: e[0], name: e[0], val: e[1], dispVal: e[1], col: 2, color: getNodeColor(e[0], i) };
       });
 
-      // Rigid spatial measurements — generous height, never scrolls, zero bottom clipping
-      const isMobile = (targetEl.clientWidth || window.innerWidth) < 768;
-      const effectiveW = Math.max(680, targetEl.clientWidth || 880);
+      // Full desktop readable width even on mobile, horizontally scrollable container
+      const minRequiredW = 750;
+      const effectiveW = Math.max(minRequiredW, targetEl.clientWidth || minRequiredW);
       const height = 450;
       targetEl.style.height = '450px';
       targetEl.style.minHeight = '450px';
       targetEl.style.maxHeight = '450px';
-      targetEl.style.overflow = 'hidden';
+      targetEl.style.width = effectiveW + 'px';
+      targetEl.style.minWidth = minRequiredW + 'px';
 
       const headerH = 34;
       const bottomPad = 28;
@@ -1712,8 +1718,8 @@
 
       // 3 Strict Discrete Columns: Left (0), Center (1), Right (2 stretched)
       const x0 = 16;
-      const x1 = Math.round(effectiveW * (isMobile ? 0.39 : 0.43));
-      const x2 = Math.round(effectiveW * (isMobile ? 0.75 : 0.79));
+      const x1 = Math.round(effectiveW * 0.42);
+      const x2 = Math.round(effectiveW * 0.78);
 
       function layoutCol(nodes, xCoord) {
         const len = nodes.length;
@@ -1848,7 +1854,7 @@
                'Z';
       }
 
-      let svg = '<svg width="100%" height="450" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: 100%; height: 450px; overflow: visible; font-family: inherit;">';
+      let svg = '<svg width="' + effectiveW + '" height="450" viewBox="0 0 ' + effectiveW + ' ' + height + '" style="display: block; width: ' + effectiveW + 'px; height: 450px; overflow: visible; font-family: inherit;">';
 
       svg += '<defs>';
       links1.concat(links2).forEach(function(l, idx) {
