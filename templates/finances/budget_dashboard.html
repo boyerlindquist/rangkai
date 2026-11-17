@@ -913,7 +913,7 @@
     <!-- ── TOP SPLIT ROW: LEFT CATEGORY TABS + RIGHT SANKEY DIAGRAM ── -->
     <div class="cat-md" style="min-height: 360px;">
       <!-- LEFT COLUMN: Clickable Category Tabs (Master List) -->
-      <aside class="cat-list" aria-label="Daftar kategori anggaran" style="max-height: 455px;">
+      <aside class="cat-list" aria-label="Daftar kategori anggaran" style="max-height: 480px;">
         <!-- Static Target Summary Card -->
         <button type="button"
                 class="cat-card"
@@ -986,11 +986,11 @@
         {% endfor %}
       </aside>
 
-      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Rigid Fixed Size, Never Scrollable) -->
-      <div style="padding: 12px 18px; position: relative; overflow: hidden !important; height: 435px; min-height: 435px; max-height: 435px; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Rigid Fixed Size, Never Scrollable, Full Branches) -->
+      <div style="padding: 12px 18px; position: relative; overflow: hidden !important; height: 480px; min-height: 480px; max-height: 480px; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
         <div id="sankey-tooltip" class="sankey-tooltip-card"></div>
         {% if has_sankey_data %}
-          <div id="budget_sankey_chart" style="width: 100%; height: 410px; min-height: 410px; max-height: 410px; overflow: hidden !important;"></div>
+          <div id="budget_sankey_chart" style="width: 100%; height: 450px; min-height: 450px; max-height: 450px; overflow: hidden !important;"></div>
           <div id="budget_sankey_empty_filter" class="empty-state" style="display: none; padding: 36px 20px; text-align: center; height: 340px; flex-direction: column; align-items: center; justify-content: center;">
             <div class="empty-icon" style="margin-bottom: 10px;">
               <i data-lucide="filter-x" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i>
@@ -1696,20 +1696,18 @@
         return { id: e[0], name: e[0], val: e[1], dispVal: e[1], col: 2, color: getNodeColor(e[0], i) };
       });
 
-      // Rigid spatial measurements — fixed size, never scrolls or shifts on hover
+      // Rigid spatial measurements — generous height, never scrolls, zero bottom clipping
       const isMobile = (targetEl.clientWidth || window.innerWidth) < 768;
       const effectiveW = Math.max(680, targetEl.clientWidth || 880);
-      const height = 410;
-      targetEl.style.height = '410px';
-      targetEl.style.minHeight = '410px';
-      targetEl.style.maxHeight = '410px';
+      const height = 450;
+      targetEl.style.height = '450px';
+      targetEl.style.minHeight = '450px';
+      targetEl.style.maxHeight = '450px';
       targetEl.style.overflow = 'hidden';
 
-      const headerH = 38;
-      const bottomPad = 22;
+      const headerH = 34;
+      const bottomPad = 28;
       const nodeW = 12;
-      const gap = 10;
-      const minNodeH = 20;
       const drawH = height - headerH - bottomPad;
 
       // 3 Strict Discrete Columns: Left (0), Center (1), Right (2 stretched)
@@ -1720,20 +1718,48 @@
       function layoutCol(nodes, xCoord) {
         const len = nodes.length;
         if (len === 0) return;
-        const totalGaps = (len - 1) * gap;
-        const availH = drawH - totalGaps;
+
+        let nodeGap = 8;
+        let minH = 16;
+        let totalGaps = (len - 1) * nodeGap;
+        let usableH = drawH - totalGaps;
+
+        if (usableH < len * minH) {
+          nodeGap = Math.max(4, Math.floor((drawH - len * minH) / Math.max(1, len - 1)));
+          totalGaps = (len - 1) * nodeGap;
+          usableH = drawH - totalGaps;
+          minH = Math.max(10, Math.floor(usableH / len));
+        }
+
+        const remainingH = Math.max(0, usableH - len * minH);
         const colSum = nodes.reduce(function(acc, n) { return acc + n.val; }, 0) || 1;
 
+        const rawHeights = nodes.map(function(node) {
+          const extra = (node.val / colSum) * remainingH;
+          return minH + extra;
+        });
+
+        const sumRaw = rawHeights.reduce(function(a, b) { return a + b; }, 0) || 1;
+        const scale = usableH / sumRaw;
+
         let curY = headerH;
-        nodes.forEach(function(node) {
+        nodes.forEach(function(node, i) {
           node.x = xCoord;
           node.w = nodeW;
-          node.h = Math.max(minNodeH, Math.round((node.val / colSum) * availH));
-          node.y = curY;
+          node.h = Math.max(minH, Math.round(rawHeights[i] * scale));
+          node.y = Math.round(curY);
           node.inOffset = 0;
           node.outOffset = 0;
-          curY += node.h + gap;
+          curY += node.h + nodeGap;
         });
+
+        // Strict clamp so the bottom-most node and labels never exceed headerH + drawH
+        const last = nodes[nodes.length - 1];
+        const maxY = headerH + drawH;
+        if (last && (last.y + last.h > maxY)) {
+          const overflow = (last.y + last.h) - maxY;
+          last.h = Math.max(minH, last.h - overflow);
+        }
       }
 
       layoutCol(col0Nodes, x0);
@@ -1751,13 +1777,16 @@
         const tgt = nodeLookup.get(d.to);
         if (!src || !tgt) return null;
 
-        const srcH = Math.max(3, (d.weight / src.val) * src.h);
-        const tgtH = Math.max(3, (d.weight / tgt.val) * tgt.h);
+        const srcH = Math.max(2, (d.weight / src.val) * src.h);
+        const tgtH = Math.max(2, (d.weight / tgt.val) * tgt.h);
+
+        const clampedSrcH = Math.min(srcH, Math.max(1.5, src.h - src.outOffset));
+        const clampedTgtH = Math.min(tgtH, Math.max(1.5, tgt.h - tgt.inOffset));
 
         const y0 = src.y + src.outOffset;
         const y1 = tgt.y + tgt.inOffset;
-        src.outOffset += srcH;
-        tgt.inOffset += tgtH;
+        src.outOffset += clampedSrcH;
+        tgt.inOffset += clampedTgtH;
 
         return {
           from: d.from,
@@ -1769,10 +1798,10 @@
           tgtColor: tgt.color,
           x0: src.x + src.w,
           y0: y0,
-          h0: srcH,
+          h0: clampedSrcH,
           x1: tgt.x,
           y1: y1,
-          h1: tgtH
+          h1: clampedTgtH
         };
       }).filter(Boolean);
 
@@ -1782,13 +1811,16 @@
         const tgt = nodeLookup.get(d.to);
         if (!src || !tgt) return null;
 
-        const srcH = Math.max(3, (d.weight / src.val) * src.h);
-        const tgtH = Math.max(3, (d.weight / tgt.val) * tgt.h);
+        const srcH = Math.max(2, (d.weight / src.val) * src.h);
+        const tgtH = Math.max(2, (d.weight / tgt.val) * tgt.h);
+
+        const clampedSrcH = Math.min(srcH, Math.max(1.5, src.h - src.outOffset));
+        const clampedTgtH = Math.min(tgtH, Math.max(1.5, tgt.h - tgt.inOffset));
 
         const y0 = src.y + src.outOffset;
         const y1 = tgt.y + tgt.inOffset;
-        src.outOffset += srcH;
-        tgt.inOffset += tgtH;
+        src.outOffset += clampedSrcH;
+        tgt.inOffset += clampedTgtH;
 
         return {
           from: d.from,
@@ -1800,10 +1832,10 @@
           tgtColor: tgt.color,
           x0: src.x + src.w,
           y0: y0,
-          h0: srcH,
+          h0: clampedSrcH,
           x1: tgt.x,
           y1: y1,
-          h1: tgtH
+          h1: clampedTgtH
         };
       }).filter(Boolean);
 
@@ -1816,7 +1848,7 @@
                'Z';
       }
 
-      let svg = '<svg width="100%" height="410" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: 100%; height: 410px; overflow: hidden; font-family: inherit;">';
+      let svg = '<svg width="100%" height="450" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: 100%; height: 450px; overflow: visible; font-family: inherit;">';
 
       svg += '<defs>';
       links1.concat(links2).forEach(function(l, idx) {
@@ -1864,10 +1896,10 @@
           const labelSuffix = isSelected ? ' ●' : '';
           svg += '<g class="sankey-node" data-name="' + cleanName + '" data-col="' + n.col + '" data-val="' + formatRp(n.dispVal) + '" style="cursor: pointer;">' +
                  '<rect x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="' + n.h + '" rx="3" fill="' + n.color + '"' + strokeStyle + ' />' +
-                 '<text x="' + (n.x + n.w + 8) + '" y="' + (n.y + Math.min(14, n.h / 2 + 4)) + '" ' +
+                 '<text x="' + (n.x + n.w + 8) + '" y="' + (n.y + Math.min(14, Math.max(10, n.h / 2 + 4))) + '" ' +
                  'fill="' + (isUnused ? goldColor : textMainColor) + '" font-size="11.5" font-weight="' + (isSelected ? '700' : '600') + '" style="pointer-events: none;">' +
                  dispName + labelSuffix + '</text>' +
-                 '<text x="' + (n.x + n.w + 8) + '" y="' + (n.y + Math.min(26, n.h / 2 + 15)) + '" ' +
+                 '<text x="' + (n.x + n.w + 8) + '" y="' + (n.y + Math.min(26, Math.max(19, n.h / 2 + 14))) + '" ' +
                  'fill="' + textMutedColor + '" font-size="10" font-weight="500" class="tabular-nums" style="pointer-events: none;">' +
                  formatRp(n.dispVal) + '</text>' +
                  '</g>';
