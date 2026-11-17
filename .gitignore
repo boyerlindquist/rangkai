@@ -80,7 +80,7 @@ desktop.ini
 *.sublime-project
 
 # ==========================================
-# Logs & Testing
+# Logs, Local DB & Generated Staticfiles
 # ==========================================
 *.log
 logs/
@@ -88,3 +88,6 @@ logs/
 htmlcov/
 .pytest_cache/
 .tox/
+db.sqlite3
+db.sqlite3-journal
+staticfiles/

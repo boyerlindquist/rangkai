@@ -3,7 +3,18 @@
 {% block title %}Detail Berkas & Seserahan — Rangkai{% endblock %}
 
 {% block content %}
-<div class="workspace-canvas">
+<div class="workspace-canvas"
+     x-data="{
+       activeTab: sessionStorage.getItem('wp_detail_tab') || 'docs',
+       showDocForm: false,
+       showSesForm: false,
+       setTab(t) {
+         this.activeTab = t;
+         sessionStorage.setItem('wp_detail_tab', t);
+         this.showDocForm = false;
+         this.showSesForm = false;
+       }
+     }">
   <div class="page-header fade-in" id="guide-checklists">
     <div>
       <h1>Detail Kelengkapan & Logistik</h1>
@@ -13,14 +24,14 @@
 
   <!-- Summary Metric Strip -->
   <div class="metric-strip">
-    <div class="metric-item">
+    <div class="metric-item" style="cursor: pointer;" @click="setTab('docs')">
       <div class="metric-label">
         <i data-lucide="file-check-2" style="width: 13px; height: 13px;"></i> Kelengkapan Berkas
       </div>
       <div class="metric-value" style="color: var(--wp-sage-main);">{{ doc_done_count }} / {{ documents|length }}</div>
       <div class="metric-sub">dokumen administrasi selesai</div>
     </div>
-    <div class="metric-item">
+    <div class="metric-item" style="cursor: pointer;" @click="setTab('ses')">
       <div class="metric-label">
         <i data-lucide="gift" style="width: 13px; height: 13px;"></i> Kesiapan Seserahan
       </div>
@@ -48,26 +59,54 @@
     </div>
   </div>
 
-  <div style="display: flex; flex-direction: column; gap: 24px;">
-    
-    <!-- DOKUMEN & BERKAS -->
-    <div class="surface-panel" x-data="{ showDocForm: false }">
-      <div class="surface-panel-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <h3 style="margin: 0;">
-            <i data-lucide="folder-open" style="color: var(--wp-gold-main);"></i> Berkas Administrasi KUA / Sipil
-          </h3>
-          <span class="status-pill">{{ doc_done_count }} / {{ documents|length }} selesai</span>
-        </div>
-        <button type="button" class="btn btn-gold btn-sm" @click="showDocForm = !showDocForm">
-          <i data-lucide="plus"></i>
-          <span x-text="showDocForm ? 'Tutup Form' : 'Tambah Dokumen'">Tambah Dokumen</span>
-        </button>
+  <!-- Unified Berkas & Seserahan Workspace Card -->
+  <div class="surface-panel">
+    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 10px;">
+      <div class="filter-segmented">
+        <a href="#" @click.prevent="setTab('docs')" :class="{ 'active': activeTab === 'docs' }" style="display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="folder-open" style="width: 13px; height: 13px;"></i>
+          <span>Berkas KUA / Sipil</span>
+          <span class="tabular-nums" style="opacity: 0.75; font-size: 0.72rem;">({{ doc_done_count }}/{{ documents|length }})</span>
+        </a>
+        <a href="#" @click.prevent="setTab('ses')" :class="{ 'active': activeTab === 'ses' }" style="display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="gift" style="width: 13px; height: 13px;"></i>
+          <span>Hantaran & Seserahan</span>
+          <span class="tabular-nums" style="opacity: 0.75; font-size: 0.72rem;">({{ ses_done_count }}/{{ seserahan|length }})</span>
+        </a>
       </div>
 
-      <!-- Collapsible Add Document Form -->
-      <div x-show="showDocForm" x-transition x-cloak style="padding: 20px 24px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
-        <h4 style="margin-top: 0; margin-bottom: 14px; font-size: 0.92rem; color: var(--wp-text-main); font-weight: 600;"><i data-lucide="file-plus" style="width: 15px; height: 15px; vertical-align: -2px;"></i> Tambah Dokumen Baru</h4>
+      <div style="display: inline-flex; align-items: center; gap: 5px;">
+        <button x-show="activeTab === 'docs'"
+                type="button"
+                class="btn btn-gold btn-sm"
+                @click="showDocForm = !showDocForm"
+                title="Tambah Dokumen Administrasi Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>Dokumen</span>
+        </button>
+        <button x-show="activeTab === 'ses'"
+                x-cloak
+                type="button"
+                class="btn btn-gold btn-sm"
+                @click="showSesForm = !showSesForm"
+                title="Tambah Barang Seserahan Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>Seserahan</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: DOKUMEN & BERKAS -->
+    <div x-show="activeTab === 'docs'">
+      <div x-show="showDocForm" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="file-plus" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Tambah Dokumen Baru
+          </strong>
+          <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showDocForm = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
+        </div>
         <form action="{% url 'operations-checklist:add_document' %}" method="post"
               hx-post="{% url 'operations-checklist:add_document' %}"
               hx-target=".main-content"
@@ -76,26 +115,26 @@
               @htmx:after-request="if($event.detail.successful) { $el.reset(); showDocForm = false; }">
           {% csrf_token %}
           <div class="form-row">
-            <div class="form-group" style="flex: 2; min-width: 200px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Dokumen</label>
+            <div class="form-group" style="flex: 2; min-width: 180px; margin-bottom: 0;">
+              <label>Nama Dokumen</label>
               {{ doc_form.name }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Pihak</label>
+            <div class="form-group" style="flex: 1; min-width: 130px; margin-bottom: 0;">
+              <label>Pihak</label>
               {{ doc_form.party }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 140px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
+            <div class="form-group" style="flex: 1; min-width: 130px; margin-bottom: 0;">
+              <label>Status</label>
               {{ doc_form.status }}
             </div>
-            <div class="form-group" style="flex: 2; min-width: 200px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Catatan</label>
+            <div class="form-group" style="flex: 2; min-width: 180px; margin-bottom: 0;">
+              <label>Catatan</label>
               {{ doc_form.notes }}
             </div>
           </div>
-          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+          <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px;">
             <button type="button" class="btn btn-ghost btn-sm" @click="showDocForm = false">Batal</button>
-            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Dokumen</button>
+            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan</button>
           </div>
         </form>
       </div>
@@ -107,7 +146,7 @@
             <tr>
               <th style="padding-left: 20px;">Nama Dokumen</th>
               <th>Pihak</th>
-              <th>Status (Klik untuk Ubah)</th>
+              <th>Status</th>
               <th>Catatan</th>
               <th style="text-align: right; padding-right: 20px;">Aksi</th>
             </tr>
@@ -119,33 +158,23 @@
           </tbody>
         </table>
         {% else %}
-        <div class="empty-state" style="padding: 40px; text-align: center;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="folder-open" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada berkas yang dilacak. Klik <strong>+ Tambah Dokumen</strong> untuk mulai.</p>
+        <div class="empty-state" style="padding: 36px; text-align: center;">
+          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="folder-open" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i></div>
+          <p class="text-secondary" style="font-size: 0.86rem;">Belum ada berkas yang dilacak. Klik <strong>+ Dokumen</strong> di kanan atas.</p>
         </div>
         {% endif %}
       </div>
     </div>
 
-
-    <!-- SESERAHAN -->
-    <div class="surface-panel" x-data="{ showSesForm: false }">
-      <div class="surface-panel-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <h3 style="margin: 0;">
-            <i data-lucide="gift" style="color: var(--wp-gold-main);"></i> Manifest Hantaran & Seserahan
-          </h3>
-          <span class="status-pill">{{ ses_done_count }} / {{ seserahan|length }} siap</span>
+    <!-- TAB 2: SESERAHAN -->
+    <div x-show="activeTab === 'ses'" x-cloak>
+      <div x-show="showSesForm" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="gift" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i> Tambah Barang Seserahan
+          </strong>
+          <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showSesForm = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
         </div>
-        <button type="button" class="btn btn-gold btn-sm" @click="showSesForm = !showSesForm">
-          <i data-lucide="plus"></i>
-          <span x-text="showSesForm ? 'Tutup Form' : 'Tambah Seserahan'">Tambah Seserahan</span>
-        </button>
-      </div>
-
-      <!-- Collapsible Add Seserahan Form -->
-      <div x-show="showSesForm" x-transition x-cloak style="padding: 20px 24px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
-        <h4 style="margin-top: 0; margin-bottom: 14px; font-size: 0.92rem; color: var(--wp-text-main); font-weight: 600;"><i data-lucide="gift" style="width: 15px; height: 15px; vertical-align: -2px;"></i> Tambah Barang Seserahan</h4>
         <form action="{% url 'operations-checklist:add_seserahan' %}" method="post"
               hx-post="{% url 'operations-checklist:add_seserahan' %}"
               hx-target=".main-content"
@@ -154,34 +183,34 @@
               @htmx:after-request="if($event.detail.successful) { $el.reset(); showSesForm = false; }">
           {% csrf_token %}
           <div class="form-row">
-            <div class="form-group" style="flex: 2; min-width: 160px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Nama Barang</label>
+            <div class="form-group" style="flex: 2; min-width: 150px; margin-bottom: 0;">
+              <label>Nama Barang</label>
               {{ ses_form.name }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 130px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Kategori</label>
+            <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+              <label>Kategori</label>
               {{ ses_form.category }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 120px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Est. Harga</label>
+            <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+              <label>Est. Harga</label>
               {{ ses_form.est_price }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 120px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Hrg. Aktual</label>
+            <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+              <label>Hrg. Aktual</label>
               {{ ses_form.actual_price }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 130px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">Status</label>
+            <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+              <label>Status</label>
               {{ ses_form.status }}
             </div>
-            <div class="form-group" style="flex: 1; min-width: 120px;">
-              <label style="display: block; font-size: 0.8rem; color: var(--wp-text-secondary); margin-bottom: 4px; font-weight: 600;">PIC</label>
+            <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+              <label>PIC</label>
               {{ ses_form.pic }}
             </div>
           </div>
-          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+          <div style="display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px;">
             <button type="button" class="btn btn-ghost btn-sm" @click="showSesForm = false">Batal</button>
-            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Seserahan</button>
+            <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan</button>
           </div>
         </form>
       </div>
@@ -195,7 +224,7 @@
               <th>Kategori</th>
               <th class="num">Budget</th>
               <th class="num">Aktual</th>
-              <th>Status (Klik untuk Ubah)</th>
+              <th>Status</th>
               <th>PIC</th>
               <th style="text-align: right; padding-right: 20px;">Aksi</th>
             </tr>
@@ -211,7 +240,7 @@
               <td class="num">Rp {{ ses_total_est|intcomma }}</td>
               <td class="num" style="color: var(--wp-sage-main);">Rp {{ ses_total_actual|intcomma }}</td>
               <td colspan="3" style="padding-right: 20px;">
-                <span style="font-size: 0.8rem; color: {% if ses_variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %};">
+                <span style="font-size: 0.78rem; color: {% if ses_variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %};">
                   {% if ses_variance >= 0 %}Hemat Rp {{ ses_variance|intcomma }}{% else %}Melebihi Estimasi Rp {{ ses_variance|intcomma }}{% endif %}
                 </span>
               </td>
@@ -219,14 +248,13 @@
           </tfoot>
         </table>
         {% else %}
-        <div class="empty-state" style="padding: 40px; text-align: center;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="gift" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada daftar seserahan. Klik <strong>+ Tambah Seserahan</strong> untuk mulai.</p>
+        <div class="empty-state" style="padding: 36px; text-align: center;">
+          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="gift" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i></div>
+          <p class="text-secondary" style="font-size: 0.86rem;">Belum ada daftar seserahan. Klik <strong>+ Seserahan</strong> di kanan atas.</p>
         </div>
         {% endif %}
       </div>
     </div>
-
   </div>
 </div>
 {% endblock %}

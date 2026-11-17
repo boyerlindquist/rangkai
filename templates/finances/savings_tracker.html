@@ -64,23 +64,50 @@
     </div>
   </div>
 
-  <!-- Unified Goal Settings & Progress Bar Panel -->
-  <div class="surface-panel fade-in" id="guide-savings-target">
-    <div class="surface-panel-header">
-      <h3><i data-lucide="sliders" style="color: var(--wp-gold-main);"></i> Target & Komitmen Tabungan</h3>
-    </div>
-    <div class="surface-panel-body">
-      <!-- Progress Bar with Milestone Markers -->
-      <div style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px;">
-          <span style="font-weight: 600; color: var(--wp-text-main);">Progres Akumulasi</span>
-          <span style="font-weight: 700; color: var(--wp-gold-main);" class="tabular-nums">{{ progress_percentage|floatformat:'1' }}%</span>
-        </div>
-        <div style="height: 10px; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-pill); overflow: hidden; border: 1px solid var(--wp-hairline);">
-          <div style="height: 100%; background: linear-gradient(90deg, var(--wp-gold-main), var(--wp-sage-main)); width: {{ progress_percentage|floatformat:'0' }}%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
-        </div>
+  <!-- Unified Savings Workspace Card (Target + Chart + Add Deposit + History Ledger) -->
+  <div class="surface-panel fade-in" id="guide-savings-target" x-data="{ showGoalForm: false, showAddDeposit: false, showChart: true }">
+    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <h3 style="margin: 0;"><i data-lucide="piggy-bank" style="color: var(--wp-gold-main);"></i> Akumulasi & Riwayat Tabungan</h3>
+        <span class="status-pill">{{ deposits|length }} Setoran</span>
+        {% for dep, total_amt in chart_data.depositor_totals.items %}
+        <span class="status-pill">{{ dep }}: <strong class="tabular-nums">Rp {{ total_amt|intcomma }}</strong></span>
+        {% endfor %}
       </div>
 
+      <!-- Compact Icon Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 5px;">
+        <button type="button"
+                class="btn btn-icon btn-sm"
+                :class="showChart ? 'btn-gold' : 'btn-secondary'"
+                @click="showChart = !showChart"
+                title="Tampilkan / Sembunyikan Grafik Akumulasi">
+          <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button"
+                class="btn btn-icon btn-sm"
+                :class="showGoalForm ? 'btn-gold' : 'btn-secondary'"
+                @click="showGoalForm = !showGoalForm; if(showGoalForm) showAddDeposit = false"
+                title="Atur Target & Komitmen Tabungan Bulanan">
+          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button"
+                class="btn btn-gold btn-sm"
+                @click="showAddDeposit = !showAddDeposit; if(showAddDeposit) showGoalForm = false"
+                title="Catat Setoran Tabungan Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>Setoran</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. Collapsible Inline Drawer: Target & Komitmen Tabungan -->
+    <div x-show="showGoalForm" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <strong style="font-size: 0.84rem;">Atur Target & Komitmen Bulanan</strong>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showGoalForm = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
+      </div>
       <form action="{% url 'finances:update_savings_goal' %}" method="post" class="savings-goal-form">
         {% csrf_token %}
         <div class="form-group" style="margin-bottom:0;">
@@ -91,170 +118,140 @@
           <label>Kesanggupan Nabung Per Bulan (Rp)</label>
           {{ goal_form.monthly_deposit }}
         </div>
-        <div>
-          <button type="submit" class="btn btn-primary" style="height: 42px; width: 100%; white-space: nowrap;">
-            <i data-lucide="check"></i> Simpan Target
-          </button>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn btn-ghost btn-sm" @click="showGoalForm = false">Batal</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan Target</button>
         </div>
       </form>
     </div>
-  </div>
 
-  <!-- Cumulative Savings Line Chart Canvas -->
-  <div class="surface-panel fade-in" id="guide-savings-chart">
-    <div class="surface-panel-header" style="flex-wrap: wrap;">
-      <div>
-        <h3><i data-lucide="trending-up" style="color: var(--wp-gold-main);"></i> Grafik Akumulasi Tabungan</h3>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 4px 0 0 0;">
-          Pertumbuhan saldo kumulatif per penyetor menuju garis target tabungan.
-        </p>
+    <!-- 2. Collapsible Inline Drawer: Tambah Setoran Baru -->
+    <div x-show="showAddDeposit" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <strong style="font-size: 0.84rem;">Catat Setoran Tabungan Baru</strong>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showAddDeposit = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span class="status-pill status-danger">
-          Target: Rp {{ goal.target_amount|intcomma }}
-        </span>
-        {% for dep, total_amt in chart_data.depositor_totals.items %}
-        <span class="status-pill">
-          {{ dep }}: <strong class="tabular-nums">Rp {{ total_amt|intcomma }}</strong>
-        </span>
-        {% endfor %}
-      </div>
+      <form action="{% url 'finances:add_savings_deposit' %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr 1.5fr auto; gap: 10px; align-items: flex-end;">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Nominal (Rp)</label>
+          {{ deposit_form.amount }}
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Tanggal</label>
+          {{ deposit_form.date }}
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Penyetor</label>
+          <select name="depositor" class="wp-input">
+            <option value="Pria">Pengantin Pria ({{ wedding.groom_name|default:"Pria" }})</option>
+            <option value="Wanita">Pengantin Wanita ({{ wedding.bride_name|default:"Wanita" }})</option>
+            <option value="Bersama" selected>Tabungan Bersama</option>
+            <option value="Keluarga">Dukungan Keluarga</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>Catatan</label>
+          {{ deposit_form.notes }}
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn btn-ghost btn-sm" @click="showAddDeposit = false">Batal</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan</button>
+        </div>
+      </form>
     </div>
-    <div class="surface-panel-body">
+
+    <!-- 3. Cumulative Savings Line Chart Section (Inside the same card) -->
+    <div id="guide-savings-chart" x-show="showChart" style="padding: 16px 20px; border-bottom: 1px solid var(--wp-hairline);">
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
+          <span style="font-weight: 600; color: var(--wp-text-main);">Progres Akumulasi menuju Target (Rp {{ goal.target_amount|intcomma }})</span>
+          <span style="font-weight: 700; color: var(--wp-gold-main);" class="tabular-nums">{{ progress_percentage|floatformat:'1' }}%</span>
+        </div>
+        <div style="height: 8px; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-pill); overflow: hidden; border: 1px solid var(--wp-hairline);">
+          <div style="height: 100%; background: linear-gradient(90deg, var(--wp-gold-main), var(--wp-sage-main)); width: {{ progress_percentage|floatformat:'0' }}%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+        </div>
+      </div>
+
       {% if chart_data.has_data %}
-      <div style="position: relative; height: 340px; width: 100%;">
+      <div style="position: relative; height: 260px; width: 100%;">
         <canvas id="savingsCumulativeChart"></canvas>
       </div>
       {% else %}
-      <div class="empty-state" style="padding: 48px var(--wp-space-lg); text-align: center;">
-        <div class="empty-icon" style="margin-bottom: 12px;"><i data-lucide="line-chart" style="width: 48px; height: 48px; color: var(--wp-text-muted);"></i></div>
-        <h4 style="color: var(--wp-text-main); margin-bottom: 6px;">Belum Ada Riwayat Setoran</h4>
-        <p class="text-secondary" style="font-size: 0.88rem; max-width: 480px; margin: 0 auto 16px auto;">
-          Grafik akumulasi akan otomatis terbentuk saat kamu dan pasangan mulai mencatat setoran tabungan pertama.
-        </p>
-        {% if goal.target_amount > 0 %}
-        <div style="font-size: 0.85rem; color: var(--wp-accent-contrast); font-weight: 500;">
-          Target yang telah ditentukan: Rp {{ goal.target_amount|intcomma }}
-        </div>
-        {% endif %}
+      <div style="padding: 20px; text-align: center; color: var(--wp-text-muted); font-size: 0.82rem; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-xs);">
+        Grafik akumulasi akan otomatis terbentuk saat setoran pertama dicatat. Klik <strong>+ Setoran</strong> di kanan atas untuk mulai.
       </div>
       {% endif %}
     </div>
-  </div>
 
-  <!-- Deposit Form & Ledger Section (Linear 2-Pane Split) -->
-  <div class="savings-split-grid">
-    <!-- Add Deposit Form Panel -->
-    <div class="surface-panel">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="plus-circle" style="color: var(--wp-gold-main);"></i> Tambah Setoran</h3>
-      </div>
-      <div class="surface-panel-body">
-        <form action="{% url 'finances:add_savings_deposit' %}" method="post">
-          {% csrf_token %}
-          <div class="form-group">
-            <label>Nominal (Rp)</label>
-            {{ deposit_form.amount }}
-          </div>
-          <div class="form-group">
-            <label>Tanggal</label>
-            {{ deposit_form.date }}
-          </div>
-          <div class="form-group">
-            <label>Penyetor</label>
-            <select name="depositor" class="wp-input">
-              <option value="Pria">Pengantin Pria ({{ wedding.groom_name|default:"Pria" }})</option>
-              <option value="Wanita">Pengantin Wanita ({{ wedding.bride_name|default:"Wanita" }})</option>
-              <option value="Bersama" selected>Tabungan Bersama</option>
-              <option value="Keluarga">Dukungan Keluarga</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Catatan</label>
-            {{ deposit_form.notes }}
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-            <i data-lucide="save"></i> Catat Setoran
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Deposit History Ledger Table -->
-    <div class="surface-panel">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="history" style="color: var(--wp-gold-main);"></i> Riwayat Setoran Tabungan</h3>
-        <span class="status-pill">{{ deposits|length }} Setoran</span>
-      </div>
-      <div class="sheet-table-wrap" style="max-height: 400px; overflow-y: auto;">
-        <table class="sheet-table">
-          <thead>
-            <tr>
-              <th style="padding-left: 20px; min-width: 120px; white-space: nowrap;">Tanggal</th>
-              <th style="min-width: 120px; white-space: nowrap;">Penyetor</th>
-              <th class="num" style="min-width: 120px; white-space: nowrap;">Nominal</th>
-              <th>Catatan</th>
-              <th style="text-align: right; padding-right: 20px; min-width: 80px; white-space: nowrap;">Aksi</th>
-            </tr>
-          </thead>
-          {% for deposit in deposits %}
-          <tbody x-data="{ editing: false }">
-            <tr x-show="!editing">
-              <td style="padding-left: 20px; font-weight: 500; white-space: nowrap;">{{ deposit.date|date:"d M Y" }}</td>
-              <td style="white-space: nowrap;">
-                <span class="status-pill {% if deposit.depositor == 'CPP' or deposit.depositor == 'Pria' %}status-warning{% elif deposit.depositor == 'CPW' or deposit.depositor == 'Wanita' %}status-done{% endif %}" style="white-space: nowrap;">
-                  <span class="dot"></span>
-                  {{ deposit.depositor }}
-                </span>
-              </td>
-              <td class="num tabular-nums" style="font-weight: 700; white-space: nowrap;">Rp {{ deposit.amount|intcomma }}</td>
-              <td class="text-secondary" style="font-size: 0.82rem;">{{ deposit.notes|default:"—" }}</td>
-              <td style="text-align: right; padding-right: 20px; white-space: nowrap;">
-                <div style="display: inline-flex; gap: 4px; white-space: nowrap;">
-                  <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="editing = true" style="color: var(--wp-gold-main);" title="Edit Setoran">
-                    <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
-                  </button>
-                  <form action="{% url 'finances:delete_savings_deposit' deposit.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Hapus setoran tabungan sebesar Rp {{ deposit.amount|intcomma }}?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-text-muted);" title="Hapus Setoran">
-                      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            <tr x-show="editing" x-cloak style="background: var(--wp-bg-surface-subtle);">
-              <td colspan="5" style="padding: 12px 20px;">
-                <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 140px 150px 160px 1fr auto; gap: 10px; align-items: center;">
+    <!-- 4. Deposit History Ledger Table (Full-width inside the same card) -->
+    <div class="sheet-table-wrap" style="max-height: 380px; overflow-y: auto;">
+      <table class="sheet-table">
+        <thead>
+          <tr>
+            <th style="padding-left: 20px; min-width: 120px; white-space: nowrap;">Tanggal</th>
+            <th style="min-width: 120px; white-space: nowrap;">Penyetor</th>
+            <th class="num" style="min-width: 120px; white-space: nowrap;">Nominal</th>
+            <th>Catatan</th>
+            <th style="text-align: right; padding-right: 20px; min-width: 80px; white-space: nowrap;">Aksi</th>
+          </tr>
+        </thead>
+        {% for deposit in deposits %}
+        <tbody x-data="{ editing: false }">
+          <tr x-show="!editing">
+            <td style="padding-left: 20px; font-weight: 500; white-space: nowrap;">{{ deposit.date|date:"d M Y" }}</td>
+            <td style="white-space: nowrap;">
+              <span class="status-pill {% if deposit.depositor == 'CPP' or deposit.depositor == 'Pria' %}status-warning{% elif deposit.depositor == 'CPW' or deposit.depositor == 'Wanita' %}status-done{% endif %}" style="white-space: nowrap;">
+                {{ deposit.depositor }}
+              </span>
+            </td>
+            <td class="num tabular-nums" style="font-weight: 700; white-space: nowrap;">Rp {{ deposit.amount|intcomma }}</td>
+            <td class="text-secondary" style="font-size: 0.82rem;">{{ deposit.notes|default:"—" }}</td>
+            <td style="text-align: right; padding-right: 20px; white-space: nowrap;">
+              <div style="display: inline-flex; gap: 4px; white-space: nowrap;">
+                <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="editing = true" style="color: var(--wp-gold-main);" title="Edit Setoran">
+                  <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                </button>
+                <form action="{% url 'finances:delete_savings_deposit' deposit.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Hapus setoran tabungan sebesar Rp {{ deposit.amount|intcomma }}?');">
                   {% csrf_token %}
-                  <input type="date" name="date" class="wp-input" value="{{ deposit.date|date:'Y-m-d' }}" required>
-                  <select name="depositor" class="wp-input">
-                    <option value="Pria" {% if deposit.depositor == 'Pria' or deposit.depositor == 'CPP' %}selected{% endif %}>Pria</option>
-                    <option value="Wanita" {% if deposit.depositor == 'Wanita' or deposit.depositor == 'CPW' %}selected{% endif %}>Wanita</option>
-                    <option value="Bersama" {% if deposit.depositor == 'Bersama' %}selected{% endif %}>Bersama</option>
-                    <option value="Keluarga" {% if deposit.depositor == 'Keluarga' %}selected{% endif %}>Keluarga</option>
-                  </select>
-                  <input type="number" name="amount" class="wp-input tabular-nums" value="{{ deposit.amount|floatformat:0 }}" min="0" required>
-                  <input type="text" name="notes" class="wp-input" value="{{ deposit.notes }}" placeholder="Catatan...">
-                  <div style="display: flex; gap: 6px;">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="editing = false">Batal</button>
-                    <button type="submit" class="btn btn-gold btn-sm">Simpan</button>
-                  </div>
+                  <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-text-muted);" title="Hapus Setoran">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                  </button>
                 </form>
-              </td>
-            </tr>
-          </tbody>
-          {% empty %}
-          <tbody>
-            <tr>
-              <td colspan="5" style="padding: 36px; text-align: center; color: var(--wp-text-muted);">
-                Belum ada setoran tabungan. Yuk mulai menabung bersama!
-              </td>
-            </tr>
-          </tbody>
-          {% endfor %}
-        </table>
-      </div>
+              </div>
+            </td>
+          </tr>
+          <tr x-show="editing" x-cloak style="background: var(--wp-bg-surface-subtle);">
+            <td colspan="5" style="padding: 12px 20px;">
+              <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 140px 150px 160px 1fr auto; gap: 10px; align-items: center;">
+                {% csrf_token %}
+                <input type="date" name="date" class="wp-input" value="{{ deposit.date|date:'Y-m-d' }}" required>
+                <select name="depositor" class="wp-input">
+                  <option value="Pria" {% if deposit.depositor == 'Pria' or deposit.depositor == 'CPP' %}selected{% endif %}>Pria</option>
+                  <option value="Wanita" {% if deposit.depositor == 'Wanita' or deposit.depositor == 'CPW' %}selected{% endif %}>Wanita</option>
+                  <option value="Bersama" {% if deposit.depositor == 'Bersama' %}selected{% endif %}>Bersama</option>
+                  <option value="Keluarga" {% if deposit.depositor == 'Keluarga' %}selected{% endif %}>Keluarga</option>
+                </select>
+                <input type="number" name="amount" class="wp-input tabular-nums" value="{{ deposit.amount|floatformat:0 }}" min="0" required>
+                <input type="text" name="notes" class="wp-input" value="{{ deposit.notes }}" placeholder="Catatan...">
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" @click="editing = false">Batal</button>
+                  <button type="submit" class="btn btn-gold btn-sm">Simpan</button>
+                </div>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+        {% empty %}
+        <tbody>
+          <tr>
+            <td colspan="5" style="padding: 36px; text-align: center; color: var(--wp-text-muted);">
+              Belum ada setoran tabungan. Klik <strong>+ Setoran</strong> di kanan atas untuk mulai mencatat.
+            </td>
+          </tr>
+        </tbody>
+        {% endfor %}
+      </table>
     </div>
   </div>
 </div>

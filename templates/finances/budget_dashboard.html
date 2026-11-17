@@ -4,45 +4,13 @@
 
 {% block content %}
 <div class="workspace-canvas"
-     x-data="{ showNewCategory: false, showCashBreakdown: true, payerFilter: '' }"
+     x-data="{ showNewCategory: false, showCashBreakdown: false, payerFilter: '' }"
      x-init="$watch('payerFilter', val => window.dispatchEvent(new CustomEvent('budgetPayerFilterChanged', { detail: { payer: val } })))">
-  <!-- Page Header -->
+  <!-- Clean Page Header -->
   <div class="page-header fade-in" id="guide-budget">
     <div>
       <h1>Anggaran & Arus Kas</h1>
       <p class="page-subtitle">Susun rencana pagu anggaran (Nominal Rp atau %), kelola pemakaian dana dari Tabungan Bersama, dan pantau kesiapan kas secara transparan.</p>
-    </div>
-    <div class="header-actions">
-      <a href="{% url 'finances:savings_tracker' %}"
-         hx-get="{% url 'finances:savings_tracker' %}"
-         hx-target=".main-content"
-         hx-select=".main-content"
-         hx-swap="outerHTML show:top"
-         hx-push-url="true"
-         class="btn btn-secondary btn-sm"
-         title="Buka halaman Tabungan Bersama">
-        <i data-lucide="piggy-bank"></i> Tabungan: Rp {{ total_saved|intcomma }}
-      </a>
-      <button class="btn btn-secondary btn-sm"
-              @click="showNewCategory = !showNewCategory; if (showNewCategory) {
-                $nextTick(() => {
-                  const el = document.getElementById('new-category-panel');
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.classList.add('highlight-pulse');
-                    setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
-                    el.querySelector('input[name=\'name\']')?.focus();
-                  }
-                });
-              }">
-        <i data-lucide="folder-plus"></i> Tambah Kategori
-      </button>
-      <button class="btn btn-gold btn-sm"
-              hx-get="{% url 'finances:config_allocations' %}"
-              hx-target="#allocation-container"
-              hx-swap="innerHTML show:#allocation-container:top">
-        <i data-lucide="sliders"></i> Susun Rencana Anggaran (Rp / %)
-      </button>
     </div>
   </div>
 
@@ -188,19 +156,19 @@
   <!-- Config Allocations Container (Loaded via HTMX when clicking "Susun Rencana Anggaran") -->
   <div id="allocation-container" style="scroll-margin-top: 24px;"></div>
 
-  <!-- 2. Breakdown Alur Dana Terkumpul & Kesiapan Anggaran -->
-  <div class="surface-panel">
+  <!-- 2. Breakdown Alur Dana Terkumpul & Kesiapan Anggaran (Toggled via Icon in Main Workspace Header) -->
+  <div class="surface-panel" x-show="showCashBreakdown" x-transition x-cloak>
     <div class="surface-panel-header" style="flex-wrap: wrap; gap: 12px;">
       <div class="reconciliation-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <h3><i data-lucide="compass" style="color: var(--wp-gold-main);"></i> Kesiapan Anggaran & Penggunaan Kas Tabungan</h3>
         <span class="status-pill status-done" style="white-space: nowrap;">{{ ready_categories_count }}/{{ categories|length }} Siap Dana</span>
       </div>
-      <button type="button" class="btn btn-ghost btn-sm" @click="showCashBreakdown = !showCashBreakdown" style="font-size: 0.78rem;">
-        <span x-text="showCashBreakdown ? 'Sembunyikan Detail' : 'Tampilkan Detail'"></span>
+      <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showCashBreakdown = false" title="Tutup">
+        <i data-lucide="x" style="width: 14px; height: 14px;"></i>
       </button>
     </div>
 
-    <div class="surface-panel-body" x-show="showCashBreakdown" x-transition>
+    <div class="surface-panel-body">
       <!-- Stacked Visual Progress Bar: Paid + Free Cash vs Shortfall -->
       {% widthratio total_paid effective_total_need 100 as bar_paid_pct %}
       {% widthratio available_cash_positive effective_total_need 100 as bar_free_pct %}
@@ -401,81 +369,29 @@
     </div>
   </div>
 
-  <!-- Inline Add Category Panel (Supports both Nominal Rp and Percentage %) -->
-  <div x-show="showNewCategory" x-transition x-cloak id="new-category-panel" class="surface-panel" style="border-color: var(--wp-sage-main); scroll-margin-top: 24px;">
-    <div class="surface-panel-header">
-      <h3><i data-lucide="folder-plus" style="color: var(--wp-gold-main);"></i> Tambah Kategori Anggaran Baru</h3>
-      <button type="button" class="btn btn-ghost btn-sm" @click="showNewCategory = false">
-        <i data-lucide="x" style="width: 14px; height: 14px;"></i> Tutup
-      </button>
-    </div>
-    <div class="surface-panel-body">
-      <form hx-post="{% url 'finances:add_category' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML show:none"
-            novalidate
-            x-data="{
-              totalBudget: {{ total_allocated|default:0 }},
-              nominal: 0,
-              pct: 10,
-              init() {
-                if (this.totalBudget > 0) this.nominal = Math.round((this.pct / 100) * this.totalBudget);
-              },
-              onNominal() {
-                const nom = Number(this.nominal) || 0;
-                if (this.totalBudget > 0) this.pct = Math.min(100, Math.round((nom / this.totalBudget) * 10000) / 100);
-              },
-              onPct() {
-                const p = Number(this.pct) || 0;
-                if (this.totalBudget > 0) this.nominal = Math.round((p / 100) * this.totalBudget);
-              }
-            }"
-            class="rg-stack" style="display: grid; grid-template-columns: 2fr 1.4fr 1fr auto; gap: 12px; align-items: flex-end;">
-        {% csrf_token %}
-        <input type="hidden" name="icon" value='<i data-lucide="folder"></i>'>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Nama Kategori *</label>
-          <input type="text" name="name" class="wp-input" placeholder="Contoh: Dekorasi & Pencahayaan" required>
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Pagu Nominal (Rp)</label>
-          <input type="number" name="allocated_budget" class="wp-input tabular-nums" x-model.number="nominal" @input="onNominal()" min="0" step="any" placeholder="Contoh: 10000000">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Atau Porsi (%)</label>
-          <input type="number" name="allocation_percentage" class="wp-input tabular-nums" x-model.number="pct" @input="onPct()" min="0" max="100" step="any">
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn btn-secondary btn-sm" @click="showNewCategory = false" style="height: 38px;">Batal</button>
-          <button type="submit" class="btn btn-gold btn-sm" style="height: 38px;">
-            <i data-lucide="save"></i> Simpan Kategori
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <style>
     .sankey-tooltip-card {
-      position: absolute;
-      pointer-events: none;
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      pointer-events: none !important;
       opacity: 0;
-      z-index: 1000;
+      z-index: 9999 !important;
+      max-width: 260px;
       background: var(--wp-surface-elevated, #FFFFFF);
       color: var(--wp-text-main, #0D1F18);
       border: 1px solid var(--wp-hairline, rgba(13, 31, 24, 0.12));
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-      transition: opacity 0.15s ease;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11.5px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+      transition: opacity 0.12s ease;
     }
     [data-theme="dark"] .sankey-tooltip-card {
       background: #142A21 !important;
       color: #F6FAF8 !important;
       border-color: rgba(255, 255, 255, 0.12) !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
     }
     @keyframes sankeyHighlightGlow {
       0% { outline: 2px solid var(--wp-gold-main); background-color: var(--wp-sage-soft); }
@@ -488,12 +404,10 @@
     }
     .sankey-node {
       cursor: pointer;
-      transition: transform 0.15s ease;
     }
     .sankey-node:hover rect {
-      filter: brightness(1.2);
+      filter: brightness(1.15);
       stroke: var(--wp-gold-main);
-      stroke-width: 1.5px;
     }
     .sankey-link {
       cursor: pointer;
@@ -953,27 +867,45 @@
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <!-- Grouped Compact Icon Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-icon btn-sm"
+                :class="showCashBreakdown ? 'btn-gold' : 'btn-secondary'"
+                @click="showCashBreakdown = !showCashBreakdown"
+                title="Rincian Realisasi & Kesiapan Kas Tabungan">
+          <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button"
+                class="btn btn-secondary btn-icon btn-sm"
+                hx-get="{% url 'finances:config_allocations' %}"
+                hx-target="#allocation-container"
+                hx-swap="innerHTML show:#allocation-container:top"
+                title="Susun Massal Pagu Kategori (Rp / %)">
+          <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button"
+                class="btn btn-icon btn-sm"
                 :class="mode === 'target' ? 'btn-gold' : 'btn-secondary'"
                 @click="openTarget()"
-                title="Ubah nilai statis Total Tabungan (Target)">
-          <i data-lucide="target" style="width: 13px; height: 13px;"></i> Ubah Target
+                title="Ubah Target Total Tabungan">
+          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
         </button>
         <button type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-icon btn-sm"
                 :class="mode === 'add_category' ? 'btn-gold' : 'btn-secondary'"
                 @click="openAddCategory()"
-                title="Tambah kategori anggaran baru">
-          <i data-lucide="folder-plus" style="width: 13px; height: 13px;"></i> + Kategori
+                title="Tambah Kategori Anggaran Baru">
+          <i data-lucide="folder-plus" style="width: 14px; height: 14px;"></i>
         </button>
         <button type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-sm"
                 :class="mode === 'add_item' ? 'btn-gold' : 'btn-secondary'"
                 @click="openAddItem()"
-                title="Tambah item pengeluaran baru">
-          <i data-lucide="plus-circle" style="width: 13px; height: 13px;"></i> + Item
+                title="Tambah Item Pengeluaran Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>Item</span>
         </button>
       </div>
     </div>
@@ -1054,15 +986,11 @@
         {% endfor %}
       </aside>
 
-      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram -->
-      <div style="padding: 14px 18px; position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-        <div class="mobile-sankey-hint">
-          <i data-lucide="move-horizontal" style="width: 13px; height: 13px;"></i>
-          <span>Geser diagram ke samping &amp; klik node untuk melihat detail di bawah &rarr;</span>
-        </div>
+      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Rigid Fixed Size, Never Scrollable) -->
+      <div style="padding: 12px 18px; position: relative; overflow: hidden !important; height: 435px; min-height: 435px; max-height: 435px; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
         <div id="sankey-tooltip" class="sankey-tooltip-card"></div>
         {% if has_sankey_data %}
-          <div id="budget_sankey_chart" style="width: 100%; height: 415px;"></div>
+          <div id="budget_sankey_chart" style="width: 100%; height: 410px; min-height: 410px; max-height: 410px; overflow: hidden !important;"></div>
           <div id="budget_sankey_empty_filter" class="empty-state" style="display: none; padding: 36px 20px; text-align: center; height: 340px; flex-direction: column; align-items: center; justify-content: center;">
             <div class="empty-icon" style="margin-bottom: 10px;">
               <i data-lucide="filter-x" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i>
@@ -1552,37 +1480,37 @@
     </div>
   </div>
 
-  <!-- 4. Split-Bill & Cash-Out Grid -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 24px;">
-    <!-- Split-Bill Breakdown -->
-    {% if payer_breakdown %}
-    <div class="surface-panel" id="guide-split-bill">
-      <div class="surface-panel-header">
-        <div>
-          <h3><i data-lucide="users" style="color: var(--wp-gold-main);"></i> Pembagian Porsi Pembiayaan (Split-Bill)</h3>
-          <p class="text-secondary" style="font-size: 0.78rem; margin: 2px 0 0 0;">Gunakan tombol filter untuk memfokuskan alur pengeluaran di atas.</p>
-        </div>
-        <template x-if="payerFilter">
-          <button type="button" class="btn btn-ghost btn-sm" @click="payerFilter = ''" style="font-size: 0.78rem;">Reset Filter</button>
-        </template>
+  <!-- 4. Unified Split-Bill & Monthly Cash-Out Panel -->
+  {% if payer_breakdown or cash_out_data %}
+  <div class="surface-panel" id="guide-split-bill">
+    <div class="surface-panel-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h3><i data-lucide="users" style="color: var(--wp-gold-main);"></i> Split-Bill & Proyeksi Arus Kas</h3>
       </div>
-      <div class="sheet-table-wrap">
+      <template x-if="payerFilter">
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="payerFilter = ''" title="Reset Filter PJ">
+          <i data-lucide="filter-x" style="width: 14px; height: 14px;"></i>
+        </button>
+      </template>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));">
+      {% if payer_breakdown %}
+      <div class="sheet-table-wrap" style="{% if cash_out_data %}border-right: 1px solid var(--wp-hairline);{% endif %}">
         <table class="sheet-table">
           <thead>
             <tr>
-              <th style="padding-left: 20px; min-width: 140px;">Pihak Pendukung</th>
-              <th class="num" style="min-width: 120px; white-space: nowrap;">Total Kesepakatan</th>
-              <th class="num" style="min-width: 110px; white-space: nowrap;">Terbayar</th>
-              <th class="num" style="min-width: 110px; white-space: nowrap;">Sisa</th>
-              <th style="text-align: right; padding-right: 20px; min-width: 90px; white-space: nowrap;">Aksi</th>
+              <th style="padding-left: 18px; min-width: 130px;">Pihak Pendukung</th>
+              <th class="num" style="min-width: 110px; white-space: nowrap;">Kesepakatan</th>
+              <th class="num" style="min-width: 100px; white-space: nowrap;">Terbayar</th>
+              <th class="num" style="min-width: 100px; white-space: nowrap;">Sisa</th>
+              <th style="text-align: right; padding-right: 18px; width: 48px;">Filter</th>
             </tr>
           </thead>
           <tbody>
             {% for payer, amounts in payer_breakdown.items %}
             <tr :style="payerFilter === '{{ payer }}' ? 'background: var(--wp-sage-soft);' : ''">
-              <td style="padding-left: 20px; white-space: nowrap;">
+              <td style="padding-left: 18px; white-space: nowrap;">
                 <strong>{{ payer }}</strong>
-                <span x-show="payerFilter === '{{ payer }}'" class="status-pill status-done" style="margin-left: 6px; padding: 1px 8px; white-space: nowrap;">Aktif</span>
               </td>
               <td class="num tabular-nums" style="white-space: nowrap;">Rp {{ amounts.actual|intcomma }}</td>
               <td class="num tabular-nums" style="white-space: nowrap;">Rp {{ amounts.paid|intcomma }}</td>
@@ -1591,13 +1519,13 @@
                   Rp {{ amounts.remaining|intcomma }}
                 </span>
               </td>
-              <td style="text-align: right; padding-right: 20px; white-space: nowrap;">
+              <td style="text-align: right; padding-right: 18px; white-space: nowrap;">
                 <button type="button"
-                        class="btn btn-sm"
-                        :class="payerFilter === '{{ payer }}' ? 'btn-gold' : 'btn-secondary'"
+                        class="btn btn-icon btn-sm"
+                        :class="payerFilter === '{{ payer }}' ? 'btn-gold' : 'btn-ghost'"
                         @click="payerFilter = (payerFilter === '{{ payer }}' ? '' : '{{ payer }}')"
-                        style="font-size: 0.74rem; padding: 3px 10px; height: 26px;">
-                  <span x-text="payerFilter === '{{ payer }}' ? 'Reset' : 'Filter'"></span>
+                        title="Filter alur pengeluaran untuk {{ payer }}">
+                  <i data-lucide="filter" style="width: 13px; height: 13px;"></i>
                 </button>
               </td>
             </tr>
@@ -1605,32 +1533,28 @@
           </tbody>
         </table>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <!-- Cash-Out Forecast -->
-    {% if cash_out_data %}
-    <div class="surface-panel">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="trending-up" style="color: var(--wp-gold-main);"></i> Proyeksi Arus Kas Bulanan</h3>
-      </div>
-      <div class="surface-panel-body" x-data="cashOutChart()" x-init="init()">
-        <div style="display: flex; align-items: flex-end; gap: 12px; height: 180px; padding-top: 10px;">
+      {% if cash_out_data %}
+      <div style="padding: 16px 20px;" x-data="cashOutChart()" x-init="init()">
+        <div style="font-size: 0.78rem; font-weight: 600; color: var(--wp-text-secondary); margin-bottom: 10px;">Proyeksi Kas Keluar Bulanan</div>
+        <div style="display: flex; align-items: flex-end; gap: 12px; height: 160px; padding-top: 8px;">
           {% for item in cash_out_data %}
           <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;">
-            <div class="text-secondary tabular-nums" style="font-size: 0.78rem; font-weight: 600; margin-bottom: 6px;">Rp {{ item.amount|intcomma }}</div>
+            <div class="text-secondary tabular-nums" style="font-size: 0.75rem; font-weight: 600; margin-bottom: 5px;">Rp {{ item.amount|intcomma }}</div>
             <div style="flex: 1; display: flex; align-items: flex-end; width: 100%;">
               <div style="width: 100%; background: linear-gradient(180deg, var(--wp-sage-light), var(--wp-sage-main)); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);"
                    x-bind:style="'height: ' + getBarHeight({{ item.amount }}) + '%'"></div>
             </div>
-            <div class="text-secondary" style="font-size: 0.78rem; margin-top: 6px; font-weight: 500;">{{ item.label }}</div>
+            <div class="text-secondary" style="font-size: 0.75rem; margin-top: 5px; font-weight: 500;">{{ item.label }}</div>
           </div>
           {% endfor %}
         </div>
       </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
+  {% endif %}
 
   <script>
   function cashOutChart() {
@@ -1772,14 +1696,14 @@
         return { id: e[0], name: e[0], val: e[1], dispVal: e[1], col: 2, color: getNodeColor(e[0], i) };
       });
 
-      // Spatial measurements — responsive canvas adapting to mobile swipe or desktop flush fit
+      // Rigid spatial measurements — fixed size, never scrolls or shifts on hover
       const isMobile = (targetEl.clientWidth || window.innerWidth) < 768;
-      const effectiveW = isMobile ? Math.max(660, targetEl.clientWidth || 360) : (targetEl.clientWidth || 920);
-      const height = isMobile ? 450 : 415;
-      targetEl.style.height = height + 'px';
-      targetEl.style.overflowX = isMobile ? 'auto' : 'hidden';
-      targetEl.style.overflowY = 'hidden';
-      targetEl.style.webkitOverflowScrolling = 'touch';
+      const effectiveW = Math.max(680, targetEl.clientWidth || 880);
+      const height = 410;
+      targetEl.style.height = '410px';
+      targetEl.style.minHeight = '410px';
+      targetEl.style.maxHeight = '410px';
+      targetEl.style.overflow = 'hidden';
 
       const headerH = 38;
       const bottomPad = 22;
@@ -1892,7 +1816,7 @@
                'Z';
       }
 
-      let svg = '<svg width="' + (isMobile ? effectiveW + 'px' : '100%') + '" height="' + height + '" viewBox="0 0 ' + effectiveW + ' ' + height + '" style="display: block; font-family: inherit; min-width: ' + (isMobile ? effectiveW + 'px' : '100%') + ';">';
+      let svg = '<svg width="100%" height="410" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: 100%; height: 410px; overflow: hidden; font-family: inherit;">';
 
       svg += '<defs>';
       links1.concat(links2).forEach(function(l, idx) {
@@ -1959,9 +1883,23 @@
 
       // Tooltip & Direct Control Studio interactive logic
       const tooltipEl = document.getElementById('sankey-tooltip');
+      function moveTooltip(e) {
+        if (!tooltipEl) return;
+        const tw = tooltipEl.offsetWidth || 220;
+        const th = tooltipEl.offsetHeight || 85;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let tx = e.clientX + 14;
+        let ty = e.clientY + 14;
+        if (tx + tw + 12 > vw) tx = Math.max(8, e.clientX - tw - 14);
+        if (ty + th + 12 > vh) ty = Math.max(8, e.clientY - th - 14);
+        tooltipEl.style.left = tx + 'px';
+        tooltipEl.style.top = ty + 'px';
+      }
+
       if (tooltipEl) {
         targetEl.querySelectorAll('.sankey-link').forEach(function(link) {
-          link.addEventListener('mouseenter', function() {
+          link.addEventListener('mouseenter', function(e) {
             link.style.fillOpacity = '0.78';
             link.style.strokeOpacity = '0.9';
             link.style.strokeWidth = '1.5';
@@ -1976,13 +1914,10 @@
                                   '<div style="font-weight: 600; color: ' + (isUnfunded ? '#C2543D' : bodyColor) + '; margin-bottom: 4px;">' + from + ' &rarr; ' + to + '</div>' +
                                   '<div style="font-size: 13px; font-weight: 700; color: ' + flowColor + ';">' + weight + '</div>' +
                                   '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">Klik untuk kelola ' + to + ' langsung di sini &darr;</div>';
+            moveTooltip(e);
             tooltipEl.style.opacity = '1';
           });
-          link.addEventListener('mousemove', function(e) {
-            const rect = targetEl.getBoundingClientRect();
-            tooltipEl.style.left = (e.clientX - rect.left + 14) + 'px';
-            tooltipEl.style.top = (e.clientY - rect.top + 14) + 'px';
-          });
+          link.addEventListener('mousemove', moveTooltip);
           link.addEventListener('mouseleave', function() {
             link.style.fillOpacity = '';
             link.style.strokeOpacity = '0.32';
@@ -2000,7 +1935,7 @@
 
         targetEl.querySelectorAll('.sankey-node').forEach(function(node) {
           const col = parseInt(node.getAttribute('data-col'), 10);
-          node.addEventListener('mouseenter', function() {
+          node.addEventListener('mouseenter', function(e) {
             const name = node.getAttribute('data-name');
             const val = node.getAttribute('data-val');
             const isUnfunded = (name === 'Belum Ada Sumber Dana');
@@ -2025,13 +1960,10 @@
                                   '<div style="font-weight: 600; color: ' + (isUnfunded ? '#C2543D' : bodyColor) + '; margin-bottom: 4px;">' + name + '</div>' +
                                   '<div style="font-size: 13px; font-weight: 700; color: ' + valColor + ';">' + val + '</div>' +
                                   actionHint;
+            moveTooltip(e);
             tooltipEl.style.opacity = '1';
           });
-          node.addEventListener('mousemove', function(e) {
-            const rect = targetEl.getBoundingClientRect();
-            tooltipEl.style.left = (e.clientX - rect.left + 14) + 'px';
-            tooltipEl.style.top = (e.clientY - rect.top + 14) + 'px';
-          });
+          node.addEventListener('mousemove', moveTooltip);
           node.addEventListener('mouseleave', function() {
             tooltipEl.style.opacity = '0';
           });
@@ -2070,18 +2002,21 @@
       window.renderBudgetSankey(payer);
     });
 
-    // Responsive resize observer
-    const containerEl = document.getElementById('budget_sankey_chart');
-    if (containerEl && window.ResizeObserver) {
-      let resizeTimer;
-      const ro = new ResizeObserver(function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
+    // Window resize listener (only re-renders when horizontal container width genuinely changes)
+    let resizeTimer;
+    let lastSankeyWidth = (document.getElementById('budget_sankey_chart') || {}).clientWidth || 0;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        const el = document.getElementById('budget_sankey_chart');
+        if (!el) return;
+        const newW = el.clientWidth || 0;
+        if (Math.abs(newW - lastSankeyWidth) > 8) {
+          lastSankeyWidth = newW;
           window.renderBudgetSankey();
-        }, 120);
-      });
-      ro.observe(containerEl.parentElement);
-    }
+        }
+      }, 150);
+    }, { passive: true });
   })();
   </script>
   {% endif %}

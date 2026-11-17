@@ -3,18 +3,11 @@
 {% block title %}Database Tamu & Katering — Rangkai{% endblock %}
 
 {% block content %}
-<div class="workspace-canvas" x-data="{ showSimulator: sessionStorage.getItem('wp_guest_sim') !== 'false' }" x-init="$watch('showSimulator', v => sessionStorage.setItem('wp_guest_sim', v))">
+<div class="workspace-canvas" x-data="{ showSimulator: sessionStorage.getItem('wp_guest_sim') === 'true' }" x-init="$watch('showSimulator', v => sessionStorage.setItem('wp_guest_sim', v))">
   <div class="page-header fade-in" id="guide-guests">
     <div>
       <h1>Daftar Tamu & Katering</h1>
       <p class="page-subtitle">Kelola database tamu undangan, alokasi kuota 4-arah, dan simulator kalkulasi porsi katering.</p>
-    </div>
-    <div class="header-actions">
-      <button type="button" class="btn btn-secondary btn-sm"
-              @click="showSimulator = !showSimulator; if(showSimulator) { $nextTick(() => { const el = document.getElementById('guide-catering'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.classList.add('highlight-pulse'); setTimeout(() => el?.classList.remove('highlight-pulse'), 2000); }); }">
-        <i data-lucide="utensils"></i>
-        <span x-text="showSimulator ? 'Sembunyikan Simulator Katering' : 'Tampilkan Simulator Katering'"></span>
-      </button>
     </div>
   </div>
 
@@ -50,125 +43,7 @@
     </div>
   </div>
 
-  <!-- 2-Pane Split: Catering Math & Quota Breakdown -->
-  <div x-show="showSimulator" x-transition class="dashboard-split-grid" style="margin-bottom: 24px;">
-    <!-- Catering Math Simulator -->
-    <div class="surface-panel" id="guide-catering">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="utensils" style="color: var(--wp-gold-main);"></i> Simulator Porsi Katering</h3>
-      </div>
-      <form hx-post="{% url 'guests:catering_config' %}" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none">
-        {% csrf_token %}
-        <input type="hidden" name="pax_multiplier" value="{{ config.pax_multiplier|stringformat:'s'|default:'2' }}">
-        <input type="hidden" name="stall_portion_per_pax" value="{{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }}">
-        <input type="hidden" name="akad_pax" value="{{ config.akad_pax|default:'100' }}">
-        <div class="surface-panel-body"
-             x-data="cateringCalc({
-               totalInvitations: {{ catering.total_invitations|default:'0' }},
-               paxMultiplier: {{ config.pax_multiplier|stringformat:'s'|default:'2' }},
-               attendanceRate: {{ config.attendance_rate|stringformat:'s'|default:'85' }},
-               vipBuffer: {{ config.vip_buffer_rate|stringformat:'s'|default:'10' }},
-               stallPerPax: {{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }},
-               stallVariety: {{ config.stall_variety_count|default:'4' }},
-               crewCount: {{ config.crew_count|default:'50' }},
-               akadPax: {{ config.akad_pax|default:'100' }}
-             })">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-            <span class="text-secondary" style="font-size: 0.75rem; font-weight: 600;">Preset Cepat:</span>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button type="button" class="btn btn-outline btn-sm" style="padding: 3px 10px; min-height: 28px; font-size: 0.75rem;" @click="attendanceRate = 90; vipBuffer = 10">Intimate (90%)</button>
-              <button type="button" class="btn btn-outline btn-sm" style="padding: 3px 10px; min-height: 28px; font-size: 0.75rem;" @click="attendanceRate = 85; vipBuffer = 10">Standar Resepsi (85%)</button>
-              <button type="button" class="btn btn-outline btn-sm" style="padding: 3px 10px; min-height: 28px; font-size: 0.75rem;" @click="attendanceRate = 80; vipBuffer = 15">Pesta Besar (80%)</button>
-            </div>
-          </div>
-
-          <div class="form-row" style="gap: 12px; margin-bottom: 12px;">
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="font-size: 0.8rem; font-weight: 600;">Total Undangan Disebar</label>
-              <input type="number" class="wp-input tabular-nums" x-model.number="totalInvitations">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="font-size: 0.8rem; font-weight: 600;">Estimasi Kehadiran (%)</label>
-              <input type="number" name="attendance_rate" class="wp-input tabular-nums" x-model.number="attendanceRate" step="0.1" min="0" max="100">
-            </div>
-          </div>
-          <div class="form-row" style="gap: 12px; margin-bottom: 16px;">
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="font-size: 0.8rem; font-weight: 600;">Cadangan VIP (%)</label>
-              <input type="number" name="vip_buffer_rate" class="wp-input tabular-nums" x-model.number="vipBuffer" step="0.1" min="0">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="font-size: 0.8rem; font-weight: 600;">Macam Gubukan</label>
-              <input type="number" name="stall_variety_count" class="wp-input tabular-nums" x-model.number="stallVariety" min="1" max="20">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="font-size: 0.8rem; font-weight: 600;">Panitia / Kru</label>
-              <input type="number" name="crew_count" class="wp-input tabular-nums" x-model.number="crewCount" min="0">
-            </div>
-          </div>
-
-          <!-- Micro Metric Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
-            <div style="background: var(--wp-bg-surface-subtle); padding: 10px 12px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
-              <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Est. Tamu Hadir</div>
-              <div class="tabular-nums" style="font-size: 1.15rem; font-weight: 700; color: var(--wp-text-main);" x-text="estAdultPax + ' pax'"></div>
-            </div>
-            <div style="background: var(--wp-bg-surface-subtle); padding: 10px 12px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
-              <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Total + Cadangan VIP</div>
-              <div class="tabular-nums" style="font-size: 1.15rem; font-weight: 700; color: var(--wp-text-main);" x-text="bufferPax + ' pax'"></div>
-            </div>
-            <div style="background: var(--wp-sage-soft); padding: 10px 12px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-sage-border);">
-              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--wp-sage-dark);"><i data-lucide="soup" style="width: 12px; height: 12px;"></i> Prasmanan (Buffet)</div>
-              <div class="tabular-nums" style="font-size: 1.15rem; font-weight: 700; color: var(--wp-sage-dark);" x-text="buffetPortions + ' porsi'"></div>
-            </div>
-            <div style="background: var(--wp-gold-soft); padding: 10px 12px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-gold-border);">
-              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--wp-gold-dark);"><i data-lucide="chef-hat" style="width: 12px; height: 12px;"></i> Total Gubukan (Stall)</div>
-              <div class="tabular-nums" style="font-size: 1.15rem; font-weight: 700; color: var(--wp-gold-dark);" x-text="stallTotal + ' porsi'"></div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width: 100%;"><i data-lucide="calculator"></i> Terapkan & Hitung Ulang</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Family Quota Visualizer -->
-    <div class="surface-panel" id="guide-guest-quota">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="scale" style="color: var(--wp-gold-main);"></i> Kuota Alokasi Tamu 4-Arah</h3>
-      </div>
-      <div class="surface-panel-body" style="padding: 20px 24px;">
-        {% if quota_breakdown %}
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          {% for q in quota_breakdown %}
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 0.85rem; font-weight: 600; color: var(--wp-text-main);">
-                {% if q.relation_side == 'groom_family' %}<i data-lucide="user" style="width: 13px; height: 13px;"></i> Keluarga Pria
-                {% elif q.relation_side == 'bride_family' %}<i data-lucide="user" style="width: 13px; height: 13px;"></i> Keluarga Wanita
-                {% elif q.relation_side == 'groom_friend' %}<i data-lucide="handshake" style="width: 13px; height: 13px;"></i> Teman Pria
-                {% elif q.relation_side == 'bride_friend' %}<i data-lucide="handshake" style="width: 13px; height: 13px;"></i> Teman Wanita
-                {% endif %}
-              </span>
-              <span class="tabular-nums text-muted" style="font-size: 0.8rem;">{{ q.count }} undangan · {{ q.pax }} pax</span>
-            </div>
-            <div class="progress-bar" style="height: 6px;">
-              <div class="progress-fill progress-fill-sage" style="width: {% widthratio q.count stats.total 100 %}%"></div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding: 32px; text-align: center;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="users" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada data tamu. Tambahkan tamu di tabel bawah.</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- Guest Database Surface Panel & Sheet Table -->
+  <!-- Unified Guest Database & Catering Simulator Surface Panel -->
   <div class="surface-panel" id="guide-guest-db" x-data="{
     mode: null,
     rows: [
@@ -191,27 +66,165 @@
       }
     }
   }">
-    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 12px;">
+    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 10px;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <h3 style="margin: 0;"><i data-lucide="clipboard-list" style="color: var(--wp-gold-main);"></i> Database Tamu</h3>
+        <h3 style="margin: 0;"><i data-lucide="clipboard-list" style="color: var(--wp-gold-main);"></i> Database Tamu & Katering</h3>
         <span class="status-pill">{{ stats.total|default:"0" }} undangan</span>
       </div>
 
-      <!-- Action Tools -->
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <a href="{% url 'guests:download_template' %}" class="btn btn-ghost btn-sm" title="Unduh format template Excel" style="color: var(--wp-text-secondary);">
-          <i data-lucide="download" style="width: 14px; height: 14px;"></i> Template
+      <!-- Grouped Compact Icon Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+        <button type="button"
+                class="btn btn-icon btn-sm"
+                :class="showSimulator ? 'btn-gold' : 'btn-secondary'"
+                @click="showSimulator = !showSimulator"
+                title="Simulator Porsi Katering & Kuota Tamu 4-Arah">
+          <i data-lucide="utensils" style="width: 14px; height: 14px;"></i>
+        </button>
+        <a href="{% url 'guests:download_template' %}"
+           class="btn btn-secondary btn-icon btn-sm"
+           title="Unduh Format Template Excel">
+          <i data-lucide="download" style="width: 14px; height: 14px;"></i>
         </a>
-        <button type="button" class="btn btn-ghost btn-sm" @click="mode = (mode === 'import' ? null : 'import')" :style="mode === 'import' ? 'background: var(--wp-sage-main); color: #FFFFFF;' : 'border: 1px solid var(--wp-hairline);'">
-          <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Import
+        <button type="button"
+                class="btn btn-icon btn-sm"
+                :class="mode === 'import' ? 'btn-gold' : 'btn-secondary'"
+                @click="mode = (mode === 'import' ? null : 'import')"
+                title="Import Tamu dari Excel">
+          <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
         </button>
-        <button type="button" class="btn btn-ghost btn-sm" @click="mode = (mode === 'spreadsheet' ? null : 'spreadsheet')" :style="mode === 'spreadsheet' ? 'background: var(--wp-sage-main); color: #FFFFFF;' : 'border: 1px solid var(--wp-hairline);'">
-          <i data-lucide="table" style="width: 14px; height: 14px;"></i> Mode Spreadsheet
+        <button type="button"
+                class="btn btn-icon btn-sm"
+                :class="mode === 'spreadsheet' ? 'btn-gold' : 'btn-secondary'"
+                @click="mode = (mode === 'spreadsheet' ? null : 'spreadsheet')"
+                title="Mode Input Cepat (Spreadsheet)">
+          <i data-lucide="table" style="width: 14px; height: 14px;"></i>
         </button>
-        <button type="button" class="btn btn-gold btn-sm" @click="mode = (mode === 'single' ? null : 'single')">
-          <i data-lucide="plus"></i>
-          <span x-text="mode === 'single' ? 'Tutup Form' : 'Tambah Tamu'">Tambah Tamu</span>
+        <button type="button"
+                class="btn btn-gold btn-sm"
+                @click="mode = (mode === 'single' ? null : 'single')"
+                title="Tambah Tamu Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>Tamu</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Integrated Inline Drawer: Catering Math & Quota Breakdown (Inside the same card) -->
+    <div x-show="showSimulator" x-transition x-cloak class="dashboard-split-grid" style="padding: 16px 20px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline); gap: 18px;">
+      <!-- Catering Math Simulator -->
+      <div id="guide-catering" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); padding: 14px 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <strong style="font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="utensils" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i> Simulator Porsi Katering
+          </strong>
+        </div>
+        <form hx-post="{% url 'guests:catering_config' %}" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none">
+          {% csrf_token %}
+          <input type="hidden" name="pax_multiplier" value="{{ config.pax_multiplier|stringformat:'s'|default:'2' }}">
+          <input type="hidden" name="stall_portion_per_pax" value="{{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }}">
+          <input type="hidden" name="akad_pax" value="{{ config.akad_pax|default:'100' }}">
+          <div x-data="cateringCalc({
+                 totalInvitations: {{ catering.total_invitations|default:'0' }},
+                 paxMultiplier: {{ config.pax_multiplier|stringformat:'s'|default:'2' }},
+                 attendanceRate: {{ config.attendance_rate|stringformat:'s'|default:'85' }},
+                 vipBuffer: {{ config.vip_buffer_rate|stringformat:'s'|default:'10' }},
+                 stallPerPax: {{ config.stall_portion_per_pax|stringformat:'s'|default:'1.5' }},
+                 stallVariety: {{ config.stall_variety_count|default:'4' }},
+                 crewCount: {{ config.crew_count|default:'50' }},
+                 akadPax: {{ config.akad_pax|default:'100' }}
+               })">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+              <span class="text-secondary" style="font-size: 0.73rem; font-weight: 600;">Preset:</span>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; min-height: 24px; font-size: 0.72rem;" @click="attendanceRate = 90; vipBuffer = 10">Intimate (90%)</button>
+                <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; min-height: 24px; font-size: 0.72rem;" @click="attendanceRate = 85; vipBuffer = 10">Standar (85%)</button>
+                <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; min-height: 24px; font-size: 0.72rem;" @click="attendanceRate = 80; vipBuffer = 15">Besar (80%)</button>
+              </div>
+            </div>
+
+            <div class="form-row" style="gap: 10px; margin-bottom: 10px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size: 0.76rem; font-weight: 600;">Total Undangan</label>
+                <input type="number" class="wp-input tabular-nums" x-model.number="totalInvitations">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size: 0.76rem; font-weight: 600;">Est. Hadir (%)</label>
+                <input type="number" name="attendance_rate" class="wp-input tabular-nums" x-model.number="attendanceRate" step="0.1" min="0" max="100">
+              </div>
+            </div>
+            <div class="form-row" style="gap: 10px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size: 0.76rem; font-weight: 600;">Cadangan VIP (%)</label>
+                <input type="number" name="vip_buffer_rate" class="wp-input tabular-nums" x-model.number="vipBuffer" step="0.1" min="0">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size: 0.76rem; font-weight: 600;">Macam Gubukan</label>
+                <input type="number" name="stall_variety_count" class="wp-input tabular-nums" x-model.number="stallVariety" min="1" max="20">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size: 0.76rem; font-weight: 600;">Panitia / Kru</label>
+                <input type="number" name="crew_count" class="wp-input tabular-nums" x-model.number="crewCount" min="0">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+              <div style="background: var(--wp-bg-surface-subtle); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
+                <div class="text-secondary" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600;">Est. Tamu Hadir</div>
+                <div class="tabular-nums" style="font-size: 1.05rem; font-weight: 700;" x-text="estAdultPax + ' pax'"></div>
+              </div>
+              <div style="background: var(--wp-bg-surface-subtle); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
+                <div class="text-secondary" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600;">Total + VIP</div>
+                <div class="tabular-nums" style="font-size: 1.05rem; font-weight: 700;" x-text="bufferPax + ' pax'"></div>
+              </div>
+              <div style="background: var(--wp-sage-soft); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-sage-border);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--wp-sage-dark);">Prasmanan (Buffet)</div>
+                <div class="tabular-nums" style="font-size: 1.05rem; font-weight: 700; color: var(--wp-sage-dark);" x-text="buffetPortions + ' porsi'"></div>
+              </div>
+              <div style="background: var(--wp-gold-soft); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-gold-border);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--wp-gold-dark);">Total Gubukan</div>
+                <div class="tabular-nums" style="font-size: 1.05rem; font-weight: 700; color: var(--wp-gold-dark);" x-text="stallTotal + ' porsi'"></div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-gold btn-sm" style="width: 100%; justify-content: center;"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Terapkan Kalkulasi</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Family Quota Visualizer -->
+      <div id="guide-guest-quota" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); padding: 14px 16px;">
+        <div style="margin-bottom: 12px;">
+          <strong style="font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="scale" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i> Kuota Alokasi Tamu 4-Arah
+          </strong>
+        </div>
+        {% if quota_breakdown %}
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          {% for q in quota_breakdown %}
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: var(--wp-text-main);">
+                {% if q.relation_side == 'groom_family' %}Keluarga Pria
+                {% elif q.relation_side == 'bride_family' %}Keluarga Wanita
+                {% elif q.relation_side == 'groom_friend' %}Teman Pria
+                {% elif q.relation_side == 'bride_friend' %}Teman Wanita
+                {% endif %}
+              </span>
+              <span class="tabular-nums text-muted" style="font-size: 0.76rem;">{{ q.count }} undangan · {{ q.pax }} pax</span>
+            </div>
+            <div class="progress-bar" style="height: 6px;">
+              <div class="progress-fill progress-fill-sage" style="width: {% widthratio q.count stats.total 100 %}%"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding: 24px; text-align: center; color: var(--wp-text-muted); font-size: 0.82rem;">
+          Belum ada data tamu.
+        </div>
+        {% endif %}
       </div>
     </div>
 

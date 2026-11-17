@@ -128,15 +128,15 @@
     <div style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
       {% if item.payment_status != 'settled' %}
       <button
-        class="btn btn-ghost btn-sm"
+        class="btn btn-ghost btn-icon btn-sm"
         hx-post="{% url 'finances:toggle_status' item.pk %}?settle=1"
         hx-target=".main-content"
         hx-select=".main-content"
         hx-swap="outerHTML show:none"
-        style="color: var(--wp-sage-main); padding: 4px 8px; font-size: 0.76rem; font-weight: 600; white-space: nowrap;"
-        title="Tandai Lunas penuh (Dibayar = Rp {{ item.actual_cost|intcomma }})"
+        style="color: var(--wp-sage-main);"
+        title="Lunaskan Penuh (Dibayar = Rp {{ item.actual_cost|intcomma }})"
       >
-        <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> Lunaskan
+        <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
       </button>
       {% endif %}
       <button
