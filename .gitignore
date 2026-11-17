@@ -6,8 +6,12 @@
 !.env.example
 *.local.md
 server_credentials*
+database_credentials*
 credentials*
 secrets/
+*.sql
+*.dump
+datadump*.json
 *.pem
 *.key
 *.cert
