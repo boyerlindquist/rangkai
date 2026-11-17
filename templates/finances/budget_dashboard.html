@@ -986,8 +986,8 @@
         {% endfor %}
       </aside>
 
-      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Full Size with Horizontal Scroll on Mobile) -->
-      <div class="sankey-outer-wrapper" style="padding: 12px 18px; position: relative; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start;">
+      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Full Size on Desktop, Horizontal Scroll on Mobile) -->
+      <div class="sankey-outer-wrapper" style="padding: 14px 18px; position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; height: 100%;">
         <!-- Mobile scroll hint -->
         <div class="sankey-mobile-hint text-muted" style="display: none; align-items: center; gap: 5px; font-size: 0.72rem; padding: 2px 4px 8px 4px; border-bottom: 1px dashed var(--wp-hairline); margin-bottom: 6px; flex-shrink: 0;">
           <i data-lucide="chevrons-right" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i>
@@ -995,7 +995,7 @@
         </div>
         <div id="sankey-tooltip" class="sankey-tooltip-card"></div>
         {% if has_sankey_data %}
-          <div id="budget_sankey_chart" style="width: 100%; min-width: 740px; height: 450px; min-height: 450px; max-height: 450px; flex-shrink: 0;"></div>
+          <div id="budget_sankey_chart" style="width: 100%; height: 100%; min-height: 520px; flex: 1 1 auto; overflow: hidden !important;"></div>
           <div id="budget_sankey_empty_filter" class="empty-state" style="display: none; padding: 36px 20px; text-align: center; height: 340px; flex-direction: column; align-items: center; justify-content: center;">
             <div class="empty-icon" style="margin-bottom: 10px;">
               <i data-lucide="filter-x" style="width: 32px; height: 32px; color: var(--wp-text-muted);"></i>
@@ -1701,15 +1701,39 @@
         return { id: e[0], name: e[0], val: e[1], dispVal: e[1], col: 2, color: getNodeColor(e[0], i) };
       });
 
-      // Full desktop readable width even on mobile, horizontally scrollable container
-      const minRequiredW = 750;
-      const effectiveW = Math.max(minRequiredW, targetEl.clientWidth || minRequiredW);
-      const height = 450;
-      targetEl.style.height = '450px';
-      targetEl.style.minHeight = '450px';
-      targetEl.style.maxHeight = '450px';
-      targetEl.style.width = effectiveW + 'px';
-      targetEl.style.minWidth = minRequiredW + 'px';
+      const isMobile = window.innerWidth <= 768;
+      const catListEl = document.querySelector('.cat-list');
+      const outerWrapper = document.querySelector('.sankey-outer-wrapper');
+
+      let height;
+      let effectiveW;
+
+      if (isMobile) {
+        effectiveW = 740;
+        height = 450;
+        targetEl.style.width = '740px';
+        targetEl.style.minWidth = '740px';
+        targetEl.style.maxWidth = '740px';
+        targetEl.style.height = '450px';
+        targetEl.style.minHeight = '450px';
+        targetEl.style.maxHeight = '450px';
+        targetEl.style.overflow = 'hidden';
+      } else {
+        // Desktop: Static rigid, 100% full view, zero scrollbar, full height matching category list
+        targetEl.style.width = '100%';
+        targetEl.style.minWidth = '0';
+        targetEl.style.maxWidth = '100%';
+
+        effectiveW = Math.max(680, Math.round(targetEl.clientWidth || (outerWrapper ? outerWrapper.clientWidth - 36 : 820)));
+
+        // Match left panel height completely, min 540px, so there is zero empty space below
+        const listH = catListEl ? catListEl.offsetHeight : 560;
+        height = Math.max(540, Math.min(780, listH - 28));
+        targetEl.style.height = height + 'px';
+        targetEl.style.minHeight = height + 'px';
+        targetEl.style.maxHeight = height + 'px';
+        targetEl.style.overflow = 'hidden';
+      }
 
       const headerH = 34;
       const bottomPad = 28;
@@ -1718,8 +1742,8 @@
 
       // 3 Strict Discrete Columns: Left (0), Center (1), Right (2 stretched)
       const x0 = 16;
-      const x1 = Math.round(effectiveW * 0.42);
-      const x2 = Math.round(effectiveW * 0.78);
+      const x1 = Math.round(effectiveW * (isMobile ? 0.40 : 0.42));
+      const x2 = Math.round(effectiveW * (isMobile ? 0.76 : 0.78));
 
       function layoutCol(nodes, xCoord) {
         const len = nodes.length;
@@ -1854,7 +1878,8 @@
                'Z';
       }
 
-      let svg = '<svg width="' + effectiveW + '" height="450" viewBox="0 0 ' + effectiveW + ' ' + height + '" style="display: block; width: ' + effectiveW + 'px; height: 450px; overflow: visible; font-family: inherit;">';
+      const svgW = isMobile ? effectiveW : '100%';
+      let svg = '<svg width="' + svgW + '" height="' + height + '" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: ' + (isMobile ? effectiveW + 'px' : '100%') + '; height: ' + height + 'px; overflow: visible; font-family: inherit;">';
 
       svg += '<defs>';
       links1.concat(links2).forEach(function(l, idx) {
@@ -2040,17 +2065,20 @@
       window.renderBudgetSankey(payer);
     });
 
-    // Window resize listener (only re-renders when horizontal container width genuinely changes)
+    // Window resize listener (debounced, re-renders when container width or height changes genuinely)
     let resizeTimer;
     let lastSankeyWidth = (document.getElementById('budget_sankey_chart') || {}).clientWidth || 0;
+    let lastSankeyHeight = (document.getElementById('budget_sankey_chart') || {}).clientHeight || 0;
     window.addEventListener('resize', function() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function() {
         const el = document.getElementById('budget_sankey_chart');
         if (!el) return;
         const newW = el.clientWidth || 0;
-        if (Math.abs(newW - lastSankeyWidth) > 8) {
+        const newH = el.clientHeight || 0;
+        if (Math.abs(newW - lastSankeyWidth) > 8 || Math.abs(newH - lastSankeyHeight) > 16) {
           lastSankeyWidth = newW;
+          lastSankeyHeight = newH;
           window.renderBudgetSankey();
         }
       }, 150);
