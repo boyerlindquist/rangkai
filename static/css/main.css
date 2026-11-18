@@ -1291,7 +1291,10 @@ input[type="radio"] {
   vertical-align: middle;
 }
 
-.wp-select-native-hidden {
+/* Selector by data attribute too: htmx settle re-applies original class attrs on id'd
+   elements (dropping .wp-select-native-hidden) while data-wp-enhanced survives. */
+.wp-select-native-hidden,
+select[data-wp-enhanced="1"] {
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;
