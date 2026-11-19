@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Panduan & Masterclass — Rangkai{% endblock %}
+{% block title %}Panduan Penggunaan | Rangkai{% endblock %}
 {% block breadcrumb %}Panduan{% endblock %}
 
 {% block header_actions %}
@@ -10,310 +10,447 @@
 {% endblock %}
 
 {% block content %}
-<div class="workspace-canvas">
-<!-- Hero Section -->
-<div class="page-header fade-in">
-  <div>
-    <h1>Panduan Lengkap Rangkai</h1>
-    <p class="page-subtitle">
-      Panduan komprehensif menguasai setiap modul untuk merencanakan pernikahan yang terstruktur, rasional, dan tanpa stres.
-    </p>
-  </div>
-</div>
-
-<!-- Sticky Quick Navigation Jump Pills -->
-<div class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 24px;">
-  <div class="card-body" style="padding: var(--wp-space-sm) var(--wp-space-md); overflow-x: auto; -webkit-overflow-scrolling: touch;">
-    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-      <span style="font-size: 0.78rem; font-weight: 600; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">
-        <i data-lucide="compass" style="width: 13px; height: 13px; vertical-align: -2px;"></i> Lompat Ke:
-      </span>
-      <a href="#section-overview" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">1. Ringkasan</a>
-      <a href="#section-checklist" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">2. Timeline & Tugas</a>
-      <a href="#section-finance" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">3. Anggaran & Kas</a>
-      <a href="#section-savings" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">4. Tabungan Bersama</a>
-      <a href="#section-vendors" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">5. Direktori Vendor</a>
-      <a href="#section-guests" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">6. Tamu & Katering</a>
-      <a href="#section-docs" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">7. Berkas & Seserahan</a>
-      <a href="#section-ops" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 10px;">8. Logistik Hari-H</a>
-    </div>
-  </div>
-</div>
-
-<!-- General Tip Box -->
-<div class="card fade-in" style="background: linear-gradient(135deg, var(--wp-sage-soft), var(--wp-gold-soft)); border: 1px solid var(--wp-sage-border); margin-bottom: 36px;">
-  <div class="card-body" style="padding: var(--wp-space-md) var(--wp-space-lg); display: flex; align-items: flex-start; gap: 14px;">
-    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--wp-gold-main); color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem;">
-      <i data-lucide="lightbulb" style="width: 18px; height: 18px;"></i>
-    </div>
-    <div style="flex: 1;">
-      <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; color: var(--wp-text-main);">Tips Kolaborasi Pasangan & Panitia</h4>
-      <p style="margin: 0; font-size: 0.85rem; color: var(--wp-text-secondary); line-height: 1.5;">
-        Gunakan tombol <strong>Mulai Tur Interaktif</strong> di atas untuk melihat fungsi tiap panel secara langsung, dan atur peran anggota (<strong>Co-Owner</strong> vs <strong>Crew / Panitia</strong>) di menu <strong>Pengaturan</strong> agar data keuangan tetap aman sementara panitia bisa fokus pada Tamu, Checklist, dan Logistik Hari-H.
+<div class="workspace-canvas guide-page" x-data="{ roleTab: '{% if is_crew %}wo{% else %}owner{% endif %}' }">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>Panduan Lengkap Rangkai</h1>
+      <p class="page-subtitle">
+        Panduan praktis menguasai setiap modul, alur kolaborasi, dan batas hak akses antara Pengantin (Owner/Co-Owner) dan WO / Tim Acara.
       </p>
     </div>
   </div>
-</div>
 
+  <!-- Quick Jump Bar -->
+  <nav class="guide-jump" aria-label="Navigasi cepat panduan">
+    <a href="#panduan-peran">Peran &amp; Hak Akses</a>
+    <a href="#section-overview">1. Ringkasan</a>
+    <a href="#section-checklist">2. Timeline &amp; Tugas</a>
+    <a href="#section-finance">3. Anggaran &amp; Kas</a>
+    <a href="#section-savings">4. Tabungan Bersama</a>
+    <a href="#section-vendors">5. Direktori Vendor</a>
+    <a href="#section-guests">6. Tamu &amp; Katering</a>
+    <a href="#section-docs">7. Berkas &amp; Seserahan</a>
+    <a href="#section-ops">8. Logistik Hari-H</a>
+  </nav>
 
-<!-- 1. OVERVIEW -->
-<div id="section-overview" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-gold-soft); color: var(--wp-gold-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        01
-      </div>
+  <!-- PANDUAN KHUSUS PERAN (OWNER/PENGANTIN vs WO/TIM ACARA) -->
+  <section id="panduan-peran" data-slot="card" data-flush="true">
+    <div data-slot="card-header" class="has-border" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="layout-dashboard" style="color: var(--wp-gold-dark);"></i> Overview & Command Center</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Pusat kendali utama persiapan pernikahan.</p>
+        <div data-slot="card-title">Panduan Berdasarkan Peran &amp; Matriks Hak Akses</div>
+        <div data-slot="card-description">Pilih peranmu untuk melihat alur kerja harian dan batas akses modul di Rangkai.</div>
+      </div>
+      <div class="filter-segmented" role="tablist" aria-label="Pilih panduan peran">
+        <button type="button" role="tab" :class="{ 'active': roleTab === 'owner' }" @click="roleTab = 'owner'">
+          Panduan Pengantin (Owner / Co-Owner)
+        </button>
+        <button type="button" role="tab" :class="{ 'active': roleTab === 'wo' }" @click="roleTab = 'wo'">
+          Panduan WO &amp; Tim Acara (Crew)
+        </button>
+        <button type="button" role="tab" :class="{ 'active': roleTab === 'matrix' }" @click="roleTab = 'matrix'">
+          Matriks Hak Akses
+        </button>
       </div>
     </div>
-    <a href="{% url 'core:dashboard' %}" class="btn btn-outline btn-sm">Buka Overview →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="clock" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> D-Day Countdown & Budget</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Menghitung mundur sisa hari menuju akad/resepsi dan menampilkan sisa anggaran yang masih aman berdasarkan pembayaran aktual.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-terracotta-main);"><i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i> Perlu Perhatian (Smart Alert)</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Mendeteksi tugas tertinggal (<em>overdue</em>), pembayaran mendesak, atau anomali alokasi budget secara otomatis.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-sage-main);"><i data-lucide="git-merge" style="width: 14px; height: 14px;"></i> Alur Budget (Sankey Flow)</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Visualisasi diagram alir interaktif dari Total Anggaran menuju masing-masing pos pengeluaran aktual.</p>
+
+    <!-- Tab 1: Panduan Pengantin (Owner & Co-Owner) -->
+    <div x-show="roleTab === 'owner'" style="padding: 18px;">
+      <div class="guide-grid-2">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="heart-handshake"></i> Alur Mulai untuk Pengantin</h4>
+          <ol class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num">1</span>
+              <span><strong>Lengkapi Data Pernikahan:</strong> Buka menu <em>Pengaturan</em> untuk mengisi nama pasangan, tanggal hari-H, dan Target Total Anggaran.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">2</span>
+              <span><strong>Undang Pasangan &amp; WO:</strong> Salin <strong>Kode Undangan 8 Karakter</strong> di Pengaturan. Pasangan/WO tinggal buka halaman Daftar → pilih tab <strong>Gabung Pakai Kode</strong>.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">3</span>
+              <span><strong>Atur Peran Anggota:</strong> Anggota baru otomatis masuk sebagai <em>Co-Owner</em>. Khusus <em>Owner</em> utama dapat mengubah peran tim eksternal menjadi <strong>Crew / WO</strong> agar data keuangan tetap privat.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">4</span>
+              <span><strong>Susun Pagu &amp; Tabungan:</strong> Atur porsi kategori di <em>Anggaran &amp; Kas</em> lalu catat setoran bulanan di <em>Tabungan Bersama</em> agar kesiapan kas selalu terpantau otomatis.</span>
+            </li>
+          </ol>
+        </div>
+
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="shield-check"></i> Kewenangan Owner &amp; Co-Owner</h4>
+          <p style="margin-top: 2px;">Kedua peran pengantin memiliki kendali penuh atas perencanaan dan keuangan workspace:</p>
+          <ul class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
+              <span><strong>Keuangan Privat:</strong> Akses penuh ke Anggaran &amp; Kas, Sankey distribusi dana, pelunasan termin vendor, dan Tabungan Bersama.</span>
+            </li>
+            <li>
+              <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
+              <span><strong>Keputusan Vendor &amp; Tamu:</strong> Mengubah bobot penilaian vendor, mengunci status <em>Booked</em>, serta import/export daftar tamu Excel.</span>
+            </li>
+            <li>
+              <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
+              <span><strong>Kontrol Keamanan (Khusus Owner):</strong> Membuat ulang kode undangan (kode lama otomatis hangus), mengubah peran anggota, atau mengeluarkan anggota dari workspace.</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Tab 2: Panduan WO & Tim Acara (Crew) -->
+    <div x-show="roleTab === 'wo'" x-cloak style="padding: 18px;">
+      <div class="guide-grid-2">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="briefcase"></i> Cara Gabung &amp; Alur Kerja WO</h4>
+          <ol class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num">1</span>
+              <span><strong>Gabung 1 Langkah:</strong> Minta kode undangan 8 karakter dari pengantin. Buka halaman Daftar → pilih tab <strong>Gabung Pakai Kode</strong> → buat akun dan masukkan kodenya.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">2</span>
+              <span><strong>Pantau Fokus Tugas:</strong> Gunakan menu <em>Timeline &amp; Tugas</em> dan filter berdasarkan PJ (termasuk <em>Keluarga / WO</em>) untuk menandai progres kerja 1-klik.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">3</span>
+              <span><strong>Kelola Tamu &amp; Check-In:</strong> Cek kuota tamu, pantau RSVP, dan lakukan check-in cepat di lokasi acara langsung lewat HP menggunakan navigasi bawah.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">4</span>
+              <span><strong>Eksekusi Hari-H:</strong> Kelola menit-ke-menit <em>Rundown</em>, awasi PIC pemegang <em>Aset Kritis</em> (cincin, mahar, buku nikah), dan cek <em>Berkas &amp; Seserahan</em>.</span>
+            </li>
+          </ol>
+        </div>
+
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="lock"></i> Batas Akses Peran Crew / WO</h4>
+          <p style="margin-top: 2px;">Demi menjaga privasi finansial pengantin, peran <strong>Crew / WO</strong> difokuskan pada operasional:</p>
+          <ul class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
+              <span><strong>Dapat Diakses Penuh:</strong> Ringkasan (versi non-keuangan), Timeline &amp; Tugas, Direktori Vendor (lihat &amp; pantau), Tamu &amp; Katering (cek/check-in), Berkas &amp; Seserahan, dan Logistik Hari-H.</span>
+            </li>
+            <li>
+              <span class="guide-step-num"><i data-lucide="x" style="width:12px;height:12px;"></i></span>
+              <span><strong>Terkunci Otomatis:</strong> Modul <em>Anggaran &amp; Kas</em>, <em>Tabungan Bersama</em>, <em>Pengaturan Workspace</em>, serta aksi sensitif seperti impor massal tamu atau ubah bobot/status keputusan vendor.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Matriks Hak Akses -->
+    <div x-show="roleTab === 'matrix'" x-cloak>
+      <div data-slot="table-container">
+        <table data-slot="table">
+          <thead>
+            <tr data-slot="table-row">
+              <th data-slot="table-head" style="padding-left: 18px;">Modul / Fitur</th>
+              <th data-slot="table-head">Owner (Pengantin Utama)</th>
+              <th data-slot="table-head">Co-Owner (Pasangan)</th>
+              <th data-slot="table-head" style="padding-right: 18px;">Crew / WO &amp; Tim Acara</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Ringkasan (Dashboard)</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk Kas)</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk Kas)</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Operasional (tanpa Kas)</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Anggaran &amp; Kas + Tabungan Bersama</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci (Privat)</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Direktori &amp; Evaluasi Vendor</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola &amp; Putuskan</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola &amp; Putuskan</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="eye" style="width:14px;height:14px;"></i> Lihat Direktori &amp; Kontak</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Tamu &amp; Katering</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola, Import/Export &amp; Check-In</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola, Import/Export &amp; Check-In</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Cek Tamu, Simulator &amp; Check-In</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Timeline &amp; Tugas, Berkas, Logistik Hari-H</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh Operasional</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Pengaturan, Kode Undangan &amp; Peran Anggota</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk kelola peran)</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Edit Data &amp; Salin Kode</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. RINGKASAN (DASHBOARD) -->
+  <section id="section-overview" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="layout-dashboard"></i></span>
+        <div>
+          <div data-slot="card-title">1. Ringkasan (Dashboard Utama)</div>
+          <div data-slot="card-description">Pusat kendali harian untuk memantau progres dan mengeksekusi prioritas tanpa berpindah halaman.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'core:dashboard' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Ringkasan <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="calendar-heart"></i> 4 KPI Utama &amp; Hitung Mundur</h4>
+          <p>Menampilkan sisa hari menuju akad/resepsi, sisa ruang anggaran, jumlah konfirmasi tamu (RSVP), serta bar progres kesiapan tugas.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="check-square"></i> Aksi Cepat 1-Klik</h4>
+          <p>Lunasi termin jatuh tempo lewat tombol <strong>Tandai Lunas</strong> atau centang tugas aktif langsung dari Dashboard. Hover atau tap ikon kecil untuk melihat PJ &amp; prioritas.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="git-merge"></i> Vendor Booked &amp; Alur Budget</h4>
+          <p>Ringkasan daftar vendor terpilih beserta estimasi biayanya, berdampingan dengan diagram alur pengeluaran aktual per kategori.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. TIMELINE & TUGAS -->
+  <section id="section-checklist" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="check-square"></i></span>
+        <div>
+          <div data-slot="card-title">2. Timeline &amp; Tugas (Checklist 5 Fase)</div>
+          <div data-slot="card-description">Roadmap persiapan terstruktur dari D-360 sampai H+1 yang bisa dikustomisasi penuh.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'operations-checklist:checklist' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Checklist <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="layers"></i> Tahapan Timeline Fleksibel</h4>
+          <p>Tersedia 5 fase bawaan. Kamu bisa menambah, mengubah nama, atau menghapus fase lewat tombol <strong>Atur Fase</strong>. Di HP, tahapan dapat digeser horizontal.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="flame"></i> Ikon Ringkas + Tooltip</h4>
+          <p>Status prioritas (api), PJ (♂ Pria, ♀ Wanita, Berdua, WO), kategori, dan tool terkait diringkas jadi ikon hemat ruang. Hover atau tap ikon untuk melihat keterangannya.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="lightbulb"></i> Ide Tugas &amp; Filter PJ</h4>
+          <p>Saring tugas berdasarkan penanggung jawab di toolbar atas, atau buka <strong>Ide Tugas</strong> untuk menambah item persiapan umum dengan cepat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ANGGARAN & KAS -->
+  <section id="section-finance" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="wallet"></i></span>
+        <div>
+          <div data-slot="card-title">3. Anggaran &amp; Arus Kas <span data-slot="badge" data-variant="secondary" style="margin-left: 4px;">Khusus Pengantin</span></div>
+          <div data-slot="card-description">Perencanaan pagu kategori (Rp / %), pemakaian kas tabungan, dan visualisasi Sankey interaktif.</div>
+        </div>
+      </div>
+      {% if not is_crew %}
+      <div data-slot="card-action">
+        <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Anggaran <i data-lucide="arrow-up-right"></i></a>
+      </div>
+      {% endif %}
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="sliders"></i> Atur Pagu Nominal &amp; Persen</h4>
+          <p>Ubah <strong>Target Total Anggaran</strong> langsung dari KPI card atau tombol <strong>Atur Pagu</strong>. Isi nominal (Rp) atau persentase (%) dan keduanya otomatis saling menghitung.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="git-merge"></i> Sankey Studio Interaktif</h4>
+          <p>Klik kategori atau item langsung di diagram Sankey untuk melihat detail, mengedit nominal DP/pelunasan, atau mengalokasikan sisa <em>Unused Budget</em>.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="receipt"></i> Kesiapan Kas &amp; Over-Allocation</h4>
+          <p>Buka <strong>Rincian Kas</strong> untuk melihat kategori mana yang sudah ter-cover oleh Tabungan Bersama. Jika total pagu melebihi target, peringatan rekonsiliasi muncul otomatis.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. TABUNGAN BERSAMA -->
+  <section id="section-savings" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="piggy-bank"></i></span>
+        <div>
+          <div data-slot="card-title">4. Tabungan Bersama <span data-slot="badge" data-variant="secondary" style="margin-left: 4px;">Khusus Pengantin</span></div>
+          <div data-slot="card-description">Pelacakan setoran bulanan berdua yang langsung tersinkronisasi dengan Sisa Kas di modul Anggaran.</div>
+        </div>
+      </div>
+      {% if not is_crew %}
+      <div data-slot="card-action">
+        <a href="{% url 'finances:savings_tracker' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Tabungan <i data-lucide="arrow-up-right"></i></a>
+      </div>
+      {% endif %}
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="target"></i> Target &amp; Komitmen Bulanan</h4>
+          <p>Klik <strong>Atur Target</strong> untuk menentukan target dana dan kesanggupan nabung per bulan. Estimasi bulan selesai dihitung otomatis.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="trending-up"></i> Grafik Akumulasi vs Target</h4>
+          <p>Lihat pertumbuhan total tabungan serta kontribusi masing-masing penyetor (Pria, Wanita, Bersama, Keluarga) dibanding garis target.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="plus-circle"></i> Catat &amp; Edit Setoran Cepat</h4>
+          <p>Tambahkan riwayat setoran lewat tombol <strong>+ Setoran</strong>, dan edit langsung di baris tabel kapan pun ada penyesuaian.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. DIREKTORI VENDOR -->
+  <section id="section-vendors" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="store"></i></span>
+        <div>
+          <div data-slot="card-title">5. Direktori &amp; Evaluasi Vendor</div>
+          <div data-slot="card-description">Bandingkan kandidat vendor secara objektif berdasarkan bobot prioritas pernikahan kalian.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'vendors:compare' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Vendor <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="sliders"></i> Bobot Kriteria Dinamis</h4>
+          <p>Atur bobot <strong>Harga, Kualitas, Fasilitas, dan Reputasi</strong> (total 100%) atau pakai preset cepat seperti <em>Seimbang</em>, <em>Hemat Biaya</em>, dan <em>Prioritas Kualitas</em>.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="award"></i> Skor &amp; Ranking Otomatis</h4>
+          <p>Vendor otomatis diurutkan dari skor tertinggi di tiap kategori (Venue, Catering, MUA, Dekorasi, Foto/Video, dll.) sehingga keputusan lebih objektif.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="phone"></i> Status Keputusan &amp; WhatsApp</h4>
+          <p>Ubah status antara <em>Shortlist</em>, <em>Booked</em>, atau <em>Ditolak</em>. Klik nomor telepon vendor untuk langsung membuka chat WhatsApp PIC.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. TAMU & KATERING -->
+  <section id="section-guests" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="users"></i></span>
+        <div>
+          <div data-slot="card-title">6. Database Tamu &amp; Simulator Katering</div>
+          <div data-slot="card-description">Kelola undangan, keseimbangan kuota 4-arah, input cepat spreadsheet, dan kalkulasi porsi makanan.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'guests:list' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Tamu <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="table"></i> Input Cepat &amp; Import Excel</h4>
+          <p>Tambah tamu satu per satu, ketik massal lewat <strong>Input Cepat</strong> (bergaya spreadsheet), atau unduh template Excel lalu import sekaligus.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="utensils"></i> Simulator Porsi Katering</h4>
+          <p>Klik <strong>Katering</strong> untuk mensimulasikan estimasi kehadiran, cadangan VIP, jumlah porsi prasmanan (buffet), dan total porsi gubukan.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="scale"></i> Kuota 4-Arah &amp; Check-In</h4>
+          <p>Pantau porsi undangan Keluarga Pria, Keluarga Wanita, Teman Pria, dan Teman Wanita, serta tandai kehadiran tamu (check-in) saat acara.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. BERKAS & SESERAHAN -->
+  <section id="section-docs" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="file-check-2"></i></span>
+        <div>
+          <div data-slot="card-title">7. Berkas KUA/Sipil &amp; Seserahan</div>
+          <div data-slot="card-description">Pelacakan dokumen administrasi pernikahan dan manifest inventaris barang hantaran.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'operations-checklist:detail_checklists' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Berkas <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-2">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="folder-open"></i> Dokumen Resmi KUA / Catatan Sipil</h4>
+          <p>Lacak progres surat pengantar RT/RW, N1-N4, KTP/KK, akta kelahiran, pas foto, hingga berkas saksi lengkap dengan status penyelesaiannya.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="gift"></i> Inventaris &amp; Biaya Seserahan</h4>
+          <p>Catat setiap barang seserahan, status kesiapan, serta perbandingan Estimasi vs Realisasi belanja agar pengeluaran hantaran tetap terkendali.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. LOGISTIK HARI-H -->
+  <section id="section-ops" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="settings-2"></i></span>
+        <div>
+          <div data-slot="card-title">8. Logistik &amp; Operasional Hari-H</div>
+          <div data-slot="card-description">Kendali penuh koordinasi lapangan untuk pengantin dan tim WO di hari acara.</div>
+        </div>
+      </div>
+      <div data-slot="card-action">
+        <a href="{% url 'operations-hub:operations_hub' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Logistik <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="clock"></i> Rundown &amp; Deteksi Bentrok</h4>
+          <p>Susun jadwal sesi acara menit-ke-menit. Sistem otomatis memberi peringatan jika ada waktu agenda yang bertabrakan.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="shield-alert"></i> Aset Kritis &amp; Perlengkapan</h4>
+          <p>Catat barang wajib (mahar, cincin kawin, buku nikah, kotak angpao) beserta nama PIC pemegang dan status serah terimanya.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="scissors"></i> Kalkulator Kain Seragam</h4>
+          <p>Hitung otomatis total kebutuhan meter kain seragam keluarga dan bridesmaid berdasarkan daftar penerima.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-
-
-<!-- 2. CHECKLIST & TASKS -->
-<div id="section-checklist" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-sage-soft); color: var(--wp-sage-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        02
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="check-square" style="color: var(--wp-sage-main);"></i> Checklist & Tasks Radar</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Manajemen tugas berbasis fase waktu dan radar timeline.</p>
-      </div>
-    </div>
-    <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-outline btn-sm">Buka Checklist →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="compass" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Timeline Radar (6 Fase Waktu)</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Tugas dikelompokkan dari 12+ Bulan Sebelum, 9–12 Bulan, 6–9 Bulan, 3–6 Bulan, 1–3 Bulan, hingga Bulan Terakhir menjelang Hari H.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="toggle-right" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Siklus Status 3 Tahap</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Klik kotak checkbox untuk mengubah status tugas: <strong>Belum Selesai</strong> &rarr; <strong>Sedang Berjalan (Kuning)</strong> &rarr; <strong>Selesai (Hijau)</strong>.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="plus-circle" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Custom Tasks & Universal Delete</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Tambah tugas kustom baru via tombol di header, atau hapus tugas apa pun yang tidak relevan untuk menyesuaikan kebutuhan pernikahanmu.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 3. BUDGET & FINANCE -->
-<div id="section-finance" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-gold-soft); color: var(--wp-gold-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        03
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="wallet" style="color: var(--wp-gold-dark);"></i> Budget & Finance Hub</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Alokasi kategori pintar, pelacakan variance, dan split-bill 3 pihak.</p>
-      </div>
-    </div>
-    <a href="{% url 'finances:dashboard' %}" class="btn btn-outline btn-sm">Buka Budget & Finance →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Alokasi Persentase Kategori</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Membagi total anggaran ke dalam pos utama (Venue & Catering 40%, Dekorasi 15%, dll) lengkap dengan konfigurasi custom.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="users" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Formula Split-Bill 3 Pihak</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Memisahkan porsi beban pembayaran antara Pihak Pria (CPP), Pihak Wanita (CPW), dan Keluarga secara transparan.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-terracotta-main);"><i data-lucide="trending-down" style="width: 14px; height: 14px;"></i> Variance & Overbudget Warning</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Menghitung selisih Budget vs Biaya Aktual secara otomatis. Angka merah menandakan pengeluaran yang melebihi batas alokasi.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 4. TABUNGAN BERSAMA -->
-<div id="section-savings" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-sage-soft); color: var(--wp-sage-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        04
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="piggy-bank" style="color: var(--wp-sage-main);"></i> Tabungan Bersama (Joint Savings)</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Pelacakan setoran tabungan bersama pasangan.</p>
-      </div>
-    </div>
-    <a href="{% url 'finances:savings_tracker' %}" class="btn btn-outline btn-sm">Buka Tabungan Bersama →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="target" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Target & Estimasi Selesai</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Kalkulator otomatis menghitung berapa bulan lagi target dana pernikahan akan terpenuhi berdasarkan komitmen setoran bulanan.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="history" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Riwayat Setoran Scrollable</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Tabel riwayat setoran berkunci tinggi (<em>fixed height &amp; sticky header</em>) agar tampilan selalu rapi dan mudah dicek kapan saja.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="user-check" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Badge Penyetor CPP & CPW</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Pembeda visual otomatis antara setoran calon pengantin pria dan calon pengantin wanita.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 5. VENDORS COMPARE -->
-<div id="section-vendors" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-gold-soft); color: var(--wp-gold-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        05
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="store" style="color: var(--wp-gold-dark);"></i> Vendors Matrix & Scoring</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Evaluasi vendor secara objektif dengan algoritma weighted score.</p>
-      </div>
-    </div>
-    <a href="{% url 'vendors:compare' %}" class="btn btn-outline btn-sm">Buka Vendors →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="award" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Weighted Scoring 4 Dimensi</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Menghitung skor komprehensif berdasarkan 4 pilar: <strong>Harga (Price)</strong>, <strong>Kualitas (Quality)</strong>, <strong>Fasilitas (Facility)</strong>, dan <strong>Reputasi (Reputation)</strong>.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Quick Status Toggle</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Tandai status vendor secara instan: <strong>Booked (Hijau)</strong>, <strong>Shortlist (Kuning)</strong>, atau <strong>Rejected (Merah)</strong>.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="grid" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Layout 4 Kolom Ramping</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Tampilan card seragam dengan tinggi yang presisi agar perbandingan antar kandidat vendor terlihat rapi dan elegan.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 6. GUEST LIST & CATERING MATH -->
-<div id="section-guests" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-sage-soft); color: var(--wp-sage-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        06
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="users" style="color: var(--wp-sage-main);"></i> Guest List & Catering Simulator</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">3 metode input cepat, kuota 4-arah, dan kalkulasi logistik konsumsi.</p>
-      </div>
-    </div>
-    <a href="{% url 'guests:list' %}" class="btn btn-outline btn-sm">Buka Guest List →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="table" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Mode Spreadsheet & Import Excel</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Input beruntun puluhan tamu langsung di tabel atau upload file spreadsheet (<strong>.xlsx / .csv</strong>) dengan template yang disediakan.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="utensils" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Simulator Katering Cerdas</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Formula standar industri otomatis membagi kebutuhan makanan menjadi <strong>Buffet (60%)</strong> dan <strong>Gubukan / Food Stall (40%)</strong> plus VIP buffer & crew meal.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Kuota 4-Arah</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Visualisasi pembagian jatah undangan antara Keluarga Pria, Keluarga Wanita, Teman Pria, dan Teman Wanita.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 7. DETAIL BERKAS & SESERAHAN -->
-<div id="section-docs" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-gold-soft); color: var(--wp-gold-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        07
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="folder-open" style="color: var(--wp-gold-dark);"></i> Detail Berkas & Seserahan</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Checklist administratif legalitas KUA dan rincian barang seserahan.</p>
-      </div>
-    </div>
-    <a href="{% url 'operations-checklist:detail_checklists' %}" class="btn btn-outline btn-sm">Buka Detail Berkas →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="file-check" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Berkas Administrasi KUA / Sipil</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Melacak kelengkapan dokumen resmi pengantin pria & wanita (Surat N1-N4, Surat Keterangan Sehat, Akta, dll).</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="gift" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Tracking Barang Seserahan</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Mencatat daftar barang hantaran, PIC penanggung jawab, status pengadaan, serta estimasi vs realisasi harga.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- 8. OPERATIONS HUB -->
-<div id="section-ops" class="card fade-in" style="background: var(--wp-bg-surface); border: 1px solid var(--wp-border-light); margin-bottom: 36px;">
-  <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 32px; height: 32px; border-radius: var(--wp-radius-sm); background: var(--wp-sage-soft); color: var(--wp-sage-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
-        08
-      </div>
-      <div>
-        <h3 style="margin: 0; color: var(--wp-text-main); font-size: 1.15rem;"><i data-lucide="calendar" style="color: var(--wp-sage-main);"></i> Operations Hub & Hari-H</h3>
-        <p class="text-muted" style="font-size: 0.8rem; margin: 2px 0 0 0;">Pusat komando teknis pelaksanaan hari bahagia.</p>
-      </div>
-    </div>
-    <a href="{% url 'operations-hub:operations_hub' %}" class="btn btn-outline btn-sm">Buka Operations Hub →</a>
-  </div>
-  <div class="card-body">
-    <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--wp-space-md);">
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="clock" style="width: 14px; height: 14px; color: var(--wp-gold-dark);"></i> Rundown & Sanity Alerts</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Susun jadwal detik demi detik hari H. Sistem cerdas otomatis mendeteksi bentrok waktu antar agenda (<em>clash</em>).</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="shield-alert" style="width: 14px; height: 14px; color: var(--wp-terracotta-main);"></i> Aset Kritis Logistik</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Menjaga barang yang tidak boleh hilang (Mahar, Cincin Kawin, Buku Nikah) beserta nama PIC pemegang barang.</p>
-      </div>
-      <div style="background: var(--wp-bg-canvas); padding: var(--wp-space-md); border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-border-light);">
-        <h4 style="margin: 0 0 6px 0; font-size: 0.9rem; color: var(--wp-text-main);"><i data-lucide="scissors" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Kalkulator Kain Seragam</h4>
-        <p class="text-secondary" style="font-size: 0.82rem; margin: 0; line-height: 1.5;">Menghitung kebutuhan total potongan meter kain seragam keluarga & bridesmaid berdasarkan jumlah penerima.</p>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-
 {% endblock %}

@@ -2,6 +2,7 @@
 Core views: Dashboard, Auth (Register/Login/Logout), Join Workspace, Settings.
 """
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -145,33 +146,60 @@ def _create_default_data(wedding):
     CateringConfig.objects.create(wedding=wedding)
 
 
+def landing_view(request):
+    """Public landing page for Rangkai."""
+    return render(request, 'core/landing.html')
+
+
+def home_view(request):
+    """Show public landing page to guests, or Dashboard to authenticated users."""
+    if request.user.is_authenticated:
+        return dashboard_view(request)
+    return landing_view(request)
+
+
 def register_view(request):
-    """User registration with auto workspace creation."""
+    """User registration with 2 modes: create a new workspace OR join existing via invite code."""
     if request.user.is_authenticated:
         return redirect('core:dashboard')
 
+    active_mode = request.GET.get('mode', 'create')
+    if active_mode not in ('create', 'join'):
+        active_mode = 'create'
+    prefill_code = (request.GET.get('code') or '').strip().upper()
+
     if request.method == 'POST':
         form = RegisterForm(request.POST)
+        active_mode = request.POST.get('mode', 'create')
+        if active_mode not in ('create', 'join'):
+            active_mode = 'create'
         if form.is_valid():
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
             user.save()
 
-            # Create wedding workspace
+            if form.cleaned_data['mode'] == 'join':
+                wedding = form.cleaned_data['target_wedding']
+                WeddingMembership.objects.create(
+                    user=user,
+                    wedding=wedding,
+                    role='co_owner',
+                )
+                login(request, user)
+                messages.success(request, f'Selamat datang, {user.username}! Berhasil bergabung ke workspace {wedding}.')
+                return redirect('core:dashboard')
+
+            # Default mode: create new wedding workspace
             wedding = Wedding.objects.create(
                 groom_name=form.cleaned_data['groom_name'],
                 bride_name=form.cleaned_data['bride_name'],
                 wedding_date=form.cleaned_data.get('wedding_date'),
             )
-
-            # Create membership
             WeddingMembership.objects.create(
                 user=user,
                 wedding=wedding,
                 role='owner',
             )
-
-            # Populate default data
             _create_default_data(wedding)
 
             login(request, user)
@@ -179,9 +207,15 @@ def register_view(request):
             messages.info(request, f'Kode undangan pasangan: {wedding.invite_code}')
             return redirect('core:dashboard')
     else:
-        form = RegisterForm()
+        initial = {'mode': active_mode}
+        if prefill_code:
+            initial['invite_code'] = prefill_code
+        form = RegisterForm(initial=initial)
 
-    return render(request, 'core/register.html', {'form': form})
+    return render(request, 'core/register.html', {
+        'form': form,
+        'active_mode': active_mode,
+    })
 
 
 def login_view(request):
@@ -213,9 +247,13 @@ def logout_view(request):
     return redirect('core:login')
 
 
-@login_required
 def join_workspace_view(request):
-    """Join an existing workspace via invite code."""
+    """Join an existing workspace via invite code (guests go to Register Join tab)."""
+    if not request.user.is_authenticated:
+        code = (request.GET.get('code') or '').strip().upper()
+        target_url = reverse('core:register') + '?mode=join' + (f'&code={code}' if code else '')
+        return redirect(target_url)
+
     # If user already has a workspace, redirect to dashboard
     if WeddingMembership.objects.filter(user=request.user).exists():
         return redirect('core:dashboard')

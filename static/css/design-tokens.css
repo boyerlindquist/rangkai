@@ -114,7 +114,7 @@
   --wp-text-xl: 1.25rem;
   --wp-text-2xl: 1.5rem;
 
-  --wp-bg-canvas: var(--sidebar);
+  --wp-bg-canvas: var(--background);
   --wp-bg-base: var(--background);
   --wp-bg-surface: var(--card);
   --wp-bg-surface-subtle: var(--muted);
