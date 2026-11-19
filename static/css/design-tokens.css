@@ -11,12 +11,12 @@
   --wp-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   --wp-text-xs: 0.75rem;      /* 12px — strict legibility floor */
-  --wp-text-sm: 0.8125rem;    /* 13px — secondary labels & table cells */
-  --wp-text-base: 0.875rem;   /* 14px — dense operational body */
-  --wp-text-md: 0.96875rem;   /* 15.5px — lead & card titles */
-  --wp-text-lg: 1.125rem;     /* 18px — section headers */
-  --wp-text-xl: 1.375rem;     /* 22px — major KPIs & sub-display */
-  --wp-text-2xl: 1.75rem;     /* 28px — page display title */
+  --wp-text-sm: 0.8125rem;    /* 13px — secondary labels, nav & table cells */
+  --wp-text-base: 0.84375rem; /* 13.5px — calm operational body */
+  --wp-text-md: 0.9375rem;    /* 15px — lead & card titles */
+  --wp-text-lg: 1.0625rem;    /* 17px — section headers */
+  --wp-text-xl: 1.25rem;      /* 20px — major KPIs */
+  --wp-text-2xl: 1.5rem;      /* 24px — page display title */
 
   /* ── CANVAS & SPATIAL SURFACES (Light: Pearl Alabaster & Botanical Mist) ── */
   --wp-bg-canvas: #F6FAF8;
@@ -102,19 +102,19 @@
   --wp-transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   --wp-transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* ── SPACING (Scaled ~78-80%) ── */
-  --wp-space-xs: 3px;
-  --wp-space-sm: 6px;
-  --wp-space-md: 12px;
-  --wp-space-lg: 18px;
-  --wp-space-xl: 28px;
-  --wp-space-2xl: 42px;
-  --wp-space-3xl: 56px;
+  /* ── SPACING (Generous Editorial Rhythm — 4px Base) ── */
+  --wp-space-xs: 4px;
+  --wp-space-sm: 8px;
+  --wp-space-md: 14px;
+  --wp-space-lg: 22px;
+  --wp-space-xl: 32px;
+  --wp-space-2xl: 44px;
+  --wp-space-3xl: 60px;
 
-  /* ── SPATIAL DIMENSIONS (Scaled ~78-80%) ── */
-  --wp-sidebar-width: 208px;
-  --wp-sidebar-collapsed: 56px;
-  --wp-inspector-width: 360px;
+  /* ── SPATIAL DIMENSIONS ── */
+  --wp-sidebar-width: 228px;
+  --wp-sidebar-collapsed: 60px;
+  --wp-inspector-width: 380px;
 
   /* ── BROWSER SURFACES ── */
   --wp-selection-bg: rgba(18, 110, 81, 0.16);
