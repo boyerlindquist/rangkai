@@ -13,4 +13,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('join/', views.join_workspace_view, name='join_workspace'),
     path('settings/', views.settings_view, name='settings'),
+    path('settings/regenerate-code/', views.regenerate_invite_code_view, name='regenerate_invite_code'),
+    path('settings/member/<int:pk>/', views.manage_member_view, name='manage_member'),
 ]

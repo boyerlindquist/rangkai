@@ -12,7 +12,7 @@
   </div>
 
   <!-- Guest Metric Strip -->
-  <div class="metric-strip">
+  <div class="metric-strip" id="guest-kpi-strip">
     <div class="metric-item">
       <div class="metric-label">
         <i data-lucide="mail" style="width: 13px; height: 13px;"></i> Total Undangan
@@ -75,14 +75,18 @@
       <!-- Grouped Compact Icon Action Cluster -->
       <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showSimulator ? 'btn-gold' : 'btn-secondary'"
                 @click="showSimulator = !showSimulator"
-                title="Simulator Porsi Katering & Kuota Tamu 4-Arah">
+                title="Simulator Porsi Katering & Kuota Tamu 4-Arah"
+                style="padding: 4px 10px;">
           <i data-lucide="utensils" style="width: 14px; height: 14px;"></i>
+          <span>Katering</span>
         </button>
+        {% if not is_crew %}
         <a href="{% url 'guests:download_template' %}"
            class="btn btn-secondary btn-icon btn-sm"
+           aria-label="Unduh Format Template Excel"
            title="Unduh Format Template Excel">
           <i data-lucide="download" style="width: 14px; height: 14px;"></i>
         </a>
@@ -90,15 +94,18 @@
                 class="btn btn-icon btn-sm"
                 :class="mode === 'import' ? 'btn-gold' : 'btn-secondary'"
                 @click="mode = (mode === 'import' ? null : 'import')"
+                aria-label="Import Tamu dari Excel"
                 title="Import Tamu dari Excel">
           <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
         </button>
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="mode === 'spreadsheet' ? 'btn-gold' : 'btn-secondary'"
                 @click="mode = (mode === 'spreadsheet' ? null : 'spreadsheet')"
-                title="Mode Input Cepat (Spreadsheet)">
+                title="Mode Input Cepat (Spreadsheet)"
+                style="padding: 4px 10px;">
           <i data-lucide="table" style="width: 14px; height: 14px;"></i>
+          <span>Input Cepat</span>
         </button>
         <button type="button"
                 class="btn btn-gold btn-sm"
@@ -108,6 +115,7 @@
           <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
           <span>Tamu</span>
         </button>
+        {% endif %}
       </div>
     </div>
 
@@ -392,24 +400,24 @@
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <form method="get" action="{% url 'guests:list' %}"
                 hx-get="{% url 'guests:list' %}"
-                hx-target="#guest-table-section"
-                hx-select="#guest-table-section"
+                hx-target="#guest-table-wrap"
+                hx-select="#guest-table-wrap"
                 hx-swap="outerHTML show:none"
-                hx-trigger="submit, keyup delay:300ms from:input[name='q']"
+                hx-trigger="submit, input changed delay:300ms from:input[name='q'], search from:input[name='q']"
                 style="position: relative; min-width: 220px;">
             {% if side_filter %}<input type="hidden" name="side" value="{{ side_filter }}">{% endif %}
             {% if rsvp_filter %}<input type="hidden" name="rsvp" value="{{ rsvp_filter }}">{% endif %}
-            <input type="search" name="q" value="{{ search_query }}" class="wp-input" placeholder="Cari nama tamu / WA..." style="padding: 6px 12px; font-size: 0.8rem; height: 32px;">
+            <input type="search" name="q" value="{{ search_query }}" class="wp-input" aria-label="Cari nama tamu atau WhatsApp" placeholder="Cari nama tamu / WA..." style="padding: 6px 12px; font-size: 0.8rem; height: 32px;">
           </form>
           <div class="filter-segmented" hx-boost="true" hx-target="#guest-table-section" hx-select="#guest-table-section" hx-swap="outerHTML show:none">
             <a href="?rsvp=attending{% if side_filter %}&side={{ side_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="{% if rsvp_filter == 'attending' %}active{% endif %}"><i data-lucide="check"></i> Hadir</a>
-            <a href="?rsvp=pending{% if side_filter %}&side={{ side_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="{% if rsvp_filter == 'pending' %}active{% endif %}"><i data-lucide="clock"></i> Pending</a>
-            <a href="?rsvp=declined{% if side_filter %}&side={{ side_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="{% if rsvp_filter == 'declined' %}active{% endif %}"><i data-lucide="x"></i> Berhalangan</a>
+            <a href="?rsvp=pending{% if side_filter %}&side={{ side_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="{% if rsvp_filter == 'pending' %}active{% endif %}"><i data-lucide="clock"></i> Belum Pasti</a>
+            <a href="?rsvp=declined{% if side_filter %}&side={{ side_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="{% if rsvp_filter == 'declined' %}active{% endif %}"><i data-lucide="x"></i> Tidak Hadir</a>
           </div>
         </div>
       </div>
 
-      <div class="sheet-table-wrap">
+      <div id="guest-table-wrap" class="sheet-table-wrap">
         {% if guests %}
         <table class="sheet-table">
           <thead>
@@ -438,41 +446,45 @@
       </div>
     </div>
   </div>
+  <script>
+    (function() {
+      var registerCateringCalc = function() {
+        if (!window.Alpine) return;
+        Alpine.data('cateringCalc', (config) => ({
+          totalInvitations: config.totalInvitations || 500,
+          paxMultiplier: config.paxMultiplier || 2,
+          attendanceRate: config.attendanceRate || 85,
+          vipBuffer: config.vipBuffer || 10,
+          stallPerPax: config.stallPerPax || 1.5,
+          stallVariety: config.stallVariety || 4,
+          crewCount: config.crewCount || 50,
+          akadPax: config.akadPax || 100,
+
+          get estAdultPax() {
+            return Math.round(this.totalInvitations * this.paxMultiplier * (this.attendanceRate / 100));
+          },
+          get bufferPax() {
+            return Math.round(this.estAdultPax * (1 + (this.vipBuffer / 100)));
+          },
+          get buffetPortions() {
+            return Math.round(this.bufferPax * 0.6);
+          },
+          get stallTotal() {
+            return Math.round(this.bufferPax * this.stallPerPax);
+          },
+          get stallPerVariety() {
+            return this.stallVariety > 0 ? Math.round(this.stallTotal / this.stallVariety) : 0;
+          }
+        }));
+      };
+      if (window.Alpine) {
+        registerCateringCalc();
+      } else {
+        document.addEventListener('alpine:init', registerCateringCalc);
+      }
+    })();
+  </script>
 </div>
 {% endblock %}
 
-
-
-{% block extra_js %}
-<script>
-  document.addEventListener('alpine:init', () => {
-    Alpine.data('cateringCalc', (config) => ({
-      totalInvitations: config.totalInvitations || 500,
-      paxMultiplier: config.paxMultiplier || 2,
-      attendanceRate: config.attendanceRate || 85,
-      vipBuffer: config.vipBuffer || 10,
-      stallPerPax: config.stallPerPax || 1.5,
-      stallVariety: config.stallVariety || 4,
-      crewCount: config.crewCount || 50,
-      akadPax: config.akadPax || 100,
-
-      get estAdultPax() {
-        return Math.round(this.totalInvitations * this.paxMultiplier * (this.attendanceRate / 100));
-      },
-      get bufferPax() {
-        return Math.round(this.estAdultPax * (1 + (this.vipBuffer / 100)));
-      },
-      get buffetPortions() {
-        // Simple 60% buffet rule
-        return Math.round(this.bufferPax * 0.6);
-      },
-      get stallTotal() {
-        return Math.round(this.bufferPax * this.stallPerPax);
-      },
-      get stallPerVariety() {
-        return this.stallVariety > 0 ? Math.round(this.stallTotal / this.stallVariety) : 0;
-      }
-    }))
-  })
-</script>
-{% endblock %}
+{% block extra_js %}{% endblock %}

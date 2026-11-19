@@ -7,10 +7,10 @@
             class="btn btn-sm"
             :class="activeTopic === '{{ topic.key }}' ? 'btn-gold' : 'btn-secondary'"
             @click="activeTopic = '{{ topic.key }}'"
-            style="font-size: 0.74rem; padding: 4px 10px; gap: 5px;">
+            style="font-size: 0.75rem; padding: 4px 10px; gap: 5px;">
       <i data-lucide="{{ topic.icon }}" style="width: 13px; height: 13px;"></i>
       <span>{{ topic.title }}</span>
-      <span class="tabular-nums" style="opacity: 0.8; font-size: 0.68rem;">({{ topic.added_count }}/{{ topic.total_count }})</span>
+      <span class="tabular-nums" style="opacity: 0.8; font-size: 0.75rem;">({{ topic.added_count }}/{{ topic.total_count }})</span>
     </button>
     {% endfor %}
   </div>
@@ -29,7 +29,7 @@
         <input type="hidden" name="topic_key" value="{{ topic.key }}">
         <input type="hidden" name="item_idx" value="all">
         <input type="hidden" name="phase" :value="selectedPhase === 'all' ? (phaseKeys[0] || 'd360') : selectedPhase">
-        <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 9px; font-size: 0.72rem;" title="Masukkan seluruh item topik ini ke fase yang sedang dibuka">
+        <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 9px; font-size: 0.75rem;" title="Masukkan seluruh item topik ini ke fase yang sedang dibuka">
           <i data-lucide="list-plus" style="width: 13px; height: 13px;"></i> + Semua Topik Ini
         </button>
       </form>
@@ -42,11 +42,11 @@
         <div style="min-width: 0; flex: 1; font-size: 0.78rem; color: {% if item.already_added %}var(--wp-text-muted){% else %}var(--wp-text-main){% endif %}; {% if item.already_added %}text-decoration: line-through;{% endif %}">
           {{ item.title }}
           {% if item.is_critical %}
-            <span class="badge badge-terracotta" style="font-size: 0.63rem; padding: 1px 4px; margin-left: 3px;">Penting</span>
+            <span class="badge badge-terracotta" style="font-size: 0.75rem; padding: 1px 4px; margin-left: 3px;">Penting</span>
           {% endif %}
         </div>
         {% if item.already_added %}
-          <span class="status-pill status-done" style="font-size: 0.65rem; padding: 1px 6px; flex-shrink: 0;">✓ Ada</span>
+          <span class="status-pill status-done" style="font-size: 0.75rem; padding: 1px 6px; flex-shrink: 0;">✓ Ada</span>
         {% else %}
           <form method="post" action="{% url 'operations-checklist:add_guide_task' %}"
                 hx-post="{% url 'operations-checklist:add_guide_task' %}"

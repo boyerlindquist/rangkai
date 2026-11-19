@@ -41,17 +41,21 @@
         <i data-lucide="calendar-clock" style="width: 13px; height: 13px;"></i> Estimasi Selesai
       </div>
       <div class="metric-value">
-        {% if estimated_months > 0 %}
+        {% if goal.target_amount <= 0 %}
+          <span style="font-size: 1.05rem; color: var(--wp-text-muted);">Belum Diatur</span>
+        {% elif estimated_months > 0 %}
           {{ estimated_months }} <span style="font-size: 0.9rem; font-weight: 500;">Bulan</span>
         {% else %}
           Tercapai
         {% endif %}
       </div>
       <div class="metric-sub">
-        {% if estimated_completion_date %}
+        {% if goal.target_amount <= 0 %}
+          Klik "Atur Target" di bawah
+        {% elif estimated_completion_date %}
           Perkiraan: {{ estimated_completion_date|date:"F Y" }}
         {% else %}
-          —
+          Target tabungan terpenuhi
         {% endif %}
       </div>
     </div>
@@ -75,21 +79,25 @@
         {% endfor %}
       </div>
 
-      <!-- Compact Icon Action Cluster -->
-      <div style="display: inline-flex; align-items: center; gap: 5px;">
+      <!-- Labeled Compact Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showChart ? 'btn-gold' : 'btn-secondary'"
                 @click="showChart = !showChart"
-                title="Tampilkan / Sembunyikan Grafik Akumulasi">
+                title="Tampilkan / Sembunyikan Grafik Akumulasi"
+                style="padding: 4px 10px;">
           <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+          <span>Grafik</span>
         </button>
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showGoalForm ? 'btn-gold' : 'btn-secondary'"
                 @click="showGoalForm = !showGoalForm; if(showGoalForm) showAddDeposit = false"
-                title="Atur Target & Komitmen Tabungan Bulanan">
+                title="Atur Target & Komitmen Tabungan Bulanan"
+                style="padding: 4px 10px;">
           <i data-lucide="target" style="width: 14px; height: 14px;"></i>
+          <span>Atur Target</span>
         </button>
         <button type="button"
                 class="btn btn-gold btn-sm"

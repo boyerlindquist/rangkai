@@ -1,0 +1,30 @@
+<div class="metric-strip" id="guest-kpi-strip" hx-swap-oob="true">
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="mail" style="width: 13px; height: 13px;"></i> Total Undangan
+    </div>
+    <div class="metric-value">{{ stats.total|default:"0" }}</div>
+    <div class="metric-sub">{{ stats.total_pax|default:"0" }} total estimasi pax</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="user-check" style="width: 13px; height: 13px;"></i> Konfirmasi Hadir
+    </div>
+    <div class="metric-value" style="color: var(--wp-sage-main);">{{ stats.attending|default:"0" }}</div>
+    <div class="metric-sub">{{ stats.attending_pax|default:"0" }} pax hadir terkonfirmasi</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> Tamu Check-In
+    </div>
+    <div class="metric-value" style="color: var(--wp-gold-main);">{{ stats.checked_in|default:"0" }}</div>
+    <div class="metric-sub">tamu telah hadir di lokasi</div>
+  </div>
+  <div class="metric-item">
+    <div class="metric-label">
+      <i data-lucide="soup" style="width: 13px; height: 13px;"></i> Buffet Porsi
+    </div>
+    <div class="metric-value">{{ catering.buffet_portions }}</div>
+    <div class="metric-sub">rekomendasi porsi prasmanan</div>
+  </div>
+</div>

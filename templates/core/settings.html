@@ -3,40 +3,153 @@
 {% block title %}Pengaturan — Rangkai{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1>Pengaturan <span class="serif-accent">Workspace</span></h1>
-  <p class="page-subtitle">Konfigurasi data pernikahan dan workspace.</p>
-</div>
-
-<div class="bento-grid bento-grid-2">
-  <div class="card">
-    <div class="card-header">
-      <h3><i data-lucide="gem"></i> Data Pernikahan</h3>
-    </div>
-    <div class="card-body">
-      <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<p class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">{{ field.help_text
-            }}</p>{% endif %}
-        </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
-      </form>
+<div class="workspace-canvas">
+  <div class="page-header fade-in">
+    <div>
+      <h1>Pengaturan <span class="serif-accent">Workspace</span></h1>
+      <p class="page-subtitle">Konfigurasi data pernikahan, kode undangan kolaborasi, dan pengelolaan peran anggota.</p>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h3><i data-lucide="link"></i> Kode Undangan Kolaborasi</h3>
+  <div class="bento-grid bento-grid-2" style="align-items: start;">
+    <!-- Data Pernikahan -->
+    <div class="surface-panel">
+      <div class="surface-panel-header">
+        <h3><i data-lucide="gem" style="color: var(--wp-gold-main);"></i> Data Pernikahan</h3>
+      </div>
+      <div class="surface-panel-body" style="padding: 20px 24px;">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+          <div style="margin-bottom: 14px; padding: 10px 14px; border-radius: var(--wp-radius-sm); background: var(--wp-terracotta-soft); border: 1px solid var(--wp-terracotta-border); color: var(--wp-terracotta-main); font-size: 0.82rem;">
+            {% for err in form.non_field_errors %}
+            <div>{{ err }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 4px; font-weight: 500;">
+              {% for err in field.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+            {% if field.help_text %}
+            <p class="text-muted" style="font-size: 0.8rem; margin-top: 4px;">{{ field.help_text }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <button type="submit" class="btn btn-primary">
+            <i data-lucide="save" style="width: 14px; height: 14px;"></i> Simpan Pengaturan
+          </button>
+        </form>
+      </div>
     </div>
-    <div class="card-body text-center">
-      <p class="text-secondary mb-md">Kode ini digunakan pasangan untuk join workspace:</p>
-      <div class="invite-code-display mb-lg">{{ wedding.invite_code }}</div>
-      <p class="text-muted" style="font-size: 0.8rem;">Salin dan bagikan ke pasanganmu</p>
+
+    <!-- Kolom Kanan: Kode Undangan + Anggota Workspace -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Kode Undangan Kolaborasi -->
+      <div class="surface-panel" x-data="{ copied: false }">
+        <div class="surface-panel-header">
+          <h3><i data-lucide="link" style="color: var(--wp-sage-main);"></i> Kode Undangan Kolaborasi</h3>
+        </div>
+        <div class="surface-panel-body" style="padding: 20px 24px; text-align: center;">
+          <p class="text-secondary" style="font-size: 0.85rem; margin-bottom: 14px;">
+            Bagikan kode ini ke pasangan atau panitia/WO untuk bergabung ke workspace <strong>{{ wedding }}</strong>.
+          </p>
+          <div class="invite-code-display" style="margin-bottom: 16px;">{{ wedding.invite_code }}</div>
+
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button"
+                    class="btn btn-primary btn-sm"
+                    @click="navigator.clipboard.writeText('{{ wedding.invite_code }}'); copied = true; setTimeout(() => copied = false, 2200)">
+              <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+              <span x-text="copied ? 'Kode Tersalin!' : 'Salin Kode'">Salin Kode</span>
+            </button>
+
+            <form method="post" action="{% url 'core:regenerate_invite_code' %}" style="margin: 0;"
+                  onsubmit="return confirm('Buat kode undangan baru? Kode lama tidak akan bisa dipakai lagi untuk bergabung.')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Buat Ulang Kode
+              </button>
+            </form>
+          </div>
+          <p class="text-muted" style="font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">
+            Anggota baru masuk sebagai <strong>Co-Owner</strong> secara default. Owner utama dapat mengubah peran menjadi <strong>Crew / Panitia</strong> di daftar anggota di bawah.
+          </p>
+        </div>
+      </div>
+
+      <!-- Anggota Workspace -->
+      <div class="surface-panel">
+        <div class="surface-panel-header">
+          <h3><i data-lucide="users" style="color: var(--wp-gold-main);"></i> Anggota Workspace</h3>
+          <span class="status-pill">{{ memberships|length }} orang</span>
+        </div>
+        <div class="surface-panel-body" style="padding: 12px 20px 18px;">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for m in memberships %}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle); border: 1px solid var(--wp-hairline);">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.82rem; flex-shrink: 0;">
+                  {{ m.user.username|first|upper }}
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-weight: 600; font-size: 0.86rem; color: var(--wp-text-main); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>{{ m.user.username }}</span>
+                    {% if m.user_id == request.user.id %}
+                    <span class="text-muted" style="font-weight: 400; font-size: 0.78rem;">(Anda)</span>
+                    {% endif %}
+                  </div>
+                  <div class="text-muted" style="font-size: 0.78rem;">
+                    Bergabung {{ m.joined_at|date:"d M Y" }}
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span class="status-pill {% if m.role == 'owner' %}status-done{% elif m.role == 'co_owner' %}status-warning{% endif %}">
+                  <span class="dot"></span>
+                  {{ m.get_role_display }}
+                </span>
+
+                {% if is_owner and m.role != 'owner' and m.user_id != request.user.id %}
+                <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="set_role">
+                  {% if m.role == 'co_owner' %}
+                  <input type="hidden" name="role" value="crew">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.78rem;" title="Batasi akses menjadi Crew / Panitia (tanpa akses keuangan)">
+                    Jadikan Crew
+                  </button>
+                  {% else %}
+                  <input type="hidden" name="role" value="co_owner">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.78rem;" title="Beri akses penuh sebagai Co-Owner (pasangan)">
+                    Jadikan Co-Owner
+                  </button>
+                  {% endif %}
+                </form>
+
+                <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;"
+                      onsubmit="return confirm('Keluarkan {{ m.user.username }} dari workspace ini?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-terracotta-main);" aria-label="Keluarkan {{ m.user.username }}" title="Keluarkan dari workspace">
+                    <i data-lucide="user-minus" style="width: 14px; height: 14px;"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

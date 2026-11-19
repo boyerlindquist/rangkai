@@ -206,14 +206,14 @@
             </tr>
             <tr x-show="editingEvent" x-cloak style="background: var(--wp-bg-surface-subtle);">
               <td colspan="6" style="padding: 12px 20px;">
-                <form method="post" action="{% url 'operations-hub:update_rundown' event.pk %}" class="rg-stack" style="display: grid; grid-template-columns: 110px 110px 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
+                <form method="post" action="{% url 'operations-hub:update_rundown' event.pk %}" class="rg-stack" style="display: grid; grid-template-columns: 110px 110px 2fr 1fr 1fr 1.5fr auto; gap: 10px; align-items: center;">
                   {% csrf_token %}
-                  <input type="time" name="start_time" class="wp-input" value="{{ event.start_time|time:'H:i' }}" required>
-                  <input type="time" name="end_time" class="wp-input" value="{{ event.end_time|time:'H:i' }}" required>
-                  <input type="text" name="activity" class="wp-input" value="{{ event.activity }}" placeholder="Nama agenda" required>
-                  <input type="text" name="location" class="wp-input" value="{{ event.location }}" placeholder="Lokasi">
-                  <input type="text" name="pic" class="wp-input" value="{{ event.pic }}" placeholder="PIC Teknis">
-                  <input type="hidden" name="notes" value="{{ event.notes }}">
+                  <input type="time" name="start_time" class="wp-input" value="{{ event.start_time|time:'H:i' }}" aria-label="Waktu mulai" required>
+                  <input type="time" name="end_time" class="wp-input" value="{{ event.end_time|time:'H:i' }}" aria-label="Waktu selesai" required>
+                  <input type="text" name="activity" class="wp-input" value="{{ event.activity }}" placeholder="Nama agenda" aria-label="Nama agenda" required>
+                  <input type="text" name="location" class="wp-input" value="{{ event.location }}" placeholder="Lokasi" aria-label="Lokasi">
+                  <input type="text" name="pic" class="wp-input" value="{{ event.pic }}" placeholder="PIC Teknis" aria-label="PIC Teknis">
+                  <input type="text" name="notes" class="wp-input" value="{{ event.notes }}" placeholder="Catatan / cue" aria-label="Catatan">
                   <div style="display: flex; gap: 6px;">
                     <button type="button" class="btn btn-secondary btn-sm" @click="editingEvent = false">Batal</button>
                     <button type="submit" class="btn btn-gold btn-sm">Simpan</button>

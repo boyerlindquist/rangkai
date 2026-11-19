@@ -10,13 +10,13 @@
   --wp-font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --wp-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  --wp-text-xs: 0.75rem;     /* 12px — strict legibility floor */
-  --wp-text-sm: 0.84rem;     /* 13.4px — secondary labels & table cells */
-  --wp-text-base: 0.9375rem; /* 15px — dense operational body */
-  --wp-text-md: 1.05rem;     /* 16.8px — lead & card titles */
-  --wp-text-lg: 1.25rem;     /* 20px — section headers */
-  --wp-text-xl: 1.55rem;     /* 24.8px — major KPIs & sub-display */
-  --wp-text-2xl: 2.15rem;    /* 34.4px — page display title */
+  --wp-text-xs: 0.75rem;      /* 12px — strict legibility floor */
+  --wp-text-sm: 0.8125rem;    /* 13px — secondary labels & table cells */
+  --wp-text-base: 0.875rem;   /* 14px — dense operational body */
+  --wp-text-md: 0.96875rem;   /* 15.5px — lead & card titles */
+  --wp-text-lg: 1.125rem;     /* 18px — section headers */
+  --wp-text-xl: 1.375rem;     /* 22px — major KPIs & sub-display */
+  --wp-text-2xl: 1.75rem;     /* 28px — page display title */
 
   /* ── CANVAS & SPATIAL SURFACES (Light: Pearl Alabaster & Botanical Mist) ── */
   --wp-bg-canvas: #F6FAF8;
@@ -71,6 +71,7 @@
   /* ── HAIRLINE BORDERS & DIVIDERS ── */
   --wp-hairline: rgba(13, 31, 24, 0.10);
   --wp-border-light: rgba(13, 31, 24, 0.09);
+  --wp-border-strong: rgba(13, 31, 24, 0.22);
   --wp-border-hover: var(--wp-sage-main);
 
   /* ── GLASSMORPHISM & SURFACE ELEVATION ── */
@@ -161,10 +162,10 @@
   --wp-terracotta-soft: rgba(224, 122, 100, 0.14);
   --wp-terracotta-border: rgba(224, 122, 100, 0.28);
 
-  /* Primary Interactive Accent in Dark Mode — Rich Imperial Emerald */
+  /* Primary Interactive Accent in Dark Mode — Luminous Emerald with Dark Ink (WCAG AA/AAA) */
   --wp-accent-contrast: #1E9E73;
   --wp-accent-contrast-hover: #27B585;
-  --wp-accent-text: #FFFFFF;
+  --wp-accent-text: #07110D;
 
   /* Crisp Tinted Foregrounds (Zero Cream/Muddy Undertones) */
   --wp-text-main: #F0FAF5;
@@ -176,6 +177,7 @@
   /* Architectural Hairlines */
   --wp-hairline: rgba(176, 204, 192, 0.14);
   --wp-border-light: rgba(240, 250, 245, 0.10);
+  --wp-border-strong: rgba(176, 204, 192, 0.24);
   --wp-border-hover: var(--wp-sage-main);
 
   --wp-glass-bg: rgba(13, 28, 22, 0.92);

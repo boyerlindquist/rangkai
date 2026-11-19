@@ -126,12 +126,17 @@ def delete_vendor(request, pk):
 @login_required
 @owner_required
 def update_vendor_status(request, pk):
-    """HTMX endpoint: Toggle vendor status."""
+    """HTMX endpoint: Select or cycle vendor status."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
-    cycle = ['shortlist', 'booked', 'rejected']
-    idx = cycle.index(vendor.status)
-    vendor.status = cycle[(idx + 1) % len(cycle)]
-    vendor.save()
+    new_status = request.POST.get('status') or request.GET.get('status')
+    valid_statuses = dict(VendorCandidate.STATUS_CHOICES)
+    if new_status and new_status in valid_statuses:
+        vendor.status = new_status
+    else:
+        cycle = ['shortlist', 'booked', 'rejected']
+        idx = cycle.index(vendor.status) if vendor.status in cycle else 0
+        vendor.status = cycle[(idx + 1) % len(cycle)]
+    vendor.save(update_fields=['status'])
     if request.htmx:
         return render(request, 'vendors/partials/vendor_card.html', {'vendor': vendor})
     return redirect('vendors:compare')

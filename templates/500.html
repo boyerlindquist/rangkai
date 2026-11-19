@@ -9,26 +9,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
   <style>
     :root {
-      --bg: #FBF9F5;
+      --bg: #F6FAF8;
       --card-bg: #FFFFFF;
-      --border: #E8E2D9;
-      --text-main: #2C2825;
-      --text-muted: #7A7269;
-      --forest: #2D4A3E;
-      --forest-hover: #22382F;
+      --border: rgba(13, 31, 24, 0.10);
+      --text-main: #0D1F18;
+      --text-muted: #587368;
+      --forest: #126E51;
+      --forest-hover: #0B4A36;
+      --btn-text: #FFFFFF;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #141615;
-        --card-bg: #1C1F1D;
-        --border: #2D3330;
-        --text-main: #EDE8E1;
-        --text-muted: #9E988F;
-        --forest: #436B5C;
-        --forest-hover: #507D6C;
-      }
+    [data-theme="dark"] {
+      --bg: #07110D;
+      --card-bg: #0D1C16;
+      --border: rgba(176, 204, 192, 0.14);
+      --text-main: #F0FAF5;
+      --text-muted: #7FA193;
+      --forest: #1E9E73;
+      --forest-hover: #27B585;
+      --btn-text: #07110D;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {

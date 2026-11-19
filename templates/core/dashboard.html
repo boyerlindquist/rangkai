@@ -34,7 +34,8 @@
       </div>
     </div>
 
-    <!-- Budget Remaining -->
+    <!-- Budget Remaining (Couple only) -->
+    {% if not is_crew %}
     <div class="metric-item" id="guide-budget-rem">
       <div class="metric-label">
         <i data-lucide="wallet" style="width: 13px; height: 13px;"></i> Sisa Ruang Anggaran
@@ -42,6 +43,7 @@
       <div class="metric-value">Rp {{ budget_remaining|intcomma }}</div>
       <div class="metric-sub">Terbayar Rp {{ total_paid|intcomma }} dari Rp {{ total_actual|intcomma }}</div>
     </div>
+    {% endif %}
 
     <!-- RSVP -->
     <div class="metric-item" id="guide-rsvp">
@@ -64,6 +66,7 @@
 
   <!-- Operational Grid (Jadwal Pembayaran & Fokus Tugas) -->
   <div class="dashboard-split-grid" style="margin-bottom: 24px;">
+    {% if not is_crew %}
     <!-- Jadwal Pembayaran Terdekat -->
     <div class="surface-panel" id="guide-attention">
       <div class="surface-panel-header">
@@ -87,6 +90,7 @@
               <button type="button"
                       class="btn btn-gold btn-sm"
                       hx-post="{% url 'finances:toggle_status' item.pk %}?settle=1&from=dashboard"
+                      hx-confirm="Tandai '{{ item.name }}' lunas penuh (sisa termin Rp {{ item.remaining|intcomma }})?"
                       hx-target=".main-content"
                       hx-select=".main-content"
                       hx-swap="outerHTML show:none"
@@ -105,6 +109,7 @@
         {% endif %}
       </div>
     </div>
+    {% endif %}
 
     <!-- Tugas Aktif (In Progress) -->
     <div class="surface-panel" id="guide-active-tasks">
@@ -151,11 +156,13 @@
     </div>
     <div class="surface-panel-body" style="padding: 18px 24px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="{% url 'finances:dashboard' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="wallet"></i> Kelola Budget</a>
-        <a href="{% url 'guests:list' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="users"></i> Daftar Tamu</a>
-        <a href="{% url 'vendors:compare' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="store"></i> Bandingkan Vendor</a>
-        <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="check-square"></i> Roadmap Checklist</a>
-        <a href="{% url 'operations-hub:operations_hub' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="settings-2"></i> Operasional H-Day</a>
+        {% if not is_crew %}
+        <a href="{% url 'finances:dashboard' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="wallet"></i> Anggaran & Kas</a>
+        {% endif %}
+        <a href="{% url 'guests:list' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="users"></i> Tamu & Katering</a>
+        <a href="{% url 'vendors:compare' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="store"></i> Direktori Vendor</a>
+        <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="check-square"></i> Timeline & Tugas</a>
+        <a href="{% url 'operations-hub:operations_hub' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="settings-2"></i> Logistik Hari-H</a>
       </div>
     </div>
   </div>
@@ -192,6 +199,7 @@
       </div>
     </div>
 
+    {% if not is_crew %}
     <!-- Sankey Diagram -->
     <div class="surface-panel" id="guide-sankey">
       <div class="surface-panel-header">
@@ -211,9 +219,10 @@
         {% endif %}
       </div>
     </div>
+    {% endif %}
   </div>
 
-  {% if wedding %}
+  {% if wedding and not is_crew %}
   <!-- Invite Code Section -->
   <div class="surface-panel">
     <div class="surface-panel-header">

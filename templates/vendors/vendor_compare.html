@@ -24,13 +24,16 @@
         {% endfor %}
       </div>
 
-      <div style="display: inline-flex; align-items: center; gap: 5px;">
+      {% if not is_crew %}
+      <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showWeights ? 'btn-gold' : 'btn-secondary'"
                 @click="showWeights = !showWeights; if(showWeights) showForm = false"
-                title="Atur Bobot Kriteria Penilaian (%)">
+                title="Atur Bobot Kriteria Penilaian (%)"
+                style="padding: 4px 10px;">
           <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+          <span>Atur Bobot</span>
         </button>
         <button type="button"
                 class="btn btn-gold btn-sm"
@@ -41,51 +44,59 @@
           <span>Vendor</span>
         </button>
       </div>
+      {% endif %}
     </div>
 
     <!-- 2. Inline Collapsible Drawer: Scoring Weights Config (Inside the same card) -->
     <div x-show="showWeights" x-transition x-cloak id="weights-panel"
          style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);"
          x-data="{ wPrice: {{ weights.price|default:30 }}, wQuality: {{ weights.quality|default:30 }}, wFacility: {{ weights.facility|default:20 }}, wReputation: {{ weights.reputation|default:20 }}, get totalW() { return (parseInt(this.wPrice)||0) + (parseInt(this.wQuality)||0) + (parseInt(this.wFacility)||0) + (parseInt(this.wReputation)||0); } }">
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="sliders" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i> Bobot Prioritas Evaluasi
           </strong>
-          <span class="status-pill" :class="totalW === 100 ? 'status-done' : 'status-warning'">
+          <span class="status-pill" :class="totalW === 100 ? 'status-done' : 'status-danger'">
             Total: <strong class="tabular-nums" x-text="totalW + '%'"></strong>
           </span>
+          <span x-show="totalW !== 100" x-cloak style="font-size: 0.78rem; color: var(--wp-terracotta-main); font-weight: 500;"
+                x-text="totalW < 100 ? 'Kurang ' + (100 - totalW) + '% agar pas 100%' : 'Kelebihan ' + (totalW - 100) + '% dari 100%'"></span>
         </div>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showWeights = false" title="Tutup">
-          <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-        </button>
+        <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=30; wQuality=30; wFacility=20; wReputation=20;" style="padding: 3px 8px; font-size: 0.75rem;">Seimbang</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=45; wQuality=25; wFacility=15; wReputation=15;" style="padding: 3px 8px; font-size: 0.75rem;">Hemat Biaya</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=15; wQuality=45; wFacility=20; wReputation=20;" style="padding: 3px 8px; font-size: 0.75rem;">Prioritas Kualitas</button>
+          <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showWeights = false" aria-label="Tutup panel bobot" title="Tutup">
+            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+          </button>
+        </div>
       </div>
       <form method="post" action="{% url 'vendors:update_weights' %}"
             hx-post="{% url 'vendors:update_weights' %}"
             hx-target=".main-content"
             hx-select=".main-content"
             hx-swap="outerHTML show:none"
+            @submit="if(totalW !== 100) $event.preventDefault()"
             class="vendor-weight-form">
         {% csrf_token %}
         <div class="form-group" style="margin-bottom: 0;">
-          <label>Harga (%)</label>
-          <input type="number" name="weight_price" class="wp-input tabular-nums" x-model.number="wPrice" min="0" max="100" required>
+          <label for="id_weight_price">Harga (%)</label>
+          <input id="id_weight_price" type="number" name="weight_price" class="wp-input tabular-nums" x-model.number="wPrice" min="0" max="100" required>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label>Kualitas (%)</label>
-          <input type="number" name="weight_quality" class="wp-input tabular-nums" x-model.number="wQuality" min="0" max="100" required>
+          <label for="id_weight_quality">Kualitas (%)</label>
+          <input id="id_weight_quality" type="number" name="weight_quality" class="wp-input tabular-nums" x-model.number="wQuality" min="0" max="100" required>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label>Fasilitas (%)</label>
-          <input type="number" name="weight_facility" class="wp-input tabular-nums" x-model.number="wFacility" min="0" max="100" required>
+          <label for="id_weight_facility">Fasilitas (%)</label>
+          <input id="id_weight_facility" type="number" name="weight_facility" class="wp-input tabular-nums" x-model.number="wFacility" min="0" max="100" required>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label>Reputasi (%)</label>
-          <input type="number" name="weight_reputation" class="wp-input tabular-nums" x-model.number="wReputation" min="0" max="100" required>
+          <label for="id_weight_reputation">Reputasi (%)</label>
+          <input id="id_weight_reputation" type="number" name="weight_reputation" class="wp-input tabular-nums" x-model.number="wReputation" min="0" max="100" required>
         </div>
         <div class="form-actions" style="display: flex; gap: 6px;">
-          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=30; wQuality=30; wFacility=20; wReputation=20;" title="Reset ke 30/30/20/20">Reset</button>
-          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Terapkan</button>
+          <button type="submit" class="btn btn-gold btn-sm" :disabled="totalW !== 100" :style="totalW !== 100 ? 'opacity: 0.45; cursor: not-allowed;' : ''"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Terapkan</button>
         </div>
       </form>
     </div>
@@ -97,7 +108,7 @@
         <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
           <i data-lucide="plus-circle" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Tambah Kandidat Vendor Baru
         </strong>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showForm = false" title="Tutup">
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showForm = false" aria-label="Tutup form tambah vendor" title="Tutup">
           <i data-lucide="x" style="width: 14px; height: 14px;"></i>
         </button>
       </div>
@@ -113,6 +124,11 @@
           <div class="form-group" style="margin-bottom: 0;">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
+            {% if field.errors %}
+            <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 3px;">
+              {% for err in field.errors %}{{ err }}{% endfor %}
+            </div>
+            {% endif %}
           </div>
           {% endfor %}
         </div>

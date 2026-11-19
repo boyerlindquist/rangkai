@@ -11,7 +11,7 @@ from datetime import timedelta
 
 from core.models import Wedding, WeddingMembership
 from core.forms import RegisterForm, LoginForm, JoinWorkspaceForm, WeddingSettingsForm
-from core.decorators import workspace_required
+from core.decorators import workspace_required, owner_required
 
 
 DEFAULT_BUDGET_CATEGORIES = [
@@ -343,9 +343,9 @@ def dashboard_view(request):
 
 
 @login_required
-@workspace_required
+@owner_required
 def settings_view(request):
-    """Edit wedding workspace settings."""
+    """Edit wedding workspace settings & manage collaborators."""
     wedding = request.wedding
 
     if request.method == 'POST':
@@ -359,7 +359,56 @@ def settings_view(request):
     else:
         form = WeddingSettingsForm(instance=wedding)
 
-    return render(request, 'core/settings.html', {'form': form})
+    memberships = (
+        WeddingMembership.objects
+        .filter(wedding=wedding)
+        .select_related('user')
+        .order_by('joined_at')
+    )
+
+    return render(request, 'core/settings.html', {
+        'form': form,
+        'memberships': memberships,
+    })
+
+
+@login_required
+@owner_required
+def regenerate_invite_code_view(request):
+    """Generate a fresh 8-character invite code (invalidating the previous code)."""
+    if request.method == 'POST':
+        request.wedding.regenerate_invite_code()
+        messages.success(request, f'Kode undangan baru dibuat: {request.wedding.invite_code}')
+    return redirect('core:settings')
+
+
+@login_required
+@owner_required
+def manage_member_view(request, pk):
+    """Update role or remove a workspace member (Owner-only)."""
+    if request.wedding_role != 'owner':
+        messages.error(request, 'Hanya Owner utama yang dapat mengelola peran atau menghapus anggota.')
+        return redirect('core:settings')
+
+    if request.method == 'POST':
+        from django.shortcuts import get_object_or_404
+        member = get_object_or_404(WeddingMembership, pk=pk, wedding=request.wedding)
+        if member.user_id == request.user.id or member.role == 'owner':
+            messages.error(request, 'Tidak dapat mengubah atau menghapus Owner utama workspace.')
+            return redirect('core:settings')
+
+        action = request.POST.get('action')
+        if action == 'remove':
+            username = member.user.username
+            member.delete()
+            messages.success(request, f'{username} telah dihapus dari workspace.')
+        elif action == 'set_role':
+            new_role = request.POST.get('role')
+            if new_role in ('co_owner', 'crew'):
+                member.role = new_role
+                member.save(update_fields=['role'])
+                messages.success(request, f'Peran {member.user.username} diperbarui menjadi {member.get_role_display()}.')
+    return redirect('core:settings')
 
 @login_required
 @workspace_required

@@ -74,6 +74,8 @@
         paramName: config.paramName || 'value',
         target: config.target || '.main-content',
         swap: config.swap || 'outerHTML show:none',
+        confirmFrom: config.confirmFrom || '',
+        confirmMessage: config.confirmMessage || '',
         get currentOption() {
           return this.options.find(o => o.value === this.value) || this.options[0] || { label: this.value || '', value: this.value || '' };
         },
@@ -123,6 +125,12 @@
             this.open = false;
             return;
           }
+          if (this.confirmFrom && this.value === this.confirmFrom && opt.value !== this.confirmFrom) {
+            if (!window.confirm(this.confirmMessage || 'Yakin ingin mengubah status ini?')) {
+              this.open = false;
+              return;
+            }
+          }
           this.value = opt.value;
           this.open = false;
           this.$nextTick(() => {
@@ -132,7 +140,9 @@
               const form = this.$el.closest ? this.$el.closest('form') : null;
               const tokenInput = form ? form.querySelector('input[name="csrfmiddlewaretoken"]') : document.querySelector('input[name="csrfmiddlewaretoken"]');
               if (tokenInput) values['csrfmiddlewaretoken'] = tokenInput.value;
-              const htmxTarget = this.target === 'closest .task-item' ? this.$el.closest('.task-item') : this.target;
+              const htmxTarget = (typeof this.target === 'string' && this.target.startsWith('closest '))
+                ? this.$el.closest(this.target.slice(8).trim())
+                : this.target;
               htmx.ajax('POST', this.postUrl, {
                 target: htmxTarget,
                 select: this.target === '.main-content' ? '.main-content' : undefined,
@@ -161,8 +171,8 @@
     rel="stylesheet">
 
   <!-- Design System -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=42">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=42">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=44">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=44">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -170,19 +180,22 @@
 </head>
 
 <body>
-  {% if messages %}
-  <div class="messages-container" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show"
-    x-transition>
+  <!-- Global HTMX Top Progress Bar -->
+  <div id="htmx-global-loader" aria-hidden="true" style="position: fixed; top: 0; left: 0; height: 2.5px; width: 0%; background: var(--wp-sage-main); z-index: 99999; pointer-events: none; opacity: 0; transition: width 0.25s ease, opacity 0.2s ease;"></div>
+
+  <!-- Global Accessible Toast Container (Server Messages + Dynamic HTMX Errors) -->
+  <div id="wp-toast-container" class="messages-container" role="status" aria-live="polite">
+    {% if messages %}
     {% for message in messages %}
-    <div class="message-toast {{ message.tags }}" x-data="{ itemShow: true }" x-show="itemShow" x-transition>
+    <div class="message-toast {{ message.tags }}" x-data="{ itemShow: true }" x-init="{% if 'error' not in message.tags %}setTimeout(() => itemShow = false, 5000){% endif %}" x-show="itemShow" x-transition>
       <span>{{ message }}</span>
       <button type="button" @click="itemShow = false" style="background: transparent; border: 0; color: currentColor; opacity: 0.65; cursor: pointer; padding: 2px; display: inline-flex; align-items: center;" aria-label="Tutup notifikasi">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
     {% endfor %}
+    {% endif %}
   </div>
-  {% endif %}
 
   {% block body %}
   <div class="app-shell" x-data="{ 
@@ -240,7 +253,9 @@
 
     <!-- Global Slide-Over Inspector Drawer (Spatial 3-Pane Component) -->
     <div class="inspector-backdrop" x-show="inspectorOpen" x-transition.opacity @click="closeInspector()" x-cloak></div>
-    <aside class="inspector-drawer" x-show="inspectorOpen" x-transition:enter="transition ease-out duration-300"
+    <aside class="inspector-drawer" role="dialog" aria-modal="true" :aria-label="inspectorTitle || 'Detail'"
+      @keydown.escape.window="if (inspectorOpen) closeInspector()"
+      x-show="inspectorOpen" x-transition:enter="transition ease-out duration-300"
       x-transition:enter-start="transform translate-x-full" x-transition:enter-end="transform translate-x-0"
       x-transition:leave="transition ease-in duration-200" x-transition:leave-start="transform translate-x-0"
       x-transition:leave-end="transform translate-x-full" x-cloak>
@@ -286,52 +301,70 @@
       </div>
 
       <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
-        <a href="{% url 'core:dashboard' %}"
+        <div class="sidebar-group-label" x-show="!rail">Perencanaan</div>
+        <a href="{% url 'core:dashboard' %}" title="Ringkasan" aria-label="Ringkasan"
           class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> <span class="nav-text">Ringkasan</span>
         </a>
-        <a href="{% url 'operations-checklist:checklist' %}"
+        <a href="{% url 'operations-checklist:checklist' %}" title="Timeline & Tugas" aria-label="Timeline & Tugas"
           class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Timeline & Tugas</span>
         </a>
-        <a href="{% url 'finances:dashboard' %}"
+        <a href="{% url 'vendors:compare' %}" title="Direktori Vendor" aria-label="Direktori Vendor"
+          class="{% if '/vendors/' in request.path %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="store"></i></span> <span class="nav-text">Direktori Vendor</span>
+        </a>
+
+        {% if not is_crew %}
+        <div class="sidebar-group-label" x-show="!rail">Keuangan</div>
+        <a href="{% url 'finances:dashboard' %}" title="Anggaran & Kas" aria-label="Anggaran & Kas"
           class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="wallet"></i></span> <span class="nav-text">Anggaran & Kas</span>
         </a>
-        <a href="{% url 'finances:savings_tracker' %}" class="{% if '/savings/' in request.path %}active{% endif %}">
+        <a href="{% url 'finances:savings_tracker' %}" title="Tabungan Bersama" aria-label="Tabungan Bersama"
+          class="{% if '/savings/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="piggy-bank"></i></span> <span class="nav-text">Tabungan Bersama</span>
         </a>
-        <a href="{% url 'vendors:compare' %}" class="{% if '/vendors/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="store"></i></span> <span class="nav-text">Direktori Vendor</span>
-        </a>
-        <a href="{% url 'guests:list' %}" class="{% if '/guests/' in request.path %}active{% endif %}">
+        {% endif %}
+
+        <div class="sidebar-group-label" x-show="!rail">Hari-H & Tamu</div>
+        <a href="{% url 'guests:list' %}" title="Tamu & Katering" aria-label="Tamu & Katering"
+          class="{% if '/guests/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="users"></i></span> <span class="nav-text">Tamu & Katering</span>
         </a>
-        <a href="{% url 'operations-checklist:detail_checklists' %}"
+        <a href="{% url 'operations-checklist:detail_checklists' %}" title="Berkas & Seserahan" aria-label="Berkas & Seserahan"
           class="{% if '/details/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="file-check-2"></i></span> <span class="nav-text">Berkas & Seserahan</span>
         </a>
-        <a href="{% url 'operations-hub:operations_hub' %}"
+        <a href="{% url 'operations-hub:operations_hub' %}" title="Logistik Hari-H" aria-label="Logistik Hari-H"
           class="{% if '/operations/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="settings-2"></i></span> <span class="nav-text">Logistik Hari-H</span>
         </a>
-        <a href="{% url 'core:guide' %}" class="{% if '/guide/' in request.path %}active{% endif %}"
+
+        <a href="{% url 'core:guide' %}" title="Panduan" aria-label="Panduan"
+          class="{% if '/guide/' in request.path %}active{% endif %}"
           style="margin-top: auto;">
           <span class="nav-icon"><i data-lucide="book-open"></i></span> <span class="nav-text">Panduan</span>
         </a>
-        <a href="{% url 'core:settings' %}" class="{% if '/settings/' in request.path %}active{% endif %}">
+        {% if not is_crew %}
+        <a href="{% url 'core:settings' %}" title="Pengaturan" aria-label="Pengaturan"
+          class="{% if '/settings/' in request.path %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="settings"></i></span> <span class="nav-text">Pengaturan</span>
         </a>
+        {% endif %}
 
-        <!-- Theme Toggle Switch Row -->
-        <div class="sidebar-theme-toggle-row" @click="toggleTheme()"
+        <!-- Theme Toggle Switch Row (Accessible Semantic Switch) -->
+        <button type="button" class="sidebar-theme-toggle-row" role="switch"
+          :aria-checked="isDark.toString()"
+          :aria-label="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
+          @click="toggleTheme()"
           :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
           <span class="nav-icon"><i :data-lucide="isDark ? 'moon' : 'sun'"></i></span>
           <span class="nav-text" x-show="!rail" x-text="isDark ? 'Mode Gelap' : 'Mode Terang'">Mode Gelap</span>
-          <div class="theme-switch" x-show="!rail">
+          <span class="theme-switch" x-show="!rail" aria-hidden="true">
             <span class="theme-switch-slider" :class="{ 'active': isDark }"></span>
-          </div>
-        </div>
+          </span>
+        </button>
       </nav>
 
       <div class="sidebar-footer" :style="rail ? 'padding: 16px 8px;' : ''">
@@ -375,9 +408,15 @@
       <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
         <i data-lucide="layout-dashboard"></i><span>Ringkasan</span>
       </a>
+      {% if is_crew %}
+      <a href="{% url 'operations-hub:operations_hub' %}" class="{% if '/operations/' in request.path %}active{% endif %}">
+        <i data-lucide="settings-2"></i><span>Logistik</span>
+      </a>
+      {% else %}
       <a href="{% url 'finances:dashboard' %}" class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
         <i data-lucide="wallet"></i><span>Anggaran</span>
       </a>
+      {% endif %}
       <a href="{% url 'operations-checklist:checklist' %}" class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
         <i data-lucide="check-square"></i><span>Tugas</span>
       </a>
@@ -398,8 +437,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- HTMX (Async Server Persistence) -->
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (pinned version) -->
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
   <!-- Driver.js (Guided Tour) -->
   <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
   <!-- Custom Tour Script -->
@@ -453,16 +492,89 @@
       if (window.innerWidth <= 768 && e.target.matches && e.target.matches('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea, select')) document.body.classList.add('kbd-open');
     });
     document.addEventListener('focusout', function () { document.body.classList.remove('kbd-open'); });
-    // Auto-dismiss messages
+    // Initialize icons on DOM ready
     document.addEventListener('DOMContentLoaded', function () {
-      setTimeout(function () {
-        var msgs = document.querySelector('.messages-container');
-        if (msgs) msgs.style.display = 'none';
-      }, 5000);
-
-      // Initialize icons
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     });
+
+    // Normalize Indonesian phone numbers (08xx -> 628xx) and open WhatsApp chat
+    window.openWhatsApp = function (rawPhone) {
+      var digits = String(rawPhone || '').replace(/\D/g, '');
+      if (!digits) return;
+      if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+      window.open('https://wa.me/' + digits, '_blank', 'noopener,noreferrer');
+    };
+
+    // Global Toast helper (errors stay visible until user dismisses)
+    window.showWpToast = function (message, type) {
+      var container = document.getElementById('wp-toast-container');
+      if (!container) return;
+      var toast = document.createElement('div');
+      toast.className = 'message-toast ' + (type || 'info');
+      var span = document.createElement('span');
+      span.textContent = message;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Tutup notifikasi');
+      btn.style.cssText = 'background: transparent; border: 0; color: currentColor; opacity: 0.7; cursor: pointer; padding: 2px; display: inline-flex; align-items: center;';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+      btn.addEventListener('click', function () { toast.remove(); });
+      toast.appendChild(span);
+      toast.appendChild(btn);
+      container.appendChild(toast);
+      if (type !== 'error') {
+        setTimeout(function () { if (toast.parentNode) toast.remove(); }, 5000);
+      }
+    };
+
+    // Global HTMX Top Progress Bar & Error Handling
+    (function () {
+      var activeRequests = 0;
+      var loaderTimer = null;
+      function getLoader() { return document.getElementById('htmx-global-loader'); }
+      function startLoader() {
+        activeRequests++;
+        var el = getLoader();
+        if (!el) return;
+        clearTimeout(loaderTimer);
+        el.style.opacity = '1';
+        el.style.width = '35%';
+        loaderTimer = setTimeout(function () {
+          if (activeRequests > 0 && el) el.style.width = '78%';
+        }, 250);
+      }
+      function stopLoader() {
+        activeRequests = Math.max(0, activeRequests - 1);
+        if (activeRequests > 0) return;
+        var el = getLoader();
+        if (!el) return;
+        clearTimeout(loaderTimer);
+        el.style.width = '100%';
+        setTimeout(function () {
+          if (activeRequests === 0 && el) {
+            el.style.opacity = '0';
+            setTimeout(function () { if (activeRequests === 0 && el) el.style.width = '0%'; }, 220);
+          }
+        }, 120);
+      }
+      document.body.addEventListener('htmx:beforeRequest', startLoader);
+      document.body.addEventListener('htmx:afterRequest', stopLoader);
+      document.body.addEventListener('htmx:responseError', function (evt) {
+        stopLoader();
+        var status = evt.detail && evt.detail.xhr ? evt.detail.xhr.status : 0;
+        if (status === 403) {
+          window.showWpToast('Akses terbatas untuk peran akun Anda.', 'error');
+        } else if (status === 404) {
+          window.showWpToast('Data tidak ditemukan. Muat ulang halaman untuk menyinkronkan.', 'error');
+        } else {
+          window.showWpToast('Gagal memproses permintaan (kode ' + (status || 'server') + '). Silakan coba lagi.', 'error');
+        }
+      });
+      document.body.addEventListener('htmx:sendError', function () {
+        stopLoader();
+        window.showWpToast('Koneksi terputus. Periksa jaringan internet Anda lalu coba lagi.', 'error');
+      });
+    })();
 
     // Update active sidebar link after HTMX swap
     document.body.addEventListener('htmx:pushedIntoHistory', function (evt) {
@@ -506,7 +618,8 @@
       window.location.reload();
     });
 
-    // Universal Native <select> -> Rangkai Custom Dropdown Enhancer
+    // Universal Native <select> -> Rangkai Custom Dropdown Enhancer (with WAI-ARIA Listbox & Keyboard Nav)
+    window._wpSelectUid = window._wpSelectUid || 0;
     window.enhanceNativeSelects = function (root) {
       var scope = root || document;
       var selects = scope.querySelectorAll ? scope.querySelectorAll('select:not([multiple]):not([data-wp-enhanced="1"])') : [];
@@ -516,12 +629,16 @@
         if (selectEl.dataset.wpEnhanced === '1' || selectEl.dataset.noCustomSelect === '1') return;
         selectEl.dataset.wpEnhanced = '1';
 
+        var uid = ++window._wpSelectUid;
+        var panelId = 'wp-listbox-' + uid;
         var isInline = selectEl.style.width === 'auto';
         var isSm = selectEl.classList.contains('wp-select-sm');
         var minW = selectEl.style.minWidth || '';
         var flexVal = selectEl.style.flex || '';
 
         selectEl.classList.add('wp-select-native-hidden');
+        selectEl.setAttribute('tabindex', '-1');
+        selectEl.setAttribute('aria-hidden', 'true');
 
         var wrapper = document.createElement('div');
         wrapper.className = 'wp-dropdown wp-select-enhanced' + (isInline ? ' is-inline' : '') + (isSm ? ' is-sm' : '');
@@ -531,12 +648,32 @@
         var trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'wp-dropdown-trigger' + (isSm ? ' wp-dropdown-sm' : '');
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.setAttribute('aria-controls', panelId);
+
+        // Preserve <label for="..."> association
+        if (selectEl.id) {
+          var assocLabel = document.querySelector('label[for="' + selectEl.id + '"]');
+          if (assocLabel) {
+            if (!assocLabel.id) assocLabel.id = 'wp-label-' + uid;
+            trigger.setAttribute('aria-labelledby', assocLabel.id);
+            assocLabel.addEventListener('click', function (e) {
+              e.preventDefault();
+              trigger.focus();
+              setOpen(true);
+            });
+          }
+        } else if (selectEl.getAttribute('aria-label')) {
+          trigger.setAttribute('aria-label', selectEl.getAttribute('aria-label'));
+        }
 
         var labelSpan = document.createElement('span');
         labelSpan.className = 'wp-dropdown-label-text';
 
         var chevronSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         chevronSvg.setAttribute('class', 'wp-dropdown-chevron');
+        chevronSvg.setAttribute('aria-hidden', 'true');
         chevronSvg.setAttribute('width', '12');
         chevronSvg.setAttribute('height', '12');
         chevronSvg.setAttribute('viewBox', '0 0 24 24');
@@ -551,7 +688,9 @@
         trigger.appendChild(chevronSvg);
 
         var panel = document.createElement('div');
+        panel.id = panelId;
         panel.className = 'wp-dropdown-panel';
+        panel.setAttribute('role', 'listbox');
         panel.style.display = 'none';
 
         wrapper.appendChild(trigger);
@@ -559,6 +698,9 @@
         selectEl.insertAdjacentElement('afterend', wrapper);
 
         var isOpen = false;
+        var activeIdx = Math.max(0, selectEl.selectedIndex);
+        var typeaheadBuf = '';
+        var typeaheadTimer = null;
 
         function markAncestors(openState) {
           var curr = wrapper.parentElement;
@@ -570,16 +712,44 @@
           }
         }
 
+        function highlightActive() {
+          var items = panel.querySelectorAll('.wp-dropdown-item');
+          items.forEach(function (el, idx) {
+            var focused = idx === activeIdx;
+            el.classList.toggle('is-focused', focused);
+            if (focused) {
+              trigger.setAttribute('aria-activedescendant', el.id);
+              el.scrollIntoView({ block: 'nearest' });
+            }
+          });
+        }
+
+        function commitOption(opt) {
+          if (opt && selectEl.value !== opt.value) {
+            selectValueDescriptor.set.call(selectEl, opt.value);
+            renderOptions();
+            selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setOpen(false);
+          trigger.focus();
+        }
+
         function renderOptions() {
           var opts = Array.from(selectEl.options || []);
           var selectedOpt = selectEl.options[selectEl.selectedIndex] || opts[0];
           labelSpan.textContent = selectedOpt ? selectedOpt.text : '';
+          activeIdx = Math.max(0, selectEl.selectedIndex);
           panel.innerHTML = '';
 
-          opts.forEach(function (opt) {
+          opts.forEach(function (opt, idx) {
             var item = document.createElement('div');
             var selected = opt.value === selectEl.value;
-            item.className = 'wp-dropdown-item' + (selected ? ' is-selected' : '');
+            item.id = panelId + '-opt-' + idx;
+            item.setAttribute('role', 'option');
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.setAttribute('tabindex', '-1');
+            item.className = 'wp-dropdown-item' + (selected ? ' is-selected' : '') + (idx === activeIdx ? ' is-focused' : '');
 
             var textSpan = document.createElement('span');
             textSpan.textContent = opt.text;
@@ -588,6 +758,7 @@
             if (selected) {
               var checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
               checkSvg.setAttribute('class', 'wp-dropdown-check');
+              checkSvg.setAttribute('aria-hidden', 'true');
               checkSvg.setAttribute('width', '13');
               checkSvg.setAttribute('height', '13');
               checkSvg.setAttribute('viewBox', '0 0 24 24');
@@ -600,15 +771,14 @@
               item.appendChild(checkSvg);
             }
 
+            item.addEventListener('mouseenter', function () {
+              activeIdx = idx;
+              highlightActive();
+            });
+
             item.addEventListener('click', function (e) {
               e.stopPropagation();
-              if (selectEl.value !== opt.value) {
-                selectValueDescriptor.set.call(selectEl, opt.value);
-                renderOptions();
-                selectEl.dispatchEvent(new Event('input', { bubbles: true }));
-                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-              }
-              setOpen(false);
+              commitOption(opt);
             });
 
             panel.appendChild(item);
@@ -620,6 +790,7 @@
           isOpen = nextOpen;
           wrapper.classList.toggle('is-open', isOpen);
           chevronSvg.classList.toggle('is-open', isOpen);
+          trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
           markAncestors(isOpen);
 
           if (isOpen) {
@@ -631,8 +802,10 @@
             var pos = window.positionDropdownPanel(trigger, panel);
             panel.classList.toggle('is-dropup', pos.dropUp);
             panel.classList.toggle('is-dropright', pos.dropRight);
+            highlightActive();
           } else {
             panel.style.display = 'none';
+            trigger.removeAttribute('aria-activedescendant');
           }
         }
 
@@ -644,6 +817,59 @@
         trigger.addEventListener('click', function (e) {
           e.stopPropagation();
           setOpen(!isOpen);
+        });
+
+        trigger.addEventListener('keydown', function (e) {
+          var opts = Array.from(selectEl.options || []);
+          if (!opts.length) return;
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!isOpen) {
+              setOpen(true);
+            } else {
+              activeIdx = (activeIdx + 1) % opts.length;
+              highlightActive();
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!isOpen) {
+              setOpen(true);
+            } else {
+              activeIdx = (activeIdx - 1 + opts.length) % opts.length;
+              highlightActive();
+            }
+          } else if (e.key === 'Home') {
+            if (isOpen) { e.preventDefault(); activeIdx = 0; highlightActive(); }
+          } else if (e.key === 'End') {
+            if (isOpen) { e.preventDefault(); activeIdx = opts.length - 1; highlightActive(); }
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!isOpen) {
+              setOpen(true);
+            } else {
+              commitOption(opts[activeIdx]);
+            }
+          } else if (e.key === 'Escape') {
+            if (isOpen) { e.preventDefault(); setOpen(false); trigger.focus(); }
+          } else if (e.key === 'Tab') {
+            if (isOpen) setOpen(false);
+          } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            clearTimeout(typeaheadTimer);
+            typeaheadBuf += e.key.toLowerCase();
+            typeaheadTimer = setTimeout(function () { typeaheadBuf = ''; }, 500);
+            var matchIdx = opts.findIndex(function (o) {
+              return (o.text || '').trim().toLowerCase().startsWith(typeaheadBuf);
+            });
+            if (matchIdx !== -1) {
+              if (!isOpen) {
+                commitOption(opts[matchIdx]);
+              } else {
+                activeIdx = matchIdx;
+                highlightActive();
+              }
+            }
+          }
         });
 
         try {
@@ -733,47 +959,23 @@
       evt.detail.headers['X-CSRFToken'] = token || '{{ csrf_token }}';
     });
 
-    // Theme Toggle Logic
-    function toggleTheme() {
-      const html = document.documentElement;
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-
-      const themeIcon = document.getElementById('themeIcon');
-      if (themeIcon) {
-        themeIcon.setAttribute('data-lucide', newTheme === 'dark' ? 'sun' : 'moon');
-        lucide.createIcons();
-      }
-
-      // Notify components that depend on theme (e.g. Sankey chart)
-      window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
-    }
-
-    // Set initial icon state based on theme and enhance all native selects
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('theme') === 'dark') {
-        const themeIcon = document.getElementById('themeIcon');
-        if (themeIcon) {
-          themeIcon.setAttribute('data-lucide', 'sun');
-        }
-      }
+    // Enhance all native selects on load and scope MutationObserver to added subtrees
+    document.addEventListener('DOMContentLoaded', function () {
       if (window.enhanceNativeSelects) {
         window.enhanceNativeSelects(document);
       }
       if (window.MutationObserver && document.body) {
         var selectObserver = new MutationObserver(function (mutations) {
-          var needsEnhance = false;
+          if (!window.enhanceNativeSelects) return;
           for (var i = 0; i < mutations.length; i++) {
-            if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
-              needsEnhance = true;
-              break;
+            var nodes = mutations[i].addedNodes;
+            for (var j = 0; j < nodes.length; j++) {
+              var n = nodes[j];
+              if (n.nodeType !== 1) continue;
+              if (n.tagName === 'SELECT' || (n.querySelector && n.querySelector('select:not([data-wp-enhanced="1"])'))) {
+                window.enhanceNativeSelects(n.tagName === 'SELECT' ? (n.parentElement || document) : n);
+              }
             }
-          }
-          if (needsEnhance && window.enhanceNativeSelects) {
-            window.enhanceNativeSelects(document);
           }
         });
         selectObserver.observe(document.body, { childList: true, subtree: true });

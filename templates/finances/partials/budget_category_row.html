@@ -7,44 +7,44 @@
     <div style="min-width: 0;">
       <div class="phase-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <span style="font-weight: 600; color: var(--wp-text-main); font-size: 0.95rem; white-space: nowrap;">{{ cat.name }}</span>
-        <span class="status-pill" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 500; white-space: nowrap;">{{ cat.items.count }} item</span>
+        <span class="status-pill" style="font-size: 0.75rem; padding: 2px 8px; font-weight: 500; white-space: nowrap;">{{ cat.items.count }} item</span>
         {% if cat.coverage_status == 'settled' %}
-          <span class="status-pill status-done" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Seluruh kebutuhan kategori ini sudah dibayar lunas">
+          <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 8px; white-space: nowrap;" title="Seluruh kebutuhan kategori ini sudah dibayar lunas">
             <i data-lucide="check-check" style="width: 12px; height: 12px;"></i> Lunas
           </span>
         {% elif cat.coverage_status == 'ready' %}
-          <span class="status-pill status-done" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Sisa dana tabungan mencukupi untuk meng-cover kategori ini">
+          <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 8px; white-space: nowrap;" title="Sisa dana tabungan mencukupi untuk meng-cover kategori ini">
             <i data-lucide="check" style="width: 12px; height: 12px;"></i> Kas Siap
           </span>
         {% elif cat.coverage_status == 'partial' %}
-          <span class="status-pill status-warning" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Ter-cover {{ cat.cat_coverage_pct }}% (Kurang Rp {{ cat.cat_shortfall|intcomma }})">
+          <span class="status-pill status-warning" style="font-size: 0.75rem; padding: 2px 8px; white-space: nowrap;" title="Ter-cover {{ cat.cat_coverage_pct }}% (Kurang Rp {{ cat.cat_shortfall|intcomma }})">
             <i data-lucide="pie-chart" style="width: 12px; height: 12px;"></i> {{ cat.cat_coverage_pct }}% Siap
           </span>
         {% elif cat.coverage_status == 'shortfall' %}
-          <span class="status-pill status-danger" style="font-size: 0.72rem; padding: 2px 8px; white-space: nowrap;" title="Kurang Rp {{ cat.cat_shortfall|intcomma }}{% if cat.cat_months_needed %} (~{{ cat.cat_months_needed }} bln){% endif %}">
+          <span class="status-pill status-danger" style="font-size: 0.75rem; padding: 2px 8px; white-space: nowrap;" title="Kurang Rp {{ cat.cat_shortfall|intcomma }}{% if cat.cat_months_needed %} (~{{ cat.cat_months_needed }} bln){% endif %}">
             <i data-lucide="clock" style="width: 12px; height: 12px;"></i>{% if cat.cat_months_needed %} ~{{ cat.cat_months_needed }} bln{% else %} Kurang Dana{% endif %}
           </span>
         {% endif %}
       </div>
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.78rem;">
         <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
-          <span class="text-secondary" style="font-size: 0.74rem;">Pagu:</span>
+          <span class="text-secondary" style="font-size: 0.75rem;">Pagu:</span>
           <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ cat.allocated_amount|floatformat:0|intcomma }}</strong>
-          <span class="text-muted" style="font-size: 0.72rem;">({{ cat.allocation_percentage|floatformat:"-1" }}%)</span>
+          <span class="text-muted" style="font-size: 0.75rem;">({{ cat.allocation_percentage|floatformat:"-1" }}%)</span>
         </span>
         <span style="color: var(--wp-hairline);">·</span>
         <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
-          <span class="text-secondary" style="font-size: 0.74rem;">Kesepakatan:</span>
+          <span class="text-secondary" style="font-size: 0.75rem;">Kesepakatan:</span>
           <span class="tabular-nums" style="font-weight: 600; color: var(--wp-text-main);">Rp {{ cat.total_actual|intcomma }}</span>
         </span>
         <span style="color: var(--wp-hairline);">·</span>
         <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
-          <span class="text-secondary" style="font-size: 0.74rem;">Dibayar:</span>
+          <span class="text-secondary" style="font-size: 0.75rem;">Dibayar:</span>
           <span class="tabular-nums" style="font-weight: 600; color: var(--wp-sage-main);">Rp {{ cat.total_paid|intcomma }}</span>
         </span>
         <span style="color: var(--wp-hairline);">·</span>
         <span style="display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap;">
-          <span class="text-secondary" style="font-size: 0.74rem;">{% if cat.variance >= 0 %}Sisa Pagu:{% else %}Over Pagu:{% endif %}</span>
+          <span class="text-secondary" style="font-size: 0.75rem;">{% if cat.variance >= 0 %}Sisa Pagu:{% else %}Over Pagu:{% endif %}</span>
           <strong class="tabular-nums" style="color: {% if cat.variance >= 0 %}var(--wp-sage-main){% else %}var(--wp-terracotta-main){% endif %};">
             Rp {{ cat.variance|floatformat:0|intcomma }}
           </strong>

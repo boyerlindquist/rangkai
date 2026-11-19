@@ -101,8 +101,8 @@
       </select>
       <input type="text" name="pic_name" class="wp-input" value="{{ asset.pic_name }}" placeholder="Nama PIC" required>
       <input type="text" name="pic_contact" class="wp-input" value="{{ asset.pic_contact }}" placeholder="No. WA PIC">
-      <input type="text" name="vehicle_info" class="wp-input" value="{{ asset.vehicle_info }}" placeholder="Kendaraan / Mobil">
-      <input type="hidden" name="notes" value="{{ asset.notes }}">
+      <input type="text" name="vehicle_info" class="wp-input" value="{{ asset.vehicle_info }}" placeholder="Kendaraan / Mobil" aria-label="Kendaraan atau mobil">
+      <input type="text" name="notes" class="wp-input" value="{{ asset.notes }}" placeholder="Catatan serah terima" aria-label="Catatan">
       <select name="status" class="wp-input">
         <option value="pending" {% if asset.status == 'pending' %}selected{% endif %}>Belum Disiapkan</option>
         <option value="loaded" {% if asset.status == 'loaded' %}selected{% endif %}>Masuk Mobil</option>

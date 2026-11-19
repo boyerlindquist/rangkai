@@ -11,18 +11,12 @@
 }
 
 html {
-  font-size: 12.8px; /* 80% base scale across desktop & tablet */
+  font-size: 100%; /* Respect user/browser 16px root font-size */
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-underline-offset: 0.2em;
   caret-color: var(--wp-sage-main);
-}
-
-@media (max-width: 768px) {
-  html {
-    font-size: 12.4px; /* ~77.5% base scale for mobile devices */
-  }
 }
 
 /* ── BROWSER SURFACES: SELECTION, FOCUS, SCROLLBAR ── */
@@ -1108,9 +1102,10 @@ th.num {
 }
 
 [data-theme="dark"] .btn-gold {
-  background: linear-gradient(135deg, #1E9E73, #137554);
-  color: #FFFFFF;
-  border: 1px solid rgba(110, 231, 183, 0.25);
+  background: linear-gradient(135deg, #2AD198, #1E9E73);
+  color: #07110D;
+  font-weight: 600;
+  border: 1px solid rgba(110, 231, 183, 0.35);
 }
 
 .btn-gold:hover {
@@ -1120,7 +1115,8 @@ th.num {
 }
 
 [data-theme="dark"] .btn-gold:hover {
-  background: linear-gradient(135deg, #25B585, #188762);
+  background: linear-gradient(135deg, #34DFAA, #25B585);
+  color: #07110D;
   box-shadow: 0 8px 24px -4px rgba(52, 199, 150, 0.30);
   transform: translateY(-1px);
 }
@@ -1144,7 +1140,7 @@ th.num {
 
 [data-theme="dark"] .btn-sage {
   background: #1E9E73;
-  color: #FFFFFF;
+  color: #07110D;
   font-weight: 600;
 }
 
@@ -1154,9 +1150,19 @@ th.num {
   transform: translateY(-1px);
 }
 
+[data-theme="dark"] .btn-sage:hover {
+  background: #27B585;
+  color: #07110D;
+}
+
 .btn-terracotta {
   background: var(--wp-terracotta-main);
   color: #FFFFFF;
+}
+
+[data-theme="dark"] .btn-terracotta {
+  color: #07110D;
+  font-weight: 600;
 }
 
 .btn-terracotta:hover {
@@ -1744,7 +1750,9 @@ textarea.wp-input {
   border-radius: var(--wp-radius-sm);
   border: 1px solid var(--wp-glass-border-subtle);
   background: var(--wp-bg-surface-subtle);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card .wp-table thead th {
@@ -1851,13 +1859,7 @@ textarea.wp-input {
 [data-theme="dark"] .badge-muted {
   background: rgba(255, 255, 255, 0.06);
   color: #C2D6CD;
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme="dark"] .badge-muted {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--wp-text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* Bold Vendor Status Badges */
@@ -1885,6 +1887,10 @@ textarea.wp-input {
   padding: 4px 10px !important;
   text-transform: capitalize !important;
   letter-spacing: 0.02em !important;
+}
+
+[data-theme="dark"] .badge-status-rejected {
+  color: #08100D !important;
 }
 
 .badge-status-shortlist {
@@ -2001,10 +2007,10 @@ textarea.wp-input {
 }
 
 .task-checkbox {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--wp-radius-xs);
-  border: 2px solid var(--wp-border-light);
+  border: 2px solid var(--wp-border-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2023,10 +2029,18 @@ textarea.wp-input {
   color: #FFFFFF;
 }
 
+[data-theme="dark"] .task-checkbox.done {
+  color: #07110D;
+}
+
 .task-checkbox.in-progress {
   background: var(--wp-gold-main);
   border-color: var(--wp-gold-dark);
   color: #FFFFFF;
+}
+
+[data-theme="dark"] .task-checkbox.in-progress {
+  color: #07110D;
 }
 
 .task-title {
@@ -3426,7 +3440,7 @@ textarea.wp-input {
     border: 0;
     color: var(--wp-text-muted);
     font-family: inherit;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 500;
     letter-spacing: 0.01em;
     text-decoration: none;
@@ -3721,8 +3735,9 @@ textarea.wp-input {
   display: grid;
   grid-template-columns: minmax(275px, 325px) minmax(0, 1fr);
   align-items: stretch;
-  height: 465px;
-  max-height: 465px;
+  min-height: 540px;
+  height: calc(100vh - 280px);
+  max-height: 760px;
   overflow: hidden;
 }
 
@@ -3832,7 +3847,12 @@ textarea.wp-input {
   border-color: var(--wp-sage-main);
   color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 0 0 0 4px var(--wp-sage-bg);
+  box-shadow: 0 0 0 4px var(--wp-sage-soft);
+}
+
+[data-theme="dark"] .phase-rail-dot.is-filled,
+[data-theme="dark"] .phase-rail-dot.is-active-target {
+  color: #07110D;
 }
 
 /* Right-side Card inside Left Rail */
@@ -3855,9 +3875,9 @@ textarea.wp-input {
 }
 
 .phase-rail-item.is-selected .phase-rail-card {
-  background: var(--wp-sage-bg);
+  background: var(--wp-sage-soft);
   border-color: var(--wp-sage-main);
-  box-shadow: var(--wp-shadow-subtle);
+  box-shadow: var(--wp-shadow-sm);
 }
 
 .phase-rail-item.is-passed:not(.is-selected) .phase-rail-card {
@@ -3901,6 +3921,34 @@ textarea.wp-input {
   overscroll-behavior: contain;
 }
 
+.sidebar-group-label {
+  padding: 12px 12px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wp-sidebar-text-muted);
+  opacity: 0.65;
+  user-select: none;
+}
+
+.sidebar-group-label:first-child {
+  padding-top: 2px;
+}
+
+button.sidebar-theme-toggle-row {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+}
+
+.wp-dropdown-item.is-focused {
+  background: var(--wp-sage-soft);
+  color: var(--wp-text-main);
+}
+
 @media (max-width: 960px) {
   .phase-md-workspace {
     grid-template-columns: 1fr;
@@ -3915,7 +3963,52 @@ textarea.wp-input {
     max-height: none;
   }
   .phase-detail-pane {
-    height: 390px;
-    max-height: 390px;
+    height: auto;
+    max-height: none;
+  }
+}
+
+/* ── MOBILE TOUCH TARGETS (WCAG 2.5.8 & 44px Ergonomics) ── */
+@media (max-width: 768px) {
+  .hamburger-btn,
+  .drawer-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+  .btn-icon.btn-sm {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .task-checkbox {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ── REDUCED MOTION (Preserve state feedback, remove spatial motion) ── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .fade-in,
+  .highlight-pulse {
+    animation: none !important;
+  }
+  .btn:hover,
+  .btn-primary:hover,
+  .btn-gold:hover,
+  .btn-sage:hover,
+  .btn-terracotta:hover,
+  .phase-rail-item:hover .phase-rail-card,
+  .phase-rail-dot.is-active-target {
+    transform: none !important;
+  }
+  .sidebar,
+  .inspector-drawer,
+  .wp-dropdown-chevron,
+  .theme-switch-slider {
+    transition-duration: 0.08s !important;
   }
 }

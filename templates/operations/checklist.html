@@ -114,30 +114,36 @@
         <a href="#" @click.prevent="selectedAssignee = 'family'" :class="{ 'active': selectedAssignee === 'family' }">Keluarga / WO</a>
       </div>
 
-      <!-- Grouped Compact Icon Action Cluster -->
-      <div style="display: inline-flex; align-items: center; gap: 5px;">
+      <!-- Labeled Compact Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="selectedPhase === 'all' ? 'btn-gold' : 'btn-secondary'"
                 @click="selectPhase(selectedPhase === 'all' ? '{{ current_phase_key|default:'d360' }}' : 'all')"
-                title="Tampilkan / Gabungkan Semua Fase Timeline">
+                title="Tampilkan / Gabungkan Semua Fase Timeline"
+                style="padding: 4px 10px;">
           <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+          <span>Semua Fase</span>
         </button>
 
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showGuide ? 'btn-gold' : 'btn-secondary'"
                 @click="showGuide = !showGuide; if(showGuide) { $nextTick(() => { if(window.lucide) lucide.createIcons(); document.getElementById('smart-guide-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }); }"
-                title="Panduan & Ide Tugas Penting (Referensi Anti-Lupa)">
+                title="Panduan & Ide Tugas Penting (Referensi Anti-Lupa)"
+                style="padding: 4px 10px;">
           <i data-lucide="lightbulb" style="width: 14px; height: 14px;"></i>
+          <span>Ide Tugas</span>
         </button>
 
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showPhaseManager ? 'btn-gold' : 'btn-secondary'"
                 @click="showPhaseManager = !showPhaseManager; if(showPhaseManager) showForm = false; $nextTick(() => { if(window.lucide) lucide.createIcons(); })"
-                title="Atur / Rombak Urutan & Preset Fase Timeline">
+                title="Atur / Rombak Urutan & Preset Fase Timeline"
+                style="padding: 4px 10px;">
           <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
+          <span>Atur Fase</span>
         </button>
 
         <button type="button"
@@ -193,9 +199,9 @@
             Kelola & Rombak Timeline
           </span>
           <div class="filter-segmented" style="padding: 2px;">
-            <a href="#" @click.prevent="managerTab = 'edit'" :class="{ 'active': managerTab === 'edit' }" style="font-size: 0.74rem; padding: 3px 9px;">Susun Fase</a>
-            <a href="#" @click.prevent="managerTab = 'preset'" :class="{ 'active': managerTab === 'preset' }" style="font-size: 0.74rem; padding: 3px 9px;">Preset Timeline</a>
-            <a href="#" @click.prevent="managerTab = 'zero'" :class="{ 'active': managerTab === 'zero' }" style="font-size: 0.74rem; padding: 3px 9px;">Mulai dari 0</a>
+            <a href="#" @click.prevent="managerTab = 'edit'" :class="{ 'active': managerTab === 'edit' }" style="font-size: 0.75rem; padding: 3px 9px;">Susun Fase</a>
+            <a href="#" @click.prevent="managerTab = 'preset'" :class="{ 'active': managerTab === 'preset' }" style="font-size: 0.75rem; padding: 3px 9px;">Preset Timeline</a>
+            <a href="#" @click.prevent="managerTab = 'zero'" :class="{ 'active': managerTab === 'zero' }" style="font-size: 0.75rem; padding: 3px 9px;">Mulai dari 0</a>
           </div>
         </div>
         <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showPhaseManager = false" title="Tutup">
@@ -212,14 +218,14 @@
             <div style="display: grid; grid-template-columns: 64px minmax(180px, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline);">
               <input type="number" name="order_{{ p.key }}" value="{{ forloop.counter }}" min="1" max="30" class="wp-input tabular-nums" style="padding: 4px 6px; font-size: 0.78rem;" title="Nomor urut fase">
               <input type="text" name="label_{{ p.key }}" value="{{ p.label }}" required class="wp-input" style="padding: 4px 8px; font-size: 0.8rem;">
-              <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; cursor: pointer; color: var(--wp-text-secondary); padding: 0 4px;">
+              <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; cursor: pointer; color: var(--wp-text-secondary); padding: 0 4px;">
                 <input type="radio" name="active_phase_key" value="{{ p.key }}" {% if p.key == current_phase_key %}checked{% endif %}>
                 Aktif
               </label>
             </div>
             {% endfor %}
             <div style="display: grid; grid-template-columns: 64px minmax(180px, 1fr); gap: 8px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); border: 1px dashed var(--wp-border-strong);">
-              <span style="font-size: 0.72rem; font-weight: 700; color: var(--wp-gold-dark); text-align: center;">+ Baru</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--wp-gold-dark); text-align: center;">+ Baru</span>
               <input type="text" name="new_phase_label" placeholder="Ketik nama fase tambahan (opsional)..." class="wp-input" style="padding: 4px 8px; font-size: 0.8rem;">
             </div>
           </div>
@@ -241,8 +247,8 @@
             <input type="hidden" name="preset_key" value="{{ p_key }}">
             <div>
               <div style="font-weight: 700; font-size: 0.84rem; color: var(--wp-text-main); margin-bottom: 3px;">{{ preset.name }}</div>
-              <p class="text-muted" style="font-size: 0.73rem; margin: 0 0 6px;">{{ preset.desc }}</p>
-              <ol style="margin: 0; padding-left: 15px; font-size: 0.73rem; color: var(--wp-text-secondary); display: flex; flex-direction: column; gap: 2px;">
+              <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 6px;">{{ preset.desc }}</p>
+              <ol style="margin: 0; padding-left: 15px; font-size: 0.75rem; color: var(--wp-text-secondary); display: flex; flex-direction: column; gap: 2px;">
                 {% for _, ph_label in preset.phases %}
                 <li>{{ ph_label }}</li>
                 {% endfor %}
@@ -295,7 +301,7 @@
                     </button>
                   </div>
                 </template>
-                <button type="button" class="btn btn-ghost btn-sm" style="align-self: flex-start; font-size: 0.72rem; padding: 2px 6px;" @click="customZeroPhases.push('Tahap ' + (customZeroPhases.length + 1) + ': ')">
+                <button type="button" class="btn btn-ghost btn-sm" style="align-self: flex-start; font-size: 0.75rem; padding: 2px 6px;" @click="customZeroPhases.push('Tahap ' + (customZeroPhases.length + 1) + ': ')">
                   + Baris Fase
                 </button>
               </div>
@@ -314,10 +320,10 @@
       <!-- LEFT: Connected Timeline Rail -->
       <aside class="phase-rail" aria-label="Tahapan Timeline Pernikahan">
         <div class="phase-rail-header">
-          <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-text-secondary);">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-text-secondary);">
             Tahapan Timeline
           </span>
-          <span class="badge badge-muted tabular-nums" style="font-size: 0.68rem;"
+          <span class="badge badge-muted tabular-nums" style="font-size: 0.75rem;"
                 x-text="selectedPhase === 'all' ? 'Semua ({{ phase_count }})' : ((selectedIdx + 1) + ' / {{ phase_count }}')">
             1 / {{ phase_count }}
           </span>
@@ -326,11 +332,16 @@
         <div class="phase-rail-steps">
           {% for phase_key, phase_data in grouped_tasks.items %}
           <div class="phase-rail-item"
+               role="button"
+               tabindex="0"
+               :aria-pressed="(selectedPhase === '{{ phase_key }}').toString()"
                :class="{
                  'is-selected': selectedPhase === '{{ phase_key }}',
                  'is-passed': selectedIdx >= {{ phase_data.phase_idx }}
                }"
-               @click="selectPhase('{{ phase_key }}')">
+               @click="selectPhase('{{ phase_key }}')"
+               @keydown.enter.prevent="selectPhase('{{ phase_key }}')"
+               @keydown.space.prevent="selectPhase('{{ phase_key }}')">
 
             <!-- Connected Vertical Line + Step Circle -->
             <div class="phase-rail-track">
@@ -368,15 +379,15 @@
               </div>
 
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
-                <span class="text-muted tabular-nums" style="font-size: 0.71rem;">
+                <span class="text-muted tabular-nums" style="font-size: 0.75rem;">
                   {{ phase_data.done }}/{{ phase_data.total }} selesai
                 </span>
                 {% if phase_data.is_current %}
-                  <span class="status-pill status-done" style="font-size: 0.65rem; padding: 1px 5px;">Aktif</span>
+                  <span class="status-pill status-done" style="font-size: 0.75rem; padding: 1px 5px;">Aktif</span>
                 {% elif phase_data.is_past and phase_data.overdue_count > 0 %}
-                  <span class="status-pill status-warning" style="font-size: 0.65rem; padding: 1px 5px;">{{ phase_data.overdue_count }} Tertunda</span>
+                  <span class="status-pill status-warning" style="font-size: 0.75rem; padding: 1px 5px;">{{ phase_data.overdue_count }} Tertunda</span>
                 {% elif phase_data.progress == 100 and phase_data.total > 0 %}
-                  <span class="status-pill status-done" style="font-size: 0.65rem; padding: 1px 5px;">Tuntas</span>
+                  <span class="status-pill status-done" style="font-size: 0.75rem; padding: 1px 5px;">Tuntas</span>
                 {% endif %}
               </div>
             </div>
@@ -390,7 +401,7 @@
                   x-show="!showInlineAddPhase"
                   @click="showInlineAddPhase = true; $nextTick(() => $refs.newPhaseInput?.focus())"
                   class="btn btn-ghost btn-sm"
-                  style="width: 100%; justify-content: center; font-size: 0.73rem; padding: 3px 8px; border: 1px dashed var(--wp-border-strong);">
+                  style="width: 100%; justify-content: center; font-size: 0.75rem; padding: 3px 8px; border: 1px dashed var(--wp-border-strong);">
             <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Fase Baru
           </button>
           <form x-show="showInlineAddPhase" x-cloak method="post" action="{% url 'operations-checklist:add_phase' %}" style="display: flex; gap: 4px; align-items: center;">
@@ -581,10 +592,10 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-weight: 700; font-size: 0.84rem; color: var(--wp-text-main);">{{ phase_data.label }}</span>
                   {% if phase_data.is_current %}
-                    <span class="status-pill status-done" style="font-size: 0.65rem; padding: 1px 5px;">Aktif</span>
+                    <span class="status-pill status-done" style="font-size: 0.75rem; padding: 1px 5px;">Aktif</span>
                   {% endif %}
                 </div>
-                <span id="all-phase-header-stats-{{ phase_key }}" class="text-muted tabular-nums" style="font-size: 0.74rem;">{{ phase_data.done }}/{{ phase_data.total }} selesai ({{ phase_data.progress }}%)</span>
+                <span id="all-phase-header-stats-{{ phase_key }}" class="text-muted tabular-nums" style="font-size: 0.75rem;">{{ phase_data.done }}/{{ phase_data.total }} selesai ({{ phase_data.progress }}%)</span>
               </div>
               <div id="all-phase-tasks-{{ phase_key }}">
                 {% for task in phase_data.tasks %}
@@ -607,7 +618,7 @@
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <i data-lucide="lightbulb" style="width: 15px; height: 15px; color: var(--wp-gold-main);"></i>
           <span style="font-weight: 700; font-size: 0.85rem; color: var(--wp-text-main);">Panduan & Katalog Tugas Penting</span>
-          <span class="text-muted" style="font-size: 0.74rem;">Klik <strong>+</strong> untuk memasukkan tugas ke fase yang sedang dibuka di atas.</span>
+          <span class="text-muted" style="font-size: 0.75rem;">Klik <strong>+</strong> untuk memasukkan tugas ke fase yang sedang dibuka di atas.</span>
         </div>
         <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showGuide = false" title="Sembunyikan Panduan">
           <i data-lucide="x" style="width: 14px; height: 14px;"></i>

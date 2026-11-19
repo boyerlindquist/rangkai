@@ -1,7 +1,7 @@
 <tr>
   <td style="padding-left: 20px; font-weight: 500;">
     <span style="color: var(--wp-text-main);">{{ guest.name }}</span>
-    {% if guest.phone %}<div class="text-muted" style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 2px;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> {{ guest.phone }}</div>{% endif %}
+    {% if guest.phone %}<div class="text-muted" style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 2px;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> <a href="#" onclick="event.preventDefault(); window.openWhatsApp('{{ guest.phone|escapejs }}');" style="color: var(--wp-sage-main); text-decoration: none; font-weight: 500;" title="Chat via WhatsApp">{{ guest.phone }}</a></div>{% endif %}
     {% if guest.notes %}<div class="text-secondary" style="font-size: 0.75rem; margin-top: 2px;">{{ guest.notes }}</div>{% endif %}
   </td>
   <td><span class="status-pill">{{ guest.get_relation_side_display }}</span></td>
@@ -13,6 +13,12 @@
   </td>
   <td class="num" style="font-weight: 600;">{{ guest.pax_allocation }}</td>
   <td style="white-space: nowrap;">
+    {% if is_crew %}
+    <span class="status-pill {% if guest.rsvp_status == 'attending' %}status-done{% elif guest.rsvp_status == 'declined' %}status-danger{% else %}status-warning{% endif %}">
+      <span class="dot"></span>
+      {% if guest.rsvp_status == 'attending' %}Hadir{% elif guest.rsvp_status == 'declined' %}Tidak Hadir{% else %}Belum Pasti{% endif %}
+    </span>
+    {% else %}
     <form style="margin: 0; display: inline-block;">
       {% csrf_token %}
       <div class="wp-dropdown"
@@ -20,6 +26,8 @@
              value: '{{ guest.rsvp_status }}',
              postUrl: '{% url 'guests:toggle_rsvp' guest.pk %}',
              paramName: 'rsvp_status',
+             target: 'closest tr',
+             swap: 'outerHTML',
              options: [
                { value: 'pending', label: 'Belum Pasti', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
                { value: 'attending', label: 'Hadir', pillClass: 'status-done', dot: 'var(--wp-sage-main)' },
@@ -66,14 +74,15 @@
         </div>
       </div>
     </form>
+    {% endif %}
   </td>
   <td>
     <button
+      type="button"
       class="status-pill {% if guest.checked_in %}status-done{% endif %}"
       hx-post="{% url 'guests:toggle_checkin' guest.pk %}"
-      hx-target=".main-content"
-      hx-select=".main-content"
-      hx-swap="outerHTML show:none"
+      hx-target="closest tr"
+      hx-swap="outerHTML"
       style="cursor: pointer;"
       title="Klik untuk menandai kehadiran tamu di lokasi (Check-In Hari-H)"
     >
@@ -82,25 +91,33 @@
     </button>
   </td>
   <td style="text-align: right; padding-right: 20px;">
+    {% if not is_crew %}
     <div style="display: flex; gap: 4px; align-items: center; justify-content: flex-end;">
       <button
+        type="button"
         class="btn btn-ghost btn-icon btn-sm"
         hx-get="{% url 'guests:update' guest.pk %}"
         hx-target="closest tr"
         hx-swap="outerHTML"
+        aria-label="Edit tamu {{ guest.name }}"
         title="Edit Tamu"
         style="color: var(--wp-gold-main);"
       ><i data-lucide="pencil" style="width: 13px; height: 13px;"></i></button>
       <button
+        type="button"
         class="btn btn-ghost btn-icon btn-sm"
         hx-delete="{% url 'guests:delete' guest.pk %}"
         hx-confirm="Hapus tamu {{ guest.name }}?"
         hx-target=".main-content"
         hx-select=".main-content"
         hx-swap="outerHTML show:none"
+        aria-label="Hapus tamu {{ guest.name }}"
         title="Hapus Tamu"
         style="color: var(--wp-text-muted);"
       ><i data-lucide="trash-2" style="width: 13px; height: 13px;"></i></button>
     </div>
+    {% else %}
+    <span class="text-muted" style="font-size: 0.74rem;">—</span>
+    {% endif %}
   </td>
 </tr>

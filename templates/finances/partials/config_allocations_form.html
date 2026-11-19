@@ -43,7 +43,7 @@
 
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
       <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
-        <div style="font-size: 0.74rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Rencana Kategori</div>
+        <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Rencana Kategori</div>
         <div class="tabular-nums" :style="totalPct > 100.5 ? 'color: var(--wp-terracotta-main);' : 'color: var(--wp-sage-main);'" 
              style="font-size: 1.35rem; font-weight: 700;">
           Rp <span x-text="formatRpNum(totalNominal)"></span>
@@ -54,7 +54,7 @@
       </div>
 
       <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
-        <div style="font-size: 0.74rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Dana Terkumpul (Tabungan)</div>
+        <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Dana Terkumpul (Tabungan)</div>
         <div class="tabular-nums" style="font-size: 1.35rem; font-weight: 700; color: var(--wp-gold-main);">
           Rp {{ total_saved|intcomma }}
         </div>
@@ -75,7 +75,7 @@
 
       <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; align-items: end;">
         <div>
-          <span style="display: block; font-size: 0.72rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Nominal Pagu (Rp)</span>
+          <span style="display: block; font-size: 0.75rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Nominal Pagu (Rp)</span>
           <input type="number"
                  name="{{ form.allocated_budget.html_name }}"
                  id="{{ form.allocated_budget.id_for_label }}"
@@ -88,7 +88,7 @@
                  @input="onNominalInput('{{ form.instance.pk }}')">
         </div>
         <div>
-          <span style="display: block; font-size: 0.72rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Atau Porsi (%)</span>
+          <span style="display: block; font-size: 0.75rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Atau Porsi (%)</span>
           <div style="position: relative;">
             <input type="number" 
                    name="{{ form.allocation_percentage.html_name }}" 
@@ -103,7 +103,7 @@
         </div>
       </div>
 
-      <div class="tabular-nums text-secondary" style="font-size: 0.74rem; margin-top: 6px; display: flex; justify-content: space-between;">
+      <div class="tabular-nums text-secondary" style="font-size: 0.75rem; margin-top: 6px; display: flex; justify-content: space-between;">
         <span>Rencana: <strong>Rp <span x-text="formatRpNum(nominals['{{ form.instance.pk }}'])"></span></strong></span>
         <span>Realisasi: Rp {{ form.instance.total_actual|intcomma }}</span>
       </div>

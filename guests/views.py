@@ -368,6 +368,37 @@ def delete_guest(request, pk):
     return redirect('guests:list')
 
 
+def _get_guest_stats_and_catering(wedding):
+    """Compute aggregate guest KPI stats and catering portions for a wedding."""
+    all_guests = Guest.objects.filter(wedding=wedding)
+    stats = all_guests.aggregate(
+        total=Count('id'),
+        total_pax=Sum('pax_allocation'),
+        attending=Count('id', filter=Q(rsvp_status='attending')),
+        attending_pax=Sum('pax_allocation', filter=Q(rsvp_status='attending')),
+        checked_in=Count('id', filter=Q(checked_in=True)),
+    )
+    config, _ = CateringConfig.objects.get_or_create(wedding=wedding)
+    total_invitations = stats['total'] or 0
+    est_adult_pax = int(total_invitations * float(config.pax_multiplier) * float(config.attendance_rate) / 100)
+    buffer_pax = int(est_adult_pax * (1 + float(config.vip_buffer_rate) / 100))
+    buffet_portions = buffer_pax
+    stall_total = buffer_pax * config.stall_portion_per_pax
+    stall_per_variety = stall_total // max(config.stall_variety_count, 1)
+    crew_meals = config.crew_count * 2
+    catering = {
+        'total_invitations': total_invitations,
+        'est_adult_pax': est_adult_pax,
+        'buffer_pax': buffer_pax,
+        'buffet_portions': buffet_portions,
+        'stall_total': stall_total,
+        'stall_per_variety': stall_per_variety,
+        'crew_meals': crew_meals,
+        'akad_pax': config.akad_pax,
+    }
+    return stats, config, catering
+
+
 @login_required
 @owner_required
 def toggle_rsvp(request, pk):
@@ -381,13 +412,20 @@ def toggle_rsvp(request, pk):
         idx = cycle.index(guest.rsvp_status) if guest.rsvp_status in cycle else 0
         guest.rsvp_status = cycle[(idx + 1) % len(cycle)]
     guest.save(update_fields=['rsvp_status'])
+    if request.htmx:
+        stats, _, catering = _get_guest_stats_and_catering(request.wedding)
+        return render(request, 'guests/partials/guest_row_with_oob.html', {
+            'guest': guest,
+            'stats': stats,
+            'catering': catering,
+        })
     return redirect('guests:list')
 
 
 @login_required
-@owner_required
+@workspace_required
 def toggle_checkin(request, pk):
-    """HTMX endpoint: Quick toggle D-Day Check-In status."""
+    """HTMX endpoint: Quick toggle D-Day Check-In status (allowed for Couple & Crew)."""
     guest = get_object_or_404(Guest, pk=pk, wedding=request.wedding)
     guest.checked_in = not guest.checked_in
     if guest.checked_in and guest.rsvp_status == 'pending':
@@ -395,6 +433,13 @@ def toggle_checkin(request, pk):
         guest.save(update_fields=['checked_in', 'rsvp_status'])
     else:
         guest.save(update_fields=['checked_in'])
+    if request.htmx:
+        stats, _, catering = _get_guest_stats_and_catering(request.wedding)
+        return render(request, 'guests/partials/guest_row_with_oob.html', {
+            'guest': guest,
+            'stats': stats,
+            'catering': catering,
+        })
     return redirect('guests:list')
 
 

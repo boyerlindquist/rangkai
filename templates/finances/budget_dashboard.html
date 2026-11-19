@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="workspace-canvas"
-     x-data="{ showNewCategory: false, showCashBreakdown: false, payerFilter: '' }"
-     x-init="$watch('payerFilter', val => window.dispatchEvent(new CustomEvent('budgetPayerFilterChanged', { detail: { payer: val } })))">
+     x-data="{ showNewCategory: false, showCashBreakdown: false, payerFilter: sessionStorage.getItem('wp_budget_payer_filter') || '' }"
+     x-init="$watch('payerFilter', val => { sessionStorage.setItem('wp_budget_payer_filter', val || ''); window.dispatchEvent(new CustomEvent('budgetPayerFilterChanged', { detail: { payer: val } })); })">
   <!-- Clean Page Header -->
   <div class="page-header fade-in" id="guide-budget">
     <div>
@@ -25,7 +25,7 @@
           </span>
           Dana Terkumpul
         </span>
-        <span class="status-pill status-done" style="font-size: 0.7rem; padding: 2px 7px; white-space: nowrap;">{{ saved_vs_need_pct }}%</span>
+        <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">{{ saved_vs_need_pct }}%</span>
       </div>
       <div class="metric-value" style="color: var(--wp-sage-main); white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
       <div class="metric-sub">
@@ -49,7 +49,7 @@
           </span>
           Sisa Kas Siap Pakai
         </span>
-        <span class="status-pill" style="font-size: 0.7rem; padding: 2px 7px; white-space: nowrap;">{{ paid_of_saved_pct }}% Terpakai</span>
+        <span class="status-pill" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">{{ paid_of_saved_pct }}% Terpakai</span>
       </div>
       <div class="metric-value" style="color: {% if is_cash_deficit %}var(--wp-terracotta-main){% else %}var(--wp-text-main){% endif %}; white-space: nowrap;">
         {% if is_cash_deficit %}-Rp {{ cash_deficit_amount|intcomma }}{% else %}Rp {{ available_cash|intcomma }}{% endif %}
@@ -71,7 +71,7 @@
         <button type="button"
                 class="btn btn-ghost btn-icon btn-sm"
                 @click="editingTotalBudget = !editingTotalBudget"
-                style="padding: 2px 6px; height: auto; color: var(--wp-gold-main); font-size: 0.72rem;"
+                style="padding: 2px 6px; height: auto; color: var(--wp-gold-main); font-size: 0.75rem;"
                 title="Ubah Target Total Anggaran">
           <i data-lucide="pencil" style="width: 12px; height: 12px;"></i>
         </button>
@@ -112,8 +112,8 @@
                style="padding: 6px 10px; font-size: 0.88rem; font-weight: 600;"
                required>
         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary btn-sm" @click="editingTotalBudget = false" style="padding: 4px 8px; font-size: 0.74rem;">Batal</button>
-          <button type="submit" class="btn btn-gold btn-sm" style="padding: 4px 10px; font-size: 0.74rem;">Simpan</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="editingTotalBudget = false" style="padding: 4px 8px; font-size: 0.75rem;">Batal</button>
+          <button type="submit" class="btn btn-gold btn-sm" style="padding: 4px 10px; font-size: 0.75rem;">Simpan</button>
         </div>
       </form>
     </div>
@@ -128,9 +128,9 @@
           Kekurangan Dana
         </span>
         {% if shortfall_from_saved == 0 and effective_total_need > 0 %}
-          <span class="status-pill status-done" style="font-size: 0.7rem; padding: 2px 7px; white-space: nowrap;">Tercukupi 100%</span>
+          <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">Tercukupi 100%</span>
         {% elif months_needed > 0 %}
-          <span class="status-pill {% if is_saving_on_track %}status-warning{% else %}status-danger{% endif %}" style="font-size: 0.7rem; padding: 2px 7px; white-space: nowrap;">
+          <span class="status-pill {% if is_saving_on_track %}status-warning{% else %}status-danger{% endif %}" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">
             ~{{ months_needed }} bln lagi
           </span>
         {% endif %}
@@ -218,15 +218,15 @@
 
           <div class="rg-3to1" style="padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-bottom: 1px solid var(--wp-hairline); background: var(--wp-bg-surface);">
             <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.7rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Dana Tabungan</div>
+              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Dana Tabungan</div>
               <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; margin-top: 2px; white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
             </div>
             <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.7rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sudah Terpakai</div>
+              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sudah Terpakai</div>
               <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; color: var(--wp-sage-main); margin-top: 2px; white-space: nowrap;">-Rp {{ total_paid|intcomma }}</div>
             </div>
             <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.7rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sisa Kas Bebas</div>
+              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sisa Kas Bebas</div>
               <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; color: {% if is_cash_deficit %}var(--wp-terracotta-main){% else %}var(--wp-gold-main){% endif %}; margin-top: 2px; white-space: nowrap;">
                 Rp {{ available_cash|intcomma }}
               </div>
@@ -248,15 +248,15 @@
                 <tr>
                   <td style="padding-left: 16px;">
                     <strong>{{ p_item.name }}</strong>
-                    {% if p_item.vendor_name %}<div class="text-muted" style="font-size: 0.73rem;">{{ p_item.vendor_name }}</div>{% endif %}
+                    {% if p_item.vendor_name %}<div class="text-muted" style="font-size: 0.75rem;">{{ p_item.vendor_name }}</div>{% endif %}
                   </td>
-                  <td><span class="status-pill" style="font-size: 0.72rem; white-space: nowrap;">{{ p_item.category.name }}</span></td>
+                  <td><span class="status-pill" style="font-size: 0.75rem; white-space: nowrap;">{{ p_item.category.name }}</span></td>
                   <td class="num tabular-nums" style="padding-right: 16px; font-weight: 700; color: var(--wp-sage-main); white-space: nowrap;">
                     Rp {{ p_item.paid_amount|intcomma }}
                     {% if p_item.remaining > 0 %}
-                      <div style="font-size: 0.7rem; color: var(--wp-terracotta-main); font-weight: 500; white-space: nowrap;">Kurang Rp {{ p_item.remaining|intcomma }}</div>
+                      <div style="font-size: 0.75rem; color: var(--wp-terracotta-main); font-weight: 500; white-space: nowrap;">Kurang Rp {{ p_item.remaining|intcomma }}</div>
                     {% else %}
-                      <div style="font-size: 0.7rem; color: var(--wp-text-muted); font-weight: 500; white-space: nowrap;">Lunas</div>
+                      <div style="font-size: 0.75rem; color: var(--wp-text-muted); font-weight: 500; white-space: nowrap;">Lunas</div>
                     {% endif %}
                   </td>
                 </tr>
@@ -285,7 +285,7 @@
               <i data-lucide="check-check" style="width: 15px; height: 15px; color: var(--wp-gold-main); flex-shrink: 0;"></i>
               Kesiapan Kas per Kategori
             </strong>
-            <button type="button" class="btn btn-ghost btn-sm" style="padding: 2px 8px; font-size: 0.74rem; color: var(--wp-gold-main); white-space: nowrap;"
+            <button type="button" class="btn btn-ghost btn-sm" style="padding: 2px 8px; font-size: 0.75rem; color: var(--wp-gold-main); white-space: nowrap;"
                     hx-get="{% url 'finances:config_allocations' %}" hx-target="#allocation-container" hx-swap="innerHTML show:#allocation-container:top">
               Atur Pagu
             </button>
@@ -306,7 +306,7 @@
                 <tr>
                   <td style="padding-left: 14px;">
                     <strong style="white-space: nowrap;">{{ cat.name }}</strong>
-                    <div class="text-muted" style="font-size: 0.7rem; white-space: nowrap;">{{ cat.allocation_percentage|floatformat:"-1" }}% dari target</div>
+                    <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">{{ cat.allocation_percentage|floatformat:"-1" }}% dari target</div>
                   </td>
                   <td class="num tabular-nums" style="font-weight: 600; white-space: nowrap;">
                     Rp {{ cat.cat_need|intcomma }}
@@ -314,32 +314,32 @@
                   <td class="num tabular-nums" style="color: var(--wp-sage-main); font-weight: 600; white-space: nowrap;">
                     Rp {{ cat.cat_total_covered|intcomma }}
                     {% if cat.cat_paid > 0 %}
-                      <div class="text-muted" style="font-size: 0.68rem; white-space: nowrap;">(Dibayar Rp {{ cat.cat_paid|intcomma }})</div>
+                      <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">(Dibayar Rp {{ cat.cat_paid|intcomma }})</div>
                     {% endif %}
                   </td>
                   <td class="num" style="padding-right: 14px; white-space: nowrap;">
                     {% if cat.coverage_status == 'settled' %}
-                      <span class="status-pill status-done" style="font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                      <span class="status-pill status-done" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                         <i data-lucide="check-check" style="width: 12px; height: 12px;"></i> Lunas
                       </span>
                     {% elif cat.coverage_status == 'ready' %}
-                      <span class="status-pill status-done" style="font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                      <span class="status-pill status-done" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                         <i data-lucide="check" style="width: 12px; height: 12px;"></i> Dana Siap
                       </span>
                     {% elif cat.coverage_status == 'partial' %}
                       <div class="tabular-nums" style="color: var(--wp-gold-dark); font-weight: 700; font-size: 0.76rem; white-space: nowrap;">
                         Kurang Rp {{ cat.cat_shortfall|intcomma }}
                       </div>
-                      <div class="text-muted" style="font-size: 0.68rem; white-space: nowrap;">Ter-cover {{ cat.cat_coverage_pct }}%{% if cat.cat_months_needed %} · ~{{ cat.cat_months_needed }} bln{% endif %}</div>
+                      <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">Ter-cover {{ cat.cat_coverage_pct }}%{% if cat.cat_months_needed %} · ~{{ cat.cat_months_needed }} bln{% endif %}</div>
                     {% elif cat.coverage_status == 'shortfall' %}
                       <div class="tabular-nums" style="color: var(--wp-terracotta-main); font-weight: 700; font-size: 0.76rem; white-space: nowrap;">
                         Kurang Rp {{ cat.cat_shortfall|intcomma }}
                       </div>
                       {% if cat.cat_months_needed %}
-                        <div class="text-muted" style="font-size: 0.68rem; white-space: nowrap;">~{{ cat.cat_months_needed }} bln menabung</div>
+                        <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">~{{ cat.cat_months_needed }} bln menabung</div>
                       {% endif %}
                     {% else %}
-                      <span class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">Belum diatur</span>
+                      <span class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">Belum diatur</span>
                     {% endif %}
                   </td>
                 </tr>
@@ -383,7 +383,7 @@
       border: 1px solid var(--wp-hairline, rgba(13, 31, 24, 0.12));
       border-radius: 6px;
       padding: 8px 12px;
-      font-size: 11.5px;
+      font-size: 12px;
       box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
       transition: opacity 0.12s ease;
     }
@@ -427,7 +427,7 @@
         <div>
           <h4 style="margin: 0 0 6px 0; color: var(--wp-terracotta-main); font-size: 0.98rem; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span>Pagu Kategori Melebihi Target Anggaran</span>
-            <span class="status-pill status-danger" style="font-size: 0.72rem; padding: 2px 8px;">Over-Allocated Rp {{ over_allocated_amount|intcomma }}</span>
+            <span class="status-pill status-danger" style="font-size: 0.75rem; padding: 2px 8px;">Over-Allocated Rp {{ over_allocated_amount|intcomma }}</span>
           </h4>
           <p style="margin: 0; font-size: 0.84rem; color: var(--wp-text-secondary); line-height: 1.55;">
             Total rencana pagu dari <strong>{{ categories|length }} kategori</strong> adalah <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ total_cat_planned|intcomma }}</strong> (<strong>{{ over_allocated_pct }}%</strong>), sedangkan Target Anggaran saat ini diset <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ total_allocated|intcomma }}</strong> (100%). Terdapat defisit rencana sebesar <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ over_allocated_amount|intcomma }}</strong> yang belum memiliki sumber dana (ditandai dengan alur merah bata pada diagram di bawah).
@@ -881,40 +881,48 @@
         </div>
       </div>
 
-      <!-- Grouped Compact Icon Action Cluster -->
-      <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+      <!-- Labeled Compact Action Cluster -->
+      <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-icon btn-sm"
+                class="btn btn-sm"
                 :class="showCashBreakdown ? 'btn-gold' : 'btn-secondary'"
                 @click="showCashBreakdown = !showCashBreakdown"
-                title="Rincian Realisasi & Kesiapan Kas Tabungan">
+                title="Rincian Realisasi & Kesiapan Kas Tabungan"
+                style="padding: 4px 10px;">
           <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+          <span>Rincian Kas</span>
         </button>
         <button type="button"
-                class="btn btn-secondary btn-icon btn-sm"
+                class="btn btn-secondary btn-sm"
                 hx-get="{% url 'finances:config_allocations' %}"
                 hx-target="#allocation-container"
                 hx-swap="innerHTML show:#allocation-container:top"
-                title="Susun Massal Pagu Kategori (Rp / %)">
+                title="Susun Massal Pagu Kategori (Rp / %)"
+                style="padding: 4px 10px;">
           <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
-        </button>
-        <button type="button"
-                class="btn btn-icon btn-sm"
-                :class="mode === 'target' ? 'btn-gold' : 'btn-secondary'"
-                @click="openTarget()"
-                title="Ubah Target Total Tabungan">
-          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
-        </button>
-        <button type="button"
-                class="btn btn-icon btn-sm"
-                :class="mode === 'add_category' ? 'btn-gold' : 'btn-secondary'"
-                @click="openAddCategory()"
-                title="Tambah Kategori Anggaran Baru">
-          <i data-lucide="folder-plus" style="width: 14px; height: 14px;"></i>
+          <span>Atur Pagu</span>
         </button>
         <button type="button"
                 class="btn btn-sm"
-                :class="mode === 'add_item' ? 'btn-gold' : 'btn-secondary'"
+                :class="mode === 'target' ? 'btn-gold' : 'btn-secondary'"
+                @click="openTarget()"
+                title="Ubah Target Total Anggaran"
+                style="padding: 4px 10px;">
+          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
+          <span>Target</span>
+        </button>
+        <button type="button"
+                class="btn btn-sm"
+                :class="mode === 'add_category' ? 'btn-gold' : 'btn-secondary'"
+                @click="openAddCategory()"
+                title="Tambah Kategori Anggaran Baru"
+                style="padding: 4px 10px;">
+          <i data-lucide="folder-plus" style="width: 14px; height: 14px;"></i>
+          <span>Kategori</span>
+        </button>
+        <button type="button"
+                class="btn btn-sm"
+                :class="mode === 'add_item' ? 'btn-gold' : 'btn-primary'"
                 @click="openAddItem()"
                 title="Tambah Item Pengeluaran Baru"
                 style="padding: 4px 10px;">
@@ -941,7 +949,7 @@
           </span>
           <span class="cat-card-meta">
             <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ total_allocated|intcomma }}</strong>
-            <span class="text-muted" style="font-size: 0.7rem;">Klik untuk ubah</span>
+            <span class="text-muted" style="font-size: 0.75rem;">Klik untuk ubah</span>
           </span>
         </button>
 
@@ -959,7 +967,7 @@
           </span>
           <span class="cat-card-meta">
             <strong class="tabular-nums" style="color: var(--wp-gold-dark);">Rp {{ unused_budget_amount|intcomma }}</strong>
-            <span style="font-size: 0.7rem; color: var(--wp-gold-dark); font-weight: 600;">Alokasikan &rarr;</span>
+            <span style="font-size: 0.75rem; color: var(--wp-gold-dark); font-weight: 600;">Alokasikan &rarr;</span>
           </span>
         </button>
         {% endif %}
@@ -1003,7 +1011,7 @@
       <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Full Size on Desktop, Horizontal Scroll on Mobile) -->
       <div class="sankey-outer-wrapper" style="padding: 14px 18px; position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; height: 100%;">
         <!-- Mobile scroll hint -->
-        <div class="sankey-mobile-hint text-muted" style="display: none; align-items: center; gap: 5px; font-size: 0.72rem; padding: 2px 4px 8px 4px; border-bottom: 1px dashed var(--wp-hairline); margin-bottom: 6px; flex-shrink: 0;">
+        <div class="sankey-mobile-hint text-muted" style="display: none; align-items: center; gap: 5px; font-size: 0.75rem; padding: 2px 4px 8px 4px; border-bottom: 1px dashed var(--wp-hairline); margin-bottom: 6px; flex-shrink: 0;">
           <i data-lucide="chevrons-right" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i>
           <span>Geser horizontal &rarr; untuk melihat seluruh alur anggaran</span>
         </div>
@@ -1047,7 +1055,7 @@
         <div class="fade-in" style="background: var(--wp-bg-surface-subtle); padding: 16px 20px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
             <div>
-              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-sage-main);">Layer 1 &middot; Sumber Anggaran Statis</div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-sage-main);">Layer 1 &middot; Sumber Anggaran Statis</div>
               <h4 style="margin: 2px 0 4px 0; font-size: 1rem;">Total Tabungan (Target)</h4>
               <div style="font-size: 0.8rem; color: var(--wp-text-secondary); display: flex; gap: 14px; flex-wrap: wrap;">
                 <span>Target Statis: <strong class="tabular-nums" x-text="formatRp(meta.target_budget)"></strong></span>
@@ -1078,7 +1086,7 @@
         <div class="fade-in" style="background: var(--wp-bg-surface-subtle); padding: 16px 20px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
             <div>
-              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 2 &middot; Cabang Sisa Pagu Belum Terpakai</div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 2 &middot; Cabang Sisa Pagu Belum Terpakai</div>
               <h4 style="margin: 2px 0 4px 0; font-size: 1rem;">
                 Belum Dialokasikan (Unused): <span class="tabular-nums" style="color: var(--wp-gold-dark);" x-text="formatRp(meta.unused_amount)"></span>
               </h4>
@@ -1152,7 +1160,7 @@
         <div class="fade-in" style="background: var(--wp-bg-surface-subtle); padding: 16px 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <div>
-              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 2 &middot; Tambah Kategori Anggaran</div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 2 &middot; Tambah Kategori Anggaran</div>
               <h4 style="margin: 2px 0 0 0; font-size: 0.98rem;">Buat Kategori Baru</h4>
             </div>
             <button type="button" class="btn btn-ghost btn-sm" @click="backToCategoryOrDefault()">Batal</button>
@@ -1186,7 +1194,7 @@
         <div class="fade-in" style="background: var(--wp-bg-surface-subtle); padding: 16px 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <div>
-              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 3 &middot; Tambah Rincian Item Pengeluaran</div>
+              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wp-gold-main);">Layer 3 &middot; Tambah Rincian Item Pengeluaran</div>
               <h4 style="margin: 2px 0 0 0; font-size: 0.98rem;">Tambah Item Pengeluaran Baru</h4>
             </div>
             <button type="button" class="btn btn-ghost btn-sm" @click="backToCategoryOrDefault()">Batal</button>
@@ -1905,7 +1913,7 @@
       svg += '</defs>';
 
       // Column Headers: 1. Total Tabungan (Target), 2. Kategori & Unused, 3. Rincian Item
-      svg += '<g style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;">' +
+      svg += '<g style="font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;">' +
              '<text x="' + x0 + '" y="18" fill="' + headerColor + '">1. Total Tabungan (Target)</text>' +
              '<text x="' + x1 + '" y="18" fill="' + headerColor + '">2. Kategori &amp; Unused</text>' +
              '<text x="' + x2 + '" y="18" fill="' + headerColor + '">3. Rincian Item (Klik untuk Edit)</text>' +
@@ -1986,10 +1994,10 @@
             const isUnused = (to === 'Belum Dialokasikan (Unused)');
             const flowSub = isUnfunded ? 'Defisit Rencana Pagu' : (isUnused ? 'Sisa Pagu Belum Dialokasikan' : 'Alur Distribusi Anggaran');
             const flowColor = isUnfunded ? '#C2543D' : goldColor;
-            tooltipEl.innerHTML = '<div style="font-size: 11px; color: ' + (isUnfunded ? '#C2543D' : titleColor) + '; font-weight: 500; margin-bottom: 2px;">' + flowSub + '</div>' +
+            tooltipEl.innerHTML = '<div style="font-size: 12px; color: ' + (isUnfunded ? '#C2543D' : titleColor) + '; font-weight: 500; margin-bottom: 2px;">' + flowSub + '</div>' +
                                   '<div style="font-weight: 600; color: ' + (isUnfunded ? '#C2543D' : bodyColor) + '; margin-bottom: 4px;">' + from + ' &rarr; ' + to + '</div>' +
                                   '<div style="font-size: 13px; font-weight: 700; color: ' + flowColor + ';">' + weight + '</div>' +
-                                  '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">Klik untuk kelola ' + to + ' langsung di sini &darr;</div>';
+                                  '<div style="font-size: 12px; color: ' + goldColor + '; margin-top: 4px;">Klik untuk kelola ' + to + ' langsung di sini &darr;</div>';
             moveTooltip(e);
             tooltipEl.style.opacity = '1';
           });
@@ -2018,21 +2026,21 @@
             const isUnused = (name === 'Belum Dialokasikan (Unused)');
             let actionHint = '';
             if (col === 0) {
-              actionHint = '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk ubah Target Tabungan / tambah kategori &darr;</div>';
+              actionHint = '<div style="font-size: 12px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk ubah Target Tabungan / tambah kategori &darr;</div>';
             } else if (col === 1) {
               if (isUnused) {
-                actionHint = '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk buat kategori baru / alokasikan dana Unused ini &darr;</div>';
+                actionHint = '<div style="font-size: 12px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk buat kategori baru / alokasikan dana Unused ini &darr;</div>';
               } else {
-                actionHint = '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk edit kategori, hapus, atau kelola item di sini &darr;</div>';
+                actionHint = '<div style="font-size: 12px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk edit kategori, hapus, atau kelola item di sini &darr;</div>';
               }
             } else if (col === 2) {
-              actionHint = '<div style="font-size: 10px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk edit nominal, status, PJ, atau hapus item ini &darr;</div>';
+              actionHint = '<div style="font-size: 12px; color: ' + goldColor + '; margin-top: 4px;">&#9998; Klik untuk edit nominal, status, PJ, atau hapus item ini &darr;</div>';
             }
 
             const valColor = isUnfunded ? '#C2543D' : (isUnused ? goldColor : tealColor);
             const subTitle = isUnfunded ? 'Defisit Rencana Pagu' : (isUnused ? 'Cabang Sisa Target Tabungan' : (col === 0 ? 'Sumber Anggaran Statis' : (col === 1 ? 'Kategori Anggaran' : 'Item Pengeluaran')));
 
-            tooltipEl.innerHTML = '<div style="font-size: 11px; color: ' + (isUnfunded ? '#C2543D' : titleColor) + '; font-weight: 500; margin-bottom: 2px;">' + subTitle + '</div>' +
+            tooltipEl.innerHTML = '<div style="font-size: 12px; color: ' + (isUnfunded ? '#C2543D' : titleColor) + '; font-weight: 500; margin-bottom: 2px;">' + subTitle + '</div>' +
                                   '<div style="font-weight: 600; color: ' + (isUnfunded ? '#C2543D' : bodyColor) + '; margin-bottom: 4px;">' + name + '</div>' +
                                   '<div style="font-size: 13px; font-weight: 700; color: ' + valColor + ';">' + val + '</div>' +
                                   actionHint;
@@ -2053,68 +2061,79 @@
       }
     };
 
-    // Immediate execution (works upon HTMX insertion & direct load)
-    window.renderBudgetSankey();
+    // Immediate execution (works upon HTMX insertion & direct load, honoring saved PJ filter)
+    var savedPayer = sessionStorage.getItem('wp_budget_payer_filter') || '';
+    window.renderBudgetSankey(savedPayer);
 
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() { window.renderBudgetSankey(); });
+      document.addEventListener('DOMContentLoaded', function() {
+        window.renderBudgetSankey(sessionStorage.getItem('wp_budget_payer_filter') || '');
+      });
     }
 
-    // HTMX swap listener: Ensures diagram always renders after any page transition
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-      if (document.getElementById('budget_sankey_chart')) {
-        window.renderBudgetSankey();
-      }
-    });
+    // Bind global listeners ONCE to prevent listener accumulation across HTMX swaps
+    if (!window.__wpBudgetSankeyListenersBound) {
+      window.__wpBudgetSankeyListenersBound = true;
 
-    // Theme change listener
-    window.addEventListener('themeChanged', function() {
-      window.renderBudgetSankey();
-    });
-
-    // Payer filter listener from Alpine
-    window.addEventListener('budgetPayerFilterChanged', function(evt) {
-      const payer = evt.detail ? evt.detail.payer : '';
-      window.renderBudgetSankey(payer);
-    });
-
-    // Window resize listener (debounced, re-renders when container width or height changes genuinely)
-    let resizeTimer;
-    let lastSankeyWidth = (document.getElementById('budget_sankey_chart') || {}).clientWidth || 0;
-    let lastSankeyHeight = (document.getElementById('budget_sankey_chart') || {}).clientHeight || 0;
-    window.addEventListener('resize', function() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        const el = document.getElementById('budget_sankey_chart');
-        if (!el) return;
-        const newW = el.clientWidth || 0;
-        const newH = el.clientHeight || 0;
-        if (Math.abs(newW - lastSankeyWidth) > 8 || Math.abs(newH - lastSankeyHeight) > 16) {
-          lastSankeyWidth = newW;
-          lastSankeyHeight = newH;
-          window.renderBudgetSankey();
+      document.body.addEventListener('htmx:afterSwap', function() {
+        if (document.getElementById('budget_sankey_chart') && typeof window.renderBudgetSankey === 'function') {
+          window.renderBudgetSankey(sessionStorage.getItem('wp_budget_payer_filter') || '');
         }
-      }, 150);
-    }, { passive: true });
+      });
+
+      window.addEventListener('themeChanged', function() {
+        if (typeof window.renderBudgetSankey === 'function') {
+          window.renderBudgetSankey(sessionStorage.getItem('wp_budget_payer_filter') || '');
+        }
+      });
+
+      window.addEventListener('budgetPayerFilterChanged', function(evt) {
+        if (typeof window.renderBudgetSankey === 'function') {
+          const payer = evt.detail ? evt.detail.payer : '';
+          window.renderBudgetSankey(payer);
+        }
+      });
+
+      let resizeTimer;
+      let lastSankeyWidth = (document.getElementById('budget_sankey_chart') || {}).clientWidth || 0;
+      let lastSankeyHeight = (document.getElementById('budget_sankey_chart') || {}).clientHeight || 0;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+          const el = document.getElementById('budget_sankey_chart');
+          if (!el || typeof window.renderBudgetSankey !== 'function') return;
+          const newW = el.clientWidth || 0;
+          const newH = el.clientHeight || 0;
+          if (Math.abs(newW - lastSankeyWidth) > 8 || Math.abs(newH - lastSankeyHeight) > 16) {
+            lastSankeyWidth = newW;
+            lastSankeyHeight = newH;
+            window.renderBudgetSankey(sessionStorage.getItem('wp_budget_payer_filter') || '');
+          }
+        }, 150);
+      }, { passive: true });
+    }
   })();
   </script>
   {% endif %}
   <script>
-  // Auto-scroll, highlight, and autofocus whenever #allocation-container is swapped into view
-  document.body.addEventListener('htmx:afterSwap', function(evt) {
-    if (evt.detail.target && evt.detail.target.id === 'allocation-container') {
-      const el = evt.detail.target;
-      setTimeout(function() {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        el.classList.add('highlight-pulse');
-        setTimeout(function() { el.classList.remove('highlight-pulse'); }, 2000);
-        const firstInput = el.querySelector('#config_total_budget') || el.querySelector('input:not([type="hidden"])');
-        if (firstInput) {
-          setTimeout(function() { firstInput.focus(); }, 450);
-        }
-      }, 60);
-    }
-  });
+  // Auto-scroll, highlight, and autofocus whenever #allocation-container is swapped into view (bound once)
+  if (!window.__wpAllocSwapBound) {
+    window.__wpAllocSwapBound = true;
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+      if (evt.detail.target && evt.detail.target.id === 'allocation-container') {
+        const el = evt.detail.target;
+        setTimeout(function() {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.classList.add('highlight-pulse');
+          setTimeout(function() { el.classList.remove('highlight-pulse'); }, 2000);
+          const firstInput = el.querySelector('#config_total_budget') || el.querySelector('input:not([type="hidden"])');
+          if (firstInput) {
+            setTimeout(function() { firstInput.focus(); }, 450);
+          }
+        }, 60);
+      }
+    });
+  }
   </script>
 </div>
 {% endblock %}
