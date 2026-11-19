@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Rangkai | Workspace Perencanaan Pernikahan Terpadu untuk Pasangan & WO{% endblock %}
+{% block title %}Rangkai.click | Workspace Perencanaan Pernikahan Terpadu untuk Pasangan & WO{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -36,7 +36,7 @@
   .lp-brand {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 6px;
     text-decoration: none;
     color: var(--foreground);
     font-weight: 650;
@@ -44,21 +44,9 @@
     letter-spacing: -0.02em;
   }
 
-  /* Light-mode native logo mark (no dark box on light navbar) */
-  .lp-brand-box {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: var(--muted);
-    border: 1px solid var(--border);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .lp-brand-box img {
-    width: 20px;
-    height: 20px;
+  .lp-brand img {
+    width: 24px;
+    height: 24px;
     display: block;
   }
 
@@ -550,6 +538,98 @@
     line-height: 1.6;
   }
 
+  /* 5. Pricing 2-Column Editorial Split */
+  .lp-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .lp-plan {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 30px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .lp-plan.is-featured {
+    border-color: var(--primary);
+    box-shadow: 0 8px 28px -12px rgba(18, 110, 81, 0.22);
+    background: linear-gradient(180deg, rgba(18, 110, 81, 0.045) 0%, var(--card) 42%);
+  }
+
+  [data-theme="dark"] .lp-plan.is-featured {
+    background: linear-gradient(180deg, rgba(34, 160, 118, 0.10) 0%, var(--card) 42%);
+    box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+  }
+
+  .lp-plan-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .lp-plan-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .lp-plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lp-plan-amount {
+    font-family: var(--font-mono);
+    font-size: clamp(1.75rem, 3vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+  }
+
+  .lp-plan-period {
+    font-size: 0.84rem;
+    color: var(--muted-foreground);
+  }
+
+  .lp-plan-summary {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--muted-foreground);
+    line-height: 1.55;
+  }
+
+  .lp-plan-foot {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lp-plan-note {
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   /* Closing Deep Forest CTA Band */
   .lp-cta-band {
     padding: 68px 0;
@@ -607,7 +687,7 @@
     .lp-mock-sidebar { display: none; }
     .lp-mock-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .lp-mock-grid { grid-template-columns: 1fr; }
-    .lp-problem-strip, .lp-feature-split, .lp-roles-split, .lp-adv-grid {
+    .lp-problem-strip, .lp-feature-split, .lp-roles-split, .lp-adv-grid, .lp-pricing-grid {
       grid-template-columns: 1fr;
     }
     .lp-problem-col, .lp-role-col {
@@ -649,11 +729,12 @@
   <!-- Sticky Top Navbar -->
   <header class="lp-nav">
     <div class="lp-nav-inner">
-      <a href="{% url 'core:landing' %}" class="lp-brand">
-        <span class="lp-brand-box">
-          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" />
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
         </span>
-        <span>Rangkai</span>
       </a>
 
       <nav class="lp-links" aria-label="Navigasi landing page">
@@ -661,6 +742,7 @@
         <a href="#fitur">Fitur Lengkap</a>
         <a href="#untuk-siapa">Untuk Siapa</a>
         <a href="#keunggulan">Keunggulan</a>
+        <a href="#harga">Harga</a>
       </nav>
 
       <div class="lp-nav-actions">
@@ -673,7 +755,7 @@
         </a>
         {% else %}
         <a href="{% url 'core:login' %}" data-slot="button" data-variant="ghost" data-size="sm">Masuk</a>
-        <a href="{% url 'core:register' %}" data-slot="button" data-variant="default" data-size="sm">Mulai Gratis</a>
+        <a href="#harga" data-slot="button" data-variant="default" data-size="sm">Pilih Paket</a>
         {% endif %}
       </div>
     </div>
@@ -715,9 +797,12 @@
         </div>
         <div class="lp-showcase-app">
           <div class="lp-mock-sidebar">
-            <div class="lp-mock-brand">
-              <img src="{% static 'img/logo.svg' %}?v=22" alt="" width="18" height="18" />
-              <span>Rangkai</span>
+            <div class="lp-mock-brand brand-lockup is-sm">
+              <img src="{% static 'img/logo.svg' %}?v=22" alt="" class="brand-lockup-icon" />
+              <span class="brand-lockup-text">
+                <span class="brand-lockup-main">Rangkai</span>
+                <span class="brand-lockup-tld">.click</span>
+              </span>
             </div>
             <div class="lp-mock-item active"><i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Ringkasan</div>
             <div class="lp-mock-item"><i data-lucide="check-square" style="width:14px;height:14px;"></i> Timeline &amp; Tugas</div>
@@ -986,6 +1071,82 @@
     </div>
   </section>
 
+  <!-- Section 5: Paket & Harga -->
+  <section class="lp-section is-alt" id="harga">
+    <div class="lp-wrap">
+      <div class="lp-section-head">
+        <h2>Pilih paket sesuai peranmu</h2>
+        <p>Tersedia dua paket jelas: untuk calon pengantin yang merencanakan 1 pernikahan, atau untuk Wedding Organizer yang menangani banyak klien sekaligus.</p>
+      </div>
+
+      <div class="lp-pricing-grid">
+        <!-- Paket 1: Wedding Owner -->
+        <div class="lp-plan">
+          <div class="lp-plan-top">
+            <h3 class="lp-plan-name">Paket Wedding Owner</h3>
+            <span data-slot="badge" data-variant="secondary">Untuk Calon Pengantin</span>
+          </div>
+          <div class="lp-plan-price">
+            <span class="lp-plan-amount">Rp 149.000</span>
+            <span class="lp-plan-period">sekali bayar sampai hari-H</span>
+          </div>
+          <p class="lp-plan-summary">
+            Khusus 1 workspace pernikahan aktif penuh untuk pasangan, lengkap dengan kontrol privasi dan kolaborasi tim operasional.
+          </p>
+          <ul class="lp-checklist">
+            <li><i data-lucide="check"></i><span><strong>1 Workspace Pernikahan</strong> aktif penuh tanpa batas waktu hingga acara selesai</span></li>
+            <li><i data-lucide="check"></i><span>Undang <strong>1 Co-Owner (Pasangan)</strong> dan <strong>Crew Operasional</strong> tanpa batas</span></li>
+            <li><i data-lucide="check"></i><span>Ruang <strong>Tabungan Pribadi</strong> terkunci khusus Owner &amp; Co-Owner</span></li>
+            <li><i data-lucide="check"></i><span>Akses seluruh modul: Budget &amp; Sankey, Vendor Scoring, Tamu, Checklist &amp; Rundown</span></li>
+          </ul>
+          <div class="lp-plan-foot">
+            <a href="{% url 'core:checkout' %}?plan=wedding_owner" data-slot="button" data-variant="outline" data-size="lg" style="width:100%;justify-content:center;">
+              Beli Paket Wedding Owner <i data-lucide="arrow-right"></i>
+            </a>
+            <div class="lp-plan-note">
+              <i data-lucide="shield-check" style="width:14px;height:14px;color:var(--primary);"></i>
+              Pembayaran via QRIS, Virtual Account, atau E-Wallet
+            </div>
+          </div>
+        </div>
+
+        <!-- Paket 2: WO Manager -->
+        <div class="lp-plan is-featured">
+          <div class="lp-plan-top">
+            <h3 class="lp-plan-name">Paket WO Manager</h3>
+            <span data-slot="badge" data-variant="emerald">Untuk Wedding Organizer</span>
+          </div>
+          <div class="lp-plan-price">
+            <span class="lp-plan-amount">Rp 499.000</span>
+            <span class="lp-plan-period">per bulan (hingga 10 project aktif)</span>
+          </div>
+          <p class="lp-plan-summary">
+            Jadikan Rangkai sebagai fasilitas resmi layanan WO-mu. Tangani banyak pernikahan klien dari satu Portal WO sambil menjaga privasi klien.
+          </p>
+          <ul class="lp-checklist">
+            <li><i data-lucide="check"></i><span>Kelola <strong>hingga 10 Workspace Klien</strong> aktif bersamaan + pindah project instan</span></li>
+            <li><i data-lucide="check"></i><span><strong>Portal WO Dashboard</strong> untuk pantau progres dan countdown semua klien</span></li>
+            <li><i data-lucide="check"></i><span>Generate <strong>link undangan khusus Pengantin</strong> (data Tabungan klien tetap 100% privat)</span></li>
+            <li><i data-lucide="check"></i><span>Undang &amp; atur <strong>Crew Operasional</strong> lintas project pernikahan klien</span></li>
+          </ul>
+          <div class="lp-plan-foot">
+            <a href="{% url 'core:checkout' %}?plan=wo_manager" data-slot="button" data-variant="default" data-size="lg" style="width:100%;justify-content:center;">
+              Beli Paket WO Manager <i data-lucide="arrow-right"></i>
+            </a>
+            <div class="lp-plan-note">
+              <i data-lucide="lock" style="width:14px;height:14px;color:var(--primary);"></i>
+              Data pribadi pengantin yang diundang tetap terisolasi dan aman
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin:20px 0 0;font-size:0.84rem;color:var(--muted-foreground);">
+        Sudah mendapat kode undangan 8 karakter dari pasangan atau WO? <a href="{% url 'core:register' %}?mode=join" style="color:var(--primary);font-weight:600;text-decoration:none;">Gabung workspace gratis di sini</a>.
+      </p>
+    </div>
+  </section>
+
   <!-- Closing CTA Band -->
   <section class="lp-cta-band">
     <div class="lp-wrap">
@@ -1007,9 +1168,14 @@
   <!-- Minimal Footer -->
   <footer class="lp-footer">
     <div class="lp-wrap lp-footer-inner">
-      <div style="display:inline-flex;align-items:center;gap:8px;">
-        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" width="18" height="18" />
-        <strong style="color:var(--foreground);">Rangkai</strong>
+      <div style="display:inline-flex;align-items:center;gap:10px;">
+        <span class="brand-lockup is-sm">
+          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+          <span class="brand-lockup-text">
+            <span class="brand-lockup-main">Rangkai</span>
+            <span class="brand-lockup-tld">.click</span>
+          </span>
+        </span>
         <span>· Workspace Perencanaan Pernikahan Indonesia</span>
       </div>
       <div style="display:inline-flex;align-items:center;gap:16px;">

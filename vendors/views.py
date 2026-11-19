@@ -5,13 +5,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from core.decorators import workspace_required, owner_required
+from core.decorators import finance_access_required
 from vendors.models import VendorCandidate
 from vendors.forms import VendorCandidateForm
 
 
 @login_required
-@workspace_required
+@finance_access_required
 def vendor_compare(request):
     """Vendor Comparator & Scoring hub."""
     wedding = request.wedding
@@ -22,9 +22,10 @@ def vendor_compare(request):
     if category_filter:
         vendors = vendors.filter(category=category_filter)
 
+    vendors_list = list(vendors)
     # Group for comparison view & sort by weighted_total_score descending
     vendor_groups = {}
-    for v in vendors:
+    for v in vendors_list:
         cat = v.get_category_display()
         if cat not in vendor_groups:
             vendor_groups[cat] = []
@@ -33,7 +34,9 @@ def vendor_compare(request):
     for cat in vendor_groups:
         vendor_groups[cat].sort(key=lambda x: x.weighted_total_score, reverse=True)
 
-    first_vendor = VendorCandidate.objects.filter(wedding=wedding).first()
+    first_vendor = vendors_list[0] if vendors_list else (
+        VendorCandidate.objects.filter(wedding=wedding).first() if category_filter else None
+    )
     weights = {
         'price': first_vendor.weight_price if first_vendor else 30,
         'quality': first_vendor.weight_quality if first_vendor else 30,
@@ -42,7 +45,7 @@ def vendor_compare(request):
     }
 
     context = {
-        'vendors': vendors,
+        'vendors': vendors_list,
         'vendor_groups': vendor_groups,
         'form': VendorCandidateForm(initial={
             'weight_price': weights['price'],
@@ -58,7 +61,7 @@ def vendor_compare(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_vendor_weights(request):
     """Update scoring weights across all vendor candidates in this workspace."""
     if request.method == 'POST':
@@ -79,7 +82,7 @@ def update_vendor_weights(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def add_vendor(request):
     """HTMX endpoint: Add vendor candidate."""
     if request.method == 'POST':
@@ -93,7 +96,7 @@ def add_vendor(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_vendor(request, pk):
     """HTMX endpoint: Update vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
@@ -115,7 +118,7 @@ def update_vendor(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def delete_vendor(request, pk):
     """HTMX endpoint: Delete vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
@@ -124,7 +127,7 @@ def delete_vendor(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_vendor_status(request, pk):
     """HTMX endpoint: Select or cycle vendor status."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)

@@ -102,7 +102,8 @@ body {
 .ui-brand-link {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 7px;
   min-width: 0;
   text-decoration: none;
   color: var(--sidebar-foreground);
@@ -112,32 +113,35 @@ body {
   flex: 1;
 }
 
+[data-slot="sidebar"][data-state="collapsed"] .ui-brand-link {
+  justify-content: center;
+}
+
 .ui-brand-link:hover {
   background: var(--sidebar-accent);
 }
 
 .ui-brand-mark {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-md);
-  background: var(--primary);
-  color: var(--primary-foreground);
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   flex-shrink: 0;
-  box-shadow: var(--shadow-xs);
 }
 
 .ui-brand-mark img {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   display: block;
-  filter: brightness(0) invert(1);
+  filter: none;
 }
 
 [data-theme="dark"] .ui-brand-mark img {
-  filter: brightness(0) saturate(100%);
+  filter: none;
 }
 
 .ui-brand-meta {
@@ -282,14 +286,14 @@ body {
 }
 
 [data-slot="sidebar"] .ui-brand-mark {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(52, 211, 153, 0.20);
+  background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
 [data-slot="sidebar"] .ui-brand-mark img {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   filter: none !important;
 }
 
@@ -3068,3 +3072,528 @@ body {
 
 
 
+
+
+/* ==========================================================================
+   MULTI-WORKSPACE SWITCHER, ADMIN INSPECT BANNER, WO PORTAL & ADMIN CONSOLE
+   ========================================================================== */
+
+.ui-ws-switcher {
+  position: relative;
+  margin-top: 6px;
+}
+
+.ui-ws-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sidebar-foreground);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+  text-align: left;
+}
+
+.ui-ws-trigger:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.ui-ws-current {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-ws-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ui-ws-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--popover-foreground);
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+
+.ui-ws-item:hover {
+  background: var(--accent);
+}
+
+.ui-ws-item.is-active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.ui-admin-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 20px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border));
+  font-size: 0.82rem;
+  color: var(--foreground);
+}
+
+/* WO Portal & Admin Console Shared Primitives */
+.portal-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.portal-kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-kpi-label {
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.portal-kpi-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.portal-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portal-project-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.portal-project-info {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-project-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.portal-project-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.portal-project-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.portal-code-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  font-size: 0.78rem;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+
+.portal-code-pill:hover {
+  border-color: var(--primary);
+}
+
+.portal-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.portal-table th,
+.portal-table td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.portal-table th {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.portal-table tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .portal-project-row { padding: 14px; }
+  .portal-project-actions { width: 100%; }
+  .ui-admin-banner { padding: 9px 14px; }
+}
+
+
+/* ==========================================================================
+   INSTANT PAGE-TRANSITION SKELETON LOADER (HTMX Navigation)
+   ========================================================================== */
+
+[data-slot="sidebar-inset"].is-nav-loading > .main-content {
+  display: none !important;
+}
+
+.wp-page-skeleton {
+  display: none;
+  min-height: 100dvh;
+  background: var(--background);
+}
+
+[data-slot="sidebar-inset"].is-nav-loading > .wp-page-skeleton {
+  display: block;
+}
+
+.wp-skel-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 52px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: color-mix(in srgb, var(--background) 86%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.wp-skel-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--muted-foreground);
+}
+
+.wp-skel-crumb strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.wp-skel-canvas {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wp-skel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wp-skel-title-text {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+.wp-skel-bar {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+
+.wp-skel-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--foreground) 7%, transparent) 50%,
+    transparent 100%
+  );
+  animation: wpSkelShimmer 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes wpSkelShimmer {
+  100% { transform: translateX(100%); }
+}
+
+.wp-skel-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.wp-skel-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wp-skel-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.wp-skel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
+}
+
+.wp-skel-row:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+@keyframes wpSwapReveal {
+  from { opacity: 0.45; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.main-content.is-just-swapped {
+  animation: wpSwapReveal 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 1024px) {
+  .wp-skel-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wp-skel-bento { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .wp-skel-canvas { padding: 16px 14px 84px; }
+  .wp-skel-header { padding: 0 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-skel-bar::after { animation: none; }
+  .main-content.is-just-swapped { animation: none; }
+}
+
+
+/* ==========================================================================
+   UNIFIED STACKED BRAND LOCKUP: [Logo] Rangkai / .click
+   ========================================================================== */
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  color: inherit;
+  line-height: 1;
+}
+
+.brand-lockup-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.brand-lockup-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+}
+
+.brand-lockup-main {
+  font-size: 1.24rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  color: var(--foreground);
+}
+
+.brand-lockup-tld {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  margin-top: -1px;
+  color: var(--primary);
+}
+
+.brand-lockup.is-sm {
+  gap: 6px;
+}
+
+.brand-lockup.is-sm .brand-lockup-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.brand-lockup.is-sm .brand-lockup-main {
+  font-size: 1.02rem;
+}
+
+.brand-lockup.is-sm .brand-lockup-tld {
+  font-size: 0.62rem;
+}
+
+.brand-lockup.is-lg {
+  gap: 9px;
+}
+
+.brand-lockup.is-lg .brand-lockup-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.brand-lockup.is-lg .brand-lockup-main {
+  font-size: 1.65rem;
+}
+
+.brand-lockup.is-lg .brand-lockup-tld {
+  font-size: 0.88rem;
+}
+
+[data-slot="sidebar"] .brand-lockup-main,
+.lp-mock-sidebar .brand-lockup-main {
+  color: #ffffff;
+}
+
+[data-slot="sidebar"] .brand-lockup-tld,
+.lp-mock-sidebar .brand-lockup-tld {
+  color: #34d399;
+}
+
+.ui-sidebar-ws-identity {
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
+}
+
+.ui-sidebar-ws-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-sidebar-ws-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.94);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-sidebar-ws-sub {
+  font-size: 0.69rem;
+  color: rgba(255, 255, 255, 0.54);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

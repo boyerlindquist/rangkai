@@ -1,0 +1,599 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Checkout Paket | Rangkai.click{% endblock %}
+
+{% block extra_css %}
+<style>
+  .co-page {
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    padding-bottom: 64px;
+  }
+
+  .co-nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .co-nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .co-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: var(--foreground);
+    font-weight: 650;
+    font-size: 0.98rem;
+  }
+
+  .co-brand img { width: 24px; height: 24px; display: block; }
+
+  .co-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 24px 0;
+  }
+
+  .co-head {
+    margin-bottom: 24px;
+  }
+
+  .co-head h1 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .co-head p {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+  }
+
+  .co-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .co-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .co-plan-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .co-plan-tab {
+    text-align: left;
+    padding: 14px 15px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+
+  .co-plan-tab.is-active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  }
+
+  .co-plan-tab strong {
+    font-size: 0.9rem;
+    font-weight: 650;
+  }
+
+  .co-plan-tab span {
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .co-section-title {
+    font-size: 0.86rem;
+    font-weight: 650;
+    color: var(--foreground);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .co-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .co-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .co-field.is-full { grid-column: 1 / -1; }
+
+  .co-field label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .co-field-err {
+    font-size: 0.76rem;
+    color: var(--destructive);
+  }
+
+  .co-pay-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .co-pay-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 500;
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+
+  .co-pay-opt.is-active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  }
+
+  .co-pay-opt input {
+    accent-color: var(--primary);
+    margin: 0;
+  }
+
+  .co-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.86rem;
+    padding: 8px 0;
+    color: var(--muted-foreground);
+  }
+
+  .co-summary-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0 18px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .co-summary-total strong {
+    font-family: var(--font-mono);
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+  }
+
+  .co-features {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .co-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+    line-height: 1.45;
+  }
+
+  .co-features li svg {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Simulated Payment Gateway Modal */
+  .co-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(9, 9, 11, 0.62);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .co-modal {
+    width: 100%;
+    max-width: 440px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .co-qr-box {
+    border: 1px dashed var(--border);
+    background: var(--background);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .co-va-number {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--foreground);
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 860px) {
+    .co-grid { grid-template-columns: 1fr; }
+    .co-form-grid, .co-pay-list, .co-plan-tabs { grid-template-columns: 1fr; }
+    .co-wrap { padding: 20px 16px 0; }
+    .co-card { padding: 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="co-page" x-data="{
+  plan: '{{ selected_plan|escapejs }}',
+  paymentMethod: '{{ form.payment_method.value|default:'qris'|escapejs }}',
+  showGateway: false,
+  clientError: '',
+  countdown: 899,
+  timer: null,
+  planMeta: {
+    wedding_owner: {
+      name: 'Paket Wedding Owner',
+      badge: 'Untuk Calon Pengantin',
+      priceDisplay: 'Rp 149.000',
+      period: 'Sekali bayar sampai hari-H',
+      va: '8801 0812 9402 1149'
+    },
+    wo_manager: {
+      name: 'Paket WO Manager',
+      badge: 'Untuk Wedding Organizer',
+      priceDisplay: 'Rp 499.000',
+      period: 'Per bulan (hingga 10 project aktif)',
+      va: '8801 0812 9402 5499'
+    }
+  },
+  get currentPlan() { return this.planMeta[this.plan] || this.planMeta.wedding_owner; },
+  get formattedTime() {
+    const m = Math.floor(this.countdown / 60).toString().padStart(2, '0');
+    const s = (this.countdown % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  },
+  openGateway() {
+    this.clientError = '';
+    const form = this.$refs.checkoutForm;
+    const u = form.querySelector('[name=username]')?.value.trim();
+    const e = form.querySelector('[name=email]')?.value.trim();
+    const p1 = form.querySelector('[name=password]')?.value || '';
+    const p2 = form.querySelector('[name=password_confirm]')?.value || '';
+    if (!u || !e) { this.clientError = 'Username dan email wajib diisi sebelum melanjutkan pembayaran.'; return; }
+    if (p1.length < 8) { this.clientError = 'Password minimal 8 karakter.'; return; }
+    if (p1 !== p2) { this.clientError = 'Konfirmasi password tidak cocok.'; return; }
+    if (this.plan === 'wedding_owner') {
+      const g = form.querySelector('[name=groom_name]')?.value.trim();
+      const b = form.querySelector('[name=bride_name]')?.value.trim();
+      if (!g || !b) { this.clientError = 'Nama pengantin pria dan wanita wajib diisi.'; return; }
+    } else {
+      const org = form.querySelector('[name=organization_name]')?.value.trim();
+      if (!org) { this.clientError = 'Nama WO / brand wajib diisi untuk paket WO Manager.'; return; }
+    }
+    this.showGateway = true;
+    this.countdown = 899;
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => { if (this.countdown > 0) this.countdown--; }, 1000);
+    this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+  },
+  confirmSimulatedPayment() {
+    if (this.timer) clearInterval(this.timer);
+    this.$refs.checkoutForm.submit();
+  }
+}">
+  <header class="co-nav">
+    <div class="co-nav-inner">
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
+        </span>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a href="{% url 'core:landing' %}#harga" data-slot="button" data-variant="ghost" data-size="sm">
+          <i data-lucide="arrow-left"></i> Kembali
+        </a>
+        <a href="{% url 'core:login' %}" data-slot="button" data-variant="outline" data-size="sm">Masuk</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="co-wrap">
+    <div class="co-head">
+      <h1>Aktivasi Paket Rangkai.click</h1>
+      <p>Pilih paket sesuai kebutuhan, lengkapi data akun, lalu selesaikan pembayaran untuk langsung masuk ke workspace.</p>
+    </div>
+
+    {% if form.errors %}
+    <div data-slot="alert" data-variant="destructive" style="margin-bottom:18px;">
+      <i data-lucide="alert-circle"></i>
+      <div>
+        <strong>Periksa kembali data form checkout</strong>
+        <p style="margin:4px 0 0;font-size:0.84rem;">
+          {% for field, errs in form.errors.items %}{% for err in errs %}{{ err }} {% endfor %}{% endfor %}
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
+    <template x-if="clientError">
+      <div data-slot="alert" data-variant="destructive" style="margin-bottom:18px;">
+        <i data-lucide="alert-circle"></i>
+        <div x-text="clientError"></div>
+      </div>
+    </template>
+
+    <form method="post" action="{% url 'core:checkout' %}" x-ref="checkoutForm" @submit.prevent="openGateway()">
+      {% csrf_token %}
+      <input type="hidden" name="plan_type" :value="plan" />
+
+      <div class="co-grid">
+        <!-- Left Column: Account + Plan Details + Payment Method -->
+        <div class="co-card">
+          <h2 class="co-section-title">1. Pilih Paket</h2>
+          <div class="co-plan-tabs">
+            <button type="button" class="co-plan-tab" :class="{ 'is-active': plan === 'wedding_owner' }" @click="plan = 'wedding_owner'">
+              <strong>Paket Wedding Owner</strong>
+              <span>Rp 149.000 · 1 Workspace</span>
+            </button>
+            <button type="button" class="co-plan-tab" :class="{ 'is-active': plan === 'wo_manager' }" @click="plan = 'wo_manager'">
+              <strong>Paket WO Manager</strong>
+              <span>Rp 499.000/bln · Hingga 10 Project</span>
+            </button>
+          </div>
+
+          <h2 class="co-section-title">2. Data Akun &amp; Workspace</h2>
+          <div class="co-form-grid">
+            <div class="co-field">
+              <label for="id_username">Username</label>
+              {{ form.username }}
+              {% if form.username.errors %}<span class="co-field-err">{{ form.username.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="co-field">
+              <label for="id_email">Email</label>
+              {{ form.email }}
+              {% if form.email.errors %}<span class="co-field-err">{{ form.email.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="co-field">
+              <label for="id_password">Password</label>
+              {{ form.password }}
+            </div>
+            <div class="co-field">
+              <label for="id_password_confirm">Konfirmasi Password</label>
+              {{ form.password_confirm }}
+            </div>
+
+            <!-- Wedding Owner Fields -->
+            <template x-if="plan === 'wedding_owner'">
+              <div class="co-field">
+                <label for="id_groom_name">Nama Pengantin Pria</label>
+                {{ form.groom_name }}
+              </div>
+            </template>
+            <template x-if="plan === 'wedding_owner'">
+              <div class="co-field">
+                <label for="id_bride_name">Nama Pengantin Wanita</label>
+                {{ form.bride_name }}
+              </div>
+            </template>
+            <template x-if="plan === 'wedding_owner'">
+              <div class="co-field is-full">
+                <label for="id_wedding_date">Perkiraan Tanggal Pernikahan (Opsional)</label>
+                {{ form.wedding_date }}
+              </div>
+            </template>
+
+            <!-- WO Manager Field -->
+            <template x-if="plan === 'wo_manager'">
+              <div class="co-field is-full">
+                <label for="id_organization_name">Nama Wedding Organizer / Brand</label>
+                {{ form.organization_name }}
+              </div>
+            </template>
+          </div>
+
+          <h2 class="co-section-title">3. Metode Pembayaran</h2>
+          <div class="co-pay-list">
+            <label class="co-pay-opt" :class="{ 'is-active': paymentMethod === 'qris' }">
+              <input type="radio" name="payment_method" value="qris" x-model="paymentMethod" />
+              <span>QRIS (Instan)</span>
+            </label>
+            <label class="co-pay-opt" :class="{ 'is-active': paymentMethod === 'va_bca' }">
+              <input type="radio" name="payment_method" value="va_bca" x-model="paymentMethod" />
+              <span>Virtual Account BCA</span>
+            </label>
+            <label class="co-pay-opt" :class="{ 'is-active': paymentMethod === 'va_mandiri' }">
+              <input type="radio" name="payment_method" value="va_mandiri" x-model="paymentMethod" />
+              <span>Virtual Account Mandiri</span>
+            </label>
+            <label class="co-pay-opt" :class="{ 'is-active': paymentMethod === 'ewallet' }">
+              <input type="radio" name="payment_method" value="ewallet" x-model="paymentMethod" />
+              <span>E-Wallet (GoPay / OVO / DANA)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Right Column: Order Summary -->
+        <aside class="co-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+            <strong style="font-size:1.02rem;" x-text="currentPlan.name"></strong>
+            <span data-slot="badge" data-variant="emerald" x-text="currentPlan.badge"></span>
+          </div>
+
+          <div class="co-summary-row">
+            <span>Skema</span>
+            <span x-text="currentPlan.period"></span>
+          </div>
+          <div class="co-summary-row">
+            <span>Biaya layanan</span>
+            <span class="font-mono" style="color:var(--primary);">Rp 0</span>
+          </div>
+
+          <div class="co-summary-total">
+            <span style="font-weight:600;">Total Tagihan</span>
+            <strong x-text="currentPlan.priceDisplay"></strong>
+          </div>
+
+          <button type="submit" data-slot="button" data-variant="default" data-size="lg" style="width:100%;justify-content:center;">
+            <i data-lucide="lock"></i> Lanjut ke Pembayaran
+          </button>
+
+          <p style="margin:10px 0 0;font-size:0.76rem;color:var(--muted-foreground);text-align:center;">
+            Akses workspace atau Portal WO aktif seketika setelah pembayaran terkonfirmasi.
+          </p>
+
+          <ul class="co-features" x-show="plan === 'wedding_owner'">
+            <li><i data-lucide="check"></i> 1 Workspace Pernikahan penuh sampai hari-H</li>
+            <li><i data-lucide="check"></i> Undang 1 Co-Owner &amp; Crew Operasional tanpa batas</li>
+            <li><i data-lucide="check"></i> Tabungan Pribadi terkunci khusus pengantin</li>
+          </ul>
+          <ul class="co-features" x-show="plan === 'wo_manager'" x-cloak>
+            <li><i data-lucide="check"></i> Kelola hingga 10 project pernikahan klien aktif</li>
+            <li><i data-lucide="check"></i> Portal WO Dashboard + Workspace Switcher</li>
+            <li><i data-lucide="check"></i> Link undangan Pengantin privat per klien</li>
+          </ul>
+        </aside>
+      </div>
+    </form>
+  </main>
+
+  <!-- Simulated Payment Gateway Modal -->
+  <div class="co-modal-backdrop" x-show="showGateway" x-cloak @keydown.escape.window="showGateway = false">
+    <div class="co-modal" @click.stop>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <strong style="font-size:1rem;">Pembayaran Rangkai</strong>
+          <div style="font-size:0.78rem;color:var(--muted-foreground);">Batas waktu <span class="font-mono" x-text="formattedTime"></span></div>
+        </div>
+        <span data-slot="badge" data-variant="amber">Mode Simulasi</span>
+      </div>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 14px;border-radius:9px;background:var(--background);border:1px solid var(--border);">
+        <span style="font-size:0.84rem;color:var(--muted-foreground);" x-text="currentPlan.name"></span>
+        <strong class="font-mono" style="font-size:1.15rem;" x-text="currentPlan.priceDisplay"></strong>
+      </div>
+
+      <div class="co-qr-box">
+        <template x-if="paymentMethod === 'qris'">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <svg width="128" height="128" viewBox="0 0 128 128" aria-label="Simulasi QRIS" style="border-radius:8px;background:#fff;padding:8px;border:1px solid var(--border);">
+              <rect x="8" y="8" width="32" height="32" fill="#09090b" rx="4"/>
+              <rect x="14" y="14" width="20" height="20" fill="#ffffff" rx="2"/>
+              <rect x="19" y="19" width="10" height="10" fill="#126e51" rx="1"/>
+              <rect x="88" y="8" width="32" height="32" fill="#09090b" rx="4"/>
+              <rect x="94" y="14" width="20" height="20" fill="#ffffff" rx="2"/>
+              <rect x="99" y="19" width="10" height="10" fill="#09090b" rx="1"/>
+              <rect x="8" y="88" width="32" height="32" fill="#09090b" rx="4"/>
+              <rect x="14" y="94" width="20" height="20" fill="#ffffff" rx="2"/>
+              <rect x="19" y="99" width="10" height="10" fill="#09090b" rx="1"/>
+              <rect x="48" y="12" width="12" height="12" fill="#09090b"/>
+              <rect x="66" y="12" width="12" height="12" fill="#09090b"/>
+              <rect x="52" y="34" width="24" height="12" fill="#126e51"/>
+              <rect x="12" y="52" width="16" height="16" fill="#09090b"/>
+              <rect x="38" y="54" width="20" height="20" fill="#09090b"/>
+              <rect x="68" y="54" width="16" height="16" fill="#126e51"/>
+              <rect x="94" y="52" width="22" height="14" fill="#09090b"/>
+              <rect x="50" y="84" width="14" height="14" fill="#09090b"/>
+              <rect x="72" y="84" width="18" height="18" fill="#09090b"/>
+              <rect x="98" y="88" width="20" height="28" fill="#09090b"/>
+              <rect x="52" y="106" width="34" height="12" fill="#126e51"/>
+            </svg>
+            <span style="font-size:0.8rem;color:var(--muted-foreground);">Pindai QRIS melalui aplikasi bank atau e-wallet</span>
+          </div>
+        </template>
+        <template x-if="paymentMethod !== 'qris'">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <span style="font-size:0.8rem;color:var(--muted-foreground);">Nomor Virtual Account / Tagihan</span>
+            <div class="co-va-number" x-text="currentPlan.va"></div>
+          </div>
+        </template>
+        <p style="margin:0;font-size:0.75rem;color:var(--muted-foreground);line-height:1.45;">
+          Ini adalah simulasi payment gateway. Klik tombol di bawah untuk menyelesaikan pembayaran demo dan langsung mengaktifkan akun.
+        </p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button type="button" data-slot="button" data-variant="default" data-size="lg" style="width:100%;justify-content:center;" @click="confirmSimulatedPayment()">
+          <i data-lucide="check-circle-2"></i> Simulasi Pembayaran Berhasil
+        </button>
+        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" style="width:100%;justify-content:center;" @click="showGateway = false">
+          Batal &amp; Kembali ke Form
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

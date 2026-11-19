@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Portal WO | Rangkai{% endblock %}
+{% block breadcrumb %}Portal WO{% endblock %}
+
+{% block header_actions %}
+<button type="button" data-slot="button" data-variant="default" data-size="sm"
+  onclick="window.dispatchEvent(new CustomEvent('open-wo-create'))">
+  <i data-lucide="plus"></i> Buat Project Klien
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-canvas" x-data="{
+  createOpen: false,
+  copiedCode: '',
+  copyInvite(code) {
+    const url = window.location.origin + '/register/?mode=join&code=' + code;
+    navigator.clipboard.writeText(url).then(() => {
+      this.copiedCode = code;
+      setTimeout(() => { if (this.copiedCode === code) this.copiedCode = ''; }, 2400);
+    });
+  }
+}" @open-wo-create.window="createOpen = true">
+
+  <div class="page-header" style="margin-bottom: 20px;">
+    <div>
+      <h1 class="page-title">{% if profile.organization_name %}{{ profile.organization_name }}{% else %}Portal WO Manager{% endif %}</h1>
+      <p class="page-subtitle">Kelola seluruh project pernikahan klien dari satu tempat. Data Tabungan Pribadi klien yang bergabung tetap terisolasi dan privat.</p>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="portal-kpi-grid">
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Project Aktif</span>
+      <span class="portal-kpi-val">{{ active_count }}</span>
+    </div>
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Sisa Kuota Project</span>
+      <span class="portal-kpi-val">{% if profile.remaining_quota is None %}Tak Terbatas{% else %}{{ profile.remaining_quota }} / {{ profile.project_quota }}{% endif %}</span>
+    </div>
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Hari-H Terdekat</span>
+      <span class="portal-kpi-val">{% if nearest_days is not None %}H-{{ nearest_days }}{% else %}-{% endif %}</span>
+    </div>
+  </div>
+
+  <!-- Create Client Project Panel (Collapsible) -->
+  <div data-slot="card" style="margin-bottom: 20px;" x-show="createOpen" x-transition x-cloak>
+    <div data-slot="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <h2 data-slot="card-title">Buat Project Pernikahan Klien Baru</h2>
+        <p data-slot="card-description">Sistem akan otomatis membuat template 55+ tugas, kategori anggaran, dan link undangan khusus Pengantin.</p>
+      </div>
+      <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="createOpen = false" aria-label="Tutup form">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div data-slot="card-content">
+      <form method="post" action="{% url 'core:wo_create_project' %}" hx-boost="false">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:16px;">
+          <div class="form-group">
+            <label for="id_groom_name">Nama Pengantin Pria</label>
+            {{ create_form.groom_name }}
+          </div>
+          <div class="form-group">
+            <label for="id_bride_name">Nama Pengantin Wanita</label>
+            {{ create_form.bride_name }}
+          </div>
+          <div class="form-group">
+            <label for="id_wedding_date">Tanggal Pernikahan</label>
+            {{ create_form.wedding_date }}
+          </div>
+          <div class="form-group">
+            <label for="id_budget_style">Preset Gaya Anggaran</label>
+            {{ create_form.budget_style }}
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" data-slot="button" data-variant="ghost" @click="createOpen = false">Batal</button>
+          <button type="submit" data-slot="button" data-variant="default">
+            <i data-lucide="folder-plus"></i> Simpan &amp; Buat Workspace
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client Projects List -->
+  {% if projects %}
+  <div class="portal-project-list" hx-boost="false">
+    {% for p in projects %}
+    <div class="portal-project-row">
+      <div class="portal-project-info">
+        <h3 class="portal-project-title">
+          <span>{{ p.wedding.groom_name|title }} &amp; {{ p.wedding.bride_name|title }}</span>
+          {% if p.days_remaining is not None %}
+          <span data-slot="badge" data-variant="secondary" class="font-mono">H-{{ p.days_remaining }}</span>
+          {% endif %}
+          {% if p.couple_members %}
+          <span data-slot="badge" data-variant="emerald">Pengantin Bergabung ({{ p.couple_members|length }})</span>
+          {% else %}
+          <span data-slot="badge" data-variant="amber">Menunggu Pengantin</span>
+          {% endif %}
+          {% if not p.wedding.allow_wo_budget_access %}
+          <span data-slot="badge" data-variant="outline" title="Pengantin mengunci akses Budget & Vendor dari WO">
+            <i data-lucide="lock" style="width:12px;height:12px;"></i> Budget Privat
+          </span>
+          {% endif %}
+        </h3>
+
+        <div class="portal-project-meta">
+          <span><i data-lucide="calendar" style="width:13px;height:13px;vertical-align:-2px;"></i> {% if p.wedding.wedding_date %}{{ p.wedding.wedding_date|date:"d M Y" }}{% else %}Tanggal belum ditentukan{% endif %}</span>
+          <span class="font-mono"><i data-lucide="check-square" style="width:13px;height:13px;vertical-align:-2px;"></i> {{ p.done_tasks }}/{{ p.total_tasks }} tugas ({{ p.progress }}%)</span>
+          <span><i data-lucide="users" style="width:13px;height:13px;vertical-align:-2px;"></i> {{ p.crew_count }} Crew</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          {% if p.couple_invite %}
+          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.couple_invite.code }}')" title="Salin link undangan khusus Pengantin (maks. 2 orang)">
+            <i data-lucide="heart" style="width:13px;height:13px;color:var(--primary);"></i>
+            <span>Link Pengantin: <strong class="font-mono">{{ p.couple_invite.code }}</strong></span>
+            <span x-show="copiedCode === '{{ p.couple_invite.code }}'" style="color:var(--primary);font-weight:600;" x-cloak>Tersalin!</span>
+          </button>
+          {% endif %}
+          {% if p.crew_invite %}
+          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.crew_invite.code }}')" title="Salin link undangan Crew Operasional">
+            <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+            <span>Link Crew: <strong class="font-mono">{{ p.crew_invite.code }}</strong></span>
+            <span x-show="copiedCode === '{{ p.crew_invite.code }}'" style="color:var(--primary);font-weight:600;" x-cloak>Tersalin!</span>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="portal-project-actions">
+        <a href="{% url 'core:switch_workspace' p.wedding.pk %}" data-slot="button" data-variant="default" data-size="sm">
+          Buka Workspace <i data-lucide="arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div data-slot="empty">
+    <div data-slot="empty-icon"><i data-lucide="briefcase"></i></div>
+    <h3 data-slot="empty-title">Belum ada project pernikahan klien</h3>
+    <p data-slot="empty-description">Buat project pertama Anda untuk mulai mengatur timeline, tamu, rundown, dan mengirimkan akses privat ke calon pengantin.</p>
+    <button type="button" data-slot="button" data-variant="default" @click="createOpen = true">
+      <i data-lucide="plus"></i> Buat Project Klien Pertama
+    </button>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

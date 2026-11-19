@@ -1,17 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Daftar — Rangkai{% endblock %}
+{% block title %}Daftar | Rangkai.click{% endblock %}
 
 {% block body %}
 <div class="auth-page">
   <div class="auth-card" style="max-width: 460px;" x-data="{ mode: '{{ active_mode|default:'create' }}' }">
     <div class="auth-brand">
-      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-        <a href="{% url 'core:landing' %}" aria-label="Kembali ke beranda Rangkai" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 10px; background: var(--muted); border: 1px solid var(--border);">
-          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" style="width: 26px; height: 26px;" />
+      <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+        <a href="{% url 'core:landing' %}" class="brand-lockup is-lg" aria-label="Kembali ke beranda Rangkai.click">
+          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+          <span class="brand-lockup-text">
+            <span class="brand-lockup-main">Rangkai</span>
+            <span class="brand-lockup-tld">.click</span>
+          </span>
         </a>
       </div>
-      <h1 x-text="mode === 'join' ? 'Gabung ke Workspace' : 'Buat Akun Rangkai'">Buat Akun Rangkai</h1>
+      <h1 x-text="mode === 'join' ? 'Gabung ke Workspace' : 'Buat Akun Rangkai.click'">Buat Akun Rangkai.click</h1>
       <p x-text="mode === 'join' ? 'Daftar akunmu lalu masukkan kode undangan 8 karakter dari pasangan atau owner.' : 'Buat akun &amp; mulai rencanakan pernikahanmu dalam satu workspace terpadu.'"></p>
     </div>
 

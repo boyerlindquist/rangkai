@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Gabung Workspace — Rangkai{% endblock %}
+{% block title %}Gabung Workspace | Rangkai.click{% endblock %}
 
 {% block body %}
 <div class="auth-page">
   <div class="auth-card fade-in">
     <div class="auth-brand">
-      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-        <span class="ui-brand-mark" style="width: 40px; height: 40px;">
-          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" style="width: 22px; height: 22px;" />
-        </span>
+      <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+        <a href="{% url 'core:landing' %}" class="brand-lockup is-lg" aria-label="Rangkai.click">
+          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+          <span class="brand-lockup-text">
+            <span class="brand-lockup-main">Rangkai</span>
+            <span class="brand-lockup-tld">.click</span>
+          </span>
+        </a>
       </div>
       <h1>Gabung Workspace</h1>
       <p>Masukkan kode undangan dari pasanganmu untuk bergabung ke workspace pernikahan bersama</p>

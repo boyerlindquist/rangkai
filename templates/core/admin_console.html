@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Platform Admin Console | Rangkai{% endblock %}
+{% block breadcrumb %}Admin Console{% endblock %}
+
+{% block header_actions %}
+<a href="/admin/" data-slot="button" data-variant="outline" data-size="sm" hx-boost="false">
+  <i data-lucide="database"></i> Django Admin
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-canvas" x-data="{ tab: 'workspaces', showNewAccount: false }">
+  <div class="page-header" style="margin-bottom: 20px;">
+    <div>
+      <h1 class="page-title">Platform Admin Console</h1>
+      <p class="page-subtitle">Akses penuh ke seluruh workspace pernikahan, akun pengguna, kuota WO Manager, dan riwayat order platform.</p>
+    </div>
+  </div>
+
+  <!-- Platform KPIs -->
+  <div class="portal-kpi-grid">
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Total Workspace</span>
+      <span class="portal-kpi-val">{{ total_weddings }}</span>
+    </div>
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Total Akun</span>
+      <span class="portal-kpi-val">{{ total_users }}</span>
+    </div>
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Akun WO Manager</span>
+      <span class="portal-kpi-val">{{ total_wo }}</span>
+    </div>
+    <div class="portal-kpi-card">
+      <span class="portal-kpi-label">Total Order Lunas</span>
+      <span class="portal-kpi-val">Rp {{ total_revenue|floatformat:0 }}</span>
+    </div>
+  </div>
+
+  <!-- Tabs Bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="display:inline-flex;gap:6px;padding:4px;border-radius:var(--radius-md);background:var(--muted);border:1px solid var(--border);">
+      <button type="button" data-slot="button" :data-variant="tab === 'workspaces' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'workspaces'">
+        Semua Workspace ({{ total_weddings }})
+      </button>
+      <button type="button" data-slot="button" :data-variant="tab === 'users' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'users'">
+        Akun &amp; Role ({{ total_users }})
+      </button>
+      <button type="button" data-slot="button" :data-variant="tab === 'orders' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'orders'">
+        Order ({{ orders|length }})
+      </button>
+    </div>
+
+    <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="showNewAccount = !showNewAccount; tab = 'users'">
+      <i data-lucide="user-plus"></i> Buat Akun Baru
+    </button>
+  </div>
+
+  <!-- Quick Create Account Form -->
+  <div data-slot="card" style="margin-bottom:18px;" x-show="showNewAccount" x-transition x-cloak>
+    <div data-slot="card-header">
+      <h2 data-slot="card-title">Buat Akun Baru (Admin / WO Manager / Pengantin)</h2>
+    </div>
+    <div data-slot="card-content">
+      <form method="post" action="{% url 'core:admin_console' %}" hx-boost="false">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_account" />
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px;">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" class="wp-input" required placeholder="contoh: admin_rangkai" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" class="wp-input" placeholder="admin@rangkai.click" />
+          </div>
+          <div class="form-group">
+            <label>Password (min. 8 karakter)</label>
+            <input type="password" name="password" class="wp-input" required minlength="8" placeholder="Minimal 8 karakter" />
+          </div>
+          <div class="form-group">
+            <label>Tipe Akun</label>
+            <select name="account_type" class="wp-input">
+              {% for val, label in account_type_choices %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nama WO (Opsional)</label>
+            <input type="text" name="organization_name" class="wp-input" placeholder="Khusus WO Manager" />
+          </div>
+          <div class="form-group">
+            <label>Kuota Project (0 = Unlimited)</label>
+            <input type="number" name="project_quota" class="wp-input font-mono" value="10" min="0" />
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" data-slot="button" data-variant="ghost" @click="showNewAccount = false">Batal</button>
+          <button type="submit" data-slot="button" data-variant="default">Simpan Akun</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB 1: All Workspaces -->
+  <div x-show="tab === 'workspaces'" hx-boost="false">
+    <div class="portal-table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>Workspace Pernikahan</th>
+            <th>Tanggal</th>
+            <th>Dikelola Oleh</th>
+            <th>Anggota</th>
+            <th>Privasi WO</th>
+            <th style="text-align:right;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in weddings %}
+          <tr>
+            <td>
+              <strong>{{ w.groom_name|title }} &amp; {{ w.bride_name|title }}</strong>
+              <div style="font-size:0.75rem;color:var(--muted-foreground);" class="font-mono">ID #{{ w.pk }}</div>
+            </td>
+            <td>{% if w.wedding_date %}{{ w.wedding_date|date:"d M Y" }}{% else %}-{% endif %}</td>
+            <td>
+              {% if w.managed_by %}
+              <span data-slot="badge" data-variant="emerald">WO: {{ w.managed_by.username }}</span>
+              {% else %}
+              <span data-slot="badge" data-variant="secondary">Mandiri (B2C)</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                {% for m in w.memberships.all %}
+                <span data-slot="badge" data-variant="outline">{{ m.user.username }} ({{ m.role }})</span>
+                {% empty %}
+                <span style="color:var(--muted-foreground);">-</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              {% if w.allow_wo_budget_access %}
+              <span data-slot="badge" data-variant="secondary">Budget Terbuka</span>
+              {% else %}
+              <span data-slot="badge" data-variant="amber">Budget Privat</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <a href="{% url 'core:switch_workspace' w.pk %}" data-slot="button" data-variant="default" data-size="sm">
+                Masuk Workspace <i data-lucide="arrow-right"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" style="text-align:center;color:var(--muted-foreground);padding:24px;">Belum ada workspace di sistem.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 2: All Users & Roles -->
+  <div x-show="tab === 'users'" x-cloak hx-boost="false">
+    <div class="portal-table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Tipe Akun</th>
+            <th>Nama WO / Brand</th>
+            <th>Kuota</th>
+            <th style="text-align:right;">Simpan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <strong>{{ u.username }}</strong>
+              <div style="font-size:0.75rem;color:var(--muted-foreground);">{{ u.email|default:"-" }}</div>
+            </td>
+            <td colspan="4" style="padding:8px 14px;">
+              <form method="post" action="{% url 'core:admin_console' %}" style="display:grid;grid-template-columns:160px 1fr 90px auto;gap:8px;align-items:center;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile" />
+                <input type="hidden" name="user_id" value="{{ u.pk }}" />
+                <select name="account_type" class="wp-input" style="height:34px;font-size:0.8rem;">
+                  {% for val, label in account_type_choices %}
+                  <option value="{{ val }}" {% if u.profile.account_type == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="organization_name" class="wp-input" style="height:34px;font-size:0.8rem;" value="{{ u.profile.organization_name }}" placeholder="Nama WO (opsional)" />
+                <input type="number" name="project_quota" class="wp-input font-mono" style="height:34px;font-size:0.8rem;" value="{{ u.profile.project_quota }}" min="0" />
+                <button type="submit" data-slot="button" data-variant="outline" data-size="sm">Update</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: Orders -->
+  <div x-show="tab === 'orders'" x-cloak>
+    <div class="portal-table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>Kode Order</th>
+            <th>Pembeli</th>
+            <th>Paket</th>
+            <th>Metode</th>
+            <th>Nominal</th>
+            <th>Status</th>
+            <th>Waktu</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td class="font-mono" style="font-weight:600;">{{ o.order_code }}</td>
+            <td>{% if o.user %}{{ o.user.username }}{% else %}{{ o.customer_email }}{% endif %}</td>
+            <td>{{ o.get_plan_type_display }}</td>
+            <td>{{ o.get_payment_method_display }}</td>
+            <td class="font-mono">Rp {{ o.amount|floatformat:0 }}</td>
+            <td>
+              {% if o.status == 'paid' %}
+              <span data-slot="badge" data-variant="emerald">Lunas</span>
+              {% else %}
+              <span data-slot="badge" data-variant="amber">{{ o.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td style="font-size:0.78rem;color:var(--muted-foreground);">{{ o.created_at|date:"d M Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center;color:var(--muted-foreground);padding:24px;">Belum ada transaksi order.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

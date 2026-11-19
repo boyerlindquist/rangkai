@@ -18,14 +18,19 @@ class TaskMilestoneForm(forms.ModelForm):
             'linked_tool': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Nama tool terkait (opsional)'}),
         }
 
-    def __init__(self, *args, wedding=None, **kwargs):
+    def __init__(self, *args, wedding=None, phases=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if phases is not None:
+            self.fields['phase'].widget.choices = (
+                [(p.key, p.label) for p in phases] if phases else TaskMilestone.PHASE_CHOICES
+            )
+            return
         if wedding is None and getattr(self.instance, 'wedding_id', None):
             wedding = self.instance.wedding
         if wedding is not None:
-            phase_qs = wedding.timeline_phases.all().order_by('sort_order', 'id')
-            if phase_qs.exists():
-                self.fields['phase'].widget.choices = [(p.key, p.label) for p in phase_qs]
+            phase_list = list(wedding.timeline_phases.all().order_by('sort_order', 'id'))
+            if phase_list:
+                self.fields['phase'].widget.choices = [(p.key, p.label) for p in phase_list]
             else:
                 self.fields['phase'].widget.choices = TaskMilestone.PHASE_CHOICES
         else:

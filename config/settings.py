@@ -88,6 +88,7 @@ if DATABASE_URL:
             'HOST': url.hostname,
             'PORT': url.port or 5432,
             'CONN_MAX_AGE': int(os.getenv('DJANGO_DB_CONN_MAX_AGE', '600')),
+            'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'connect_timeout': 10,
             }

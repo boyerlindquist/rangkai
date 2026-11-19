@@ -43,14 +43,20 @@ class BudgetCategory(models.Model):
             return self.allocated_budget
         if self.wedding.total_budget and self.wedding.total_budget > 0:
             return round((self.wedding.total_budget * self.allocation_percentage) / 100)
+        if 'items' in getattr(self, '_prefetched_objects_cache', {}):
+            return sum((item.allocated_amount or 0) for item in self.items.all())
         return self.items.aggregate(total=models.Sum('allocated_amount'))['total'] or 0
 
     @property
     def total_actual(self):
+        if 'items' in getattr(self, '_prefetched_objects_cache', {}):
+            return sum((item.actual_cost or 0) for item in self.items.all())
         return self.items.aggregate(total=models.Sum('actual_cost'))['total'] or 0
 
     @property
     def total_paid(self):
+        if 'items' in getattr(self, '_prefetched_objects_cache', {}):
+            return sum((item.paid_amount or 0) for item in self.items.all())
         return self.items.aggregate(total=models.Sum('paid_amount'))['total'] or 0
 
     @property
@@ -212,6 +218,10 @@ class SavingsGoal(models.Model):
 
     @property
     def total_saved(self):
+        if hasattr(self, '_cached_total_saved'):
+            return self._cached_total_saved
+        if 'deposits' in getattr(self, '_prefetched_objects_cache', {}):
+            return sum((d.amount or 0) for d in self.deposits.all())
         return self.deposits.aggregate(total=models.Sum('amount'))['total'] or 0
 
     @property

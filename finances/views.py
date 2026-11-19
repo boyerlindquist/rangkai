@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Sum
 
-from core.decorators import workspace_required, owner_required
+from core.decorators import couple_only_required, finance_access_required
 from finances.models import BudgetCategory, BudgetItem, ContributionShare, SavingsGoal, SavingsDeposit
 from finances.forms import BudgetItemForm, BudgetCategoryForm, BudgetCategoryConfigForm, SavingsGoalForm, SavingsDepositForm
 from django.forms import modelformset_factory
@@ -36,7 +36,15 @@ def _compute_financial_state(wedding):
         goal.save(update_fields=['target_amount'])
 
     categories = list(BudgetCategory.objects.filter(wedding=wedding).prefetch_related('items'))
-    items = list(BudgetItem.objects.filter(wedding=wedding).select_related('category'))
+    for cat in categories:
+        cat.wedding = wedding
+    # Derive flat items list from prefetched categories (0 extra BudgetItem queries)
+    items = []
+    for cat in categories:
+        for it in cat.items.all():
+            it.category = cat
+            items.append(it)
+    items.sort(key=lambda i: (i.due_date is None, i.due_date or datetime.date.max, (i.name or '').lower()))
 
     total_cat_planned = int(sum(int(c.allocated_amount or 0) for c in categories))
     if not wedding.total_budget and not goal.target_amount and total_cat_planned > 0:
@@ -190,7 +198,7 @@ def _compute_financial_state(wedding):
 
 
 @login_required
-@workspace_required
+@finance_access_required
 def budget_dashboard(request):
     """Finance & Cash Flow hub integrated with Savings Pool."""
     wedding = request.wedding
@@ -198,9 +206,11 @@ def budget_dashboard(request):
     categories = state['categories']
     items = state['items']
 
-    # Cash-out by month (for chart)
+    # Cash-out by month (reuses already-loaded sorted items — 0 extra queries)
     cash_out_by_month = {}
-    for item in BudgetItem.objects.filter(wedding=wedding, due_date__isnull=False).order_by('due_date'):
+    for item in items:
+        if not item.due_date:
+            continue
         month_key = item.due_date.strftime('%Y-%m')
         month_label = item.due_date.strftime('%b %Y')
         if month_key not in cash_out_by_month:
@@ -421,7 +431,7 @@ def budget_dashboard(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def add_budget_item(request):
     """HTMX endpoint: Add a new budget item."""
     wedding = request.wedding
@@ -443,7 +453,7 @@ def add_budget_item(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def add_item_to_category(request, category_pk):
     """HTMX endpoint: Add a budget item pre-scoped to a specific category."""
     wedding = request.wedding
@@ -464,7 +474,7 @@ def add_item_to_category(request, category_pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_budget_item(request, pk):
     """HTMX endpoint: Update a budget item."""
     item = get_object_or_404(BudgetItem, pk=pk, wedding=request.wedding)
@@ -494,7 +504,7 @@ def update_budget_item(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def delete_budget_item(request, pk):
     """HTMX endpoint: Delete a budget item."""
     item = get_object_or_404(BudgetItem, pk=pk, wedding=request.wedding)
@@ -506,7 +516,7 @@ def delete_budget_item(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def toggle_payment_status(request, pk):
     """HTMX endpoint: Quick update or toggle payment status / payer & sync paid_amount."""
     item = get_object_or_404(BudgetItem, pk=pk, wedding=request.wedding)
@@ -572,7 +582,7 @@ def _sync_category_nominal_and_pct(cat, wedding):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def add_budget_category(request):
     """HTMX endpoint: Create a new budget category (by Nominal Rp or Percentage %)."""
     if request.method == 'POST':
@@ -590,7 +600,7 @@ def add_budget_category(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_budget_category(request, pk):
     """HTMX endpoint: Update budget category allocation (by Nominal Rp or Percentage %)."""
     category = get_object_or_404(BudgetCategory, pk=pk, wedding=request.wedding)
@@ -619,7 +629,7 @@ def update_budget_category(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def delete_budget_category(request, pk):
     """HTMX endpoint: Delete a budget category."""
     category = get_object_or_404(BudgetCategory, pk=pk, wedding=request.wedding)
@@ -628,7 +638,7 @@ def delete_budget_category(request, pk):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def update_total_budget(request):
     """HTMX/POST endpoint: Quickly update wedding.total_budget & recalculate category nominals/percentages."""
     if request.method == 'POST':
@@ -662,7 +672,7 @@ def update_total_budget(request):
 
 
 @login_required
-@owner_required
+@finance_access_required
 def config_allocations(request):
     """HTMX endpoint: Configure all category allocations (Nominal Rp & Percentage %) and total_budget at once."""
     CategoryFormSet = modelformset_factory(
@@ -717,12 +727,16 @@ def config_allocations(request):
     })
 
 @login_required
-@workspace_required
+@couple_only_required
 def savings_tracker_view(request):
     """Joint Savings Tracker dashboard."""
     wedding = request.wedding
     goal, created = SavingsGoal.objects.get_or_create(wedding=wedding)
-    
+
+    # Fetch deposits ONCE (Meta ordering: -date, -created_at) and cache total_saved on goal
+    deposits_desc = list(goal.deposits.all())
+    goal._cached_total_saved = sum((d.amount or 0) for d in deposits_desc)
+
     # Calculate estimations
     estimated_months = 0
     estimated_completion_date = None
@@ -740,8 +754,8 @@ def savings_tracker_view(request):
     if goal.target_amount > 0:
         progress_percentage = min(100, (goal.total_saved / goal.target_amount) * 100)
 
-    # Prepare cumulative line chart data per depositor & total vs target
-    deposits_asc = list(goal.deposits.all().order_by('date', 'created_at', 'id'))
+    # Prepare cumulative line chart data per depositor & total vs target (reuse deposits in memory)
+    deposits_asc = sorted(deposits_desc, key=lambda d: (d.date, d.created_at, d.id))
     
     # Distinct depositors preserving order
     depositors = []
@@ -802,7 +816,7 @@ def savings_tracker_view(request):
 
     context = {
         'goal': goal,
-        'deposits': goal.deposits.all(),
+        'deposits': deposits_desc,
         'goal_form': SavingsGoalForm(instance=goal),
         'deposit_form': SavingsDepositForm(),
         'progress_percentage': progress_percentage,
@@ -815,7 +829,7 @@ def savings_tracker_view(request):
 
 
 @login_required
-@owner_required
+@couple_only_required
 def update_savings_goal(request):
     """HTMX endpoint to update savings target & monthly capability."""
     wedding = request.wedding
@@ -834,7 +848,7 @@ def update_savings_goal(request):
 
 
 @login_required
-@owner_required
+@couple_only_required
 def add_savings_deposit(request):
     """HTMX endpoint to add a new deposit."""
     wedding = request.wedding
@@ -850,7 +864,7 @@ def add_savings_deposit(request):
 
 
 @login_required
-@owner_required
+@couple_only_required
 def update_savings_deposit(request, pk):
     """Endpoint to update an existing savings deposit."""
     deposit = get_object_or_404(SavingsDeposit, pk=pk, goal__wedding=request.wedding)
@@ -862,7 +876,7 @@ def update_savings_deposit(request, pk):
 
 
 @login_required
-@owner_required
+@couple_only_required
 def delete_savings_deposit(request, pk):
     """HTMX/Standard endpoint to delete a deposit."""
     deposit = get_object_or_404(SavingsDeposit, pk=pk, goal__wedding=request.wedding)

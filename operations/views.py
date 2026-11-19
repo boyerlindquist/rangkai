@@ -164,18 +164,20 @@ TASK_GUIDE_CATALOG = [
 ]
 
 
-def _ensure_wedding_phases(wedding):
+def _ensure_wedding_phases(wedding, all_tasks_list=None):
     """Ensure Wedding has TimelinePhase rows; seed from default 5 phases if empty."""
     existing = list(TimelinePhase.objects.filter(wedding=wedding).order_by('sort_order', 'id'))
     if existing:
-        # Also make sure any orphan task phase keys exist as TimelinePhase
         existing_keys = {p.key for p in existing}
-        orphan_keys = (
-            TaskMilestone.objects.filter(wedding=wedding)
-            .exclude(phase__in=existing_keys)
-            .values_list('phase', flat=True)
-            .distinct()
-        )
+        if all_tasks_list is not None:
+            orphan_keys = {t.phase for t in all_tasks_list if t.phase and t.phase not in existing_keys}
+        else:
+            orphan_keys = (
+                TaskMilestone.objects.filter(wedding=wedding)
+                .exclude(phase__in=existing_keys)
+                .values_list('phase', flat=True)
+                .distinct()
+            )
         default_map = dict(TaskMilestone.PHASE_CHOICES)
         max_order = max((p.sort_order for p in existing), default=0)
         for o_key in orphan_keys:
@@ -209,14 +211,17 @@ def _ensure_wedding_phases(wedding):
 # ============================================================
 
 def _build_checklist_context(wedding, assignee_filter=''):
-    """Compute grouped tasks, dynamic phases, progress, and smart task guide for Checklist."""
-    phase_objs = _ensure_wedding_phases(wedding)
+    """Compute grouped tasks, dynamic phases, progress, and smart task guide in minimal queries."""
+    # Single query for all tasks of this wedding (reused for grouping, counts, overdue, and guide matching)
+    all_tasks_list = list(TaskMilestone.objects.filter(wedding=wedding))
+    phase_objs = _ensure_wedding_phases(wedding, all_tasks_list=all_tasks_list)
     phases = [(p.key, p.label) for p in phase_objs]
     phase_order = [p.key for p in phase_objs]
 
-    tasks = TaskMilestone.objects.filter(wedding=wedding)
-    if assignee_filter:
-        tasks = tasks.filter(assignee=assignee_filter)
+    filtered_tasks = [t for t in all_tasks_list if t.assignee == assignee_filter] if assignee_filter else all_tasks_list
+    tasks_by_phase = defaultdict(list)
+    for t in filtered_tasks:
+        tasks_by_phase[t.phase].append(t)
 
     days_remaining = wedding.days_remaining
 
@@ -230,7 +235,6 @@ def _build_checklist_context(wedding, assignee_filter=''):
         current_phase_key = override_phase.key
         current_phase_idx = phase_order.index(current_phase_key)
     elif days_remaining is not None and phase_order:
-        # If standard keys exist, map by days_remaining; otherwise map proportionally or first incomplete phase
         if days_remaining > 180 and 'd360' in phase_order:
             current_phase_key = 'd360'
         elif days_remaining >= 90 and 'd180' in phase_order:
@@ -242,11 +246,11 @@ def _build_checklist_context(wedding, assignee_filter=''):
         elif 'dday' in phase_order and days_remaining < 7:
             current_phase_key = 'dday'
         else:
-            # Custom phases: pick the first phase that isn't 100% done, or the first phase
             current_phase_key = phase_order[0]
             for p_key in phase_order:
-                p_total = tasks.filter(phase=p_key).count()
-                p_done = tasks.filter(phase=p_key, status='done').count()
+                p_list = tasks_by_phase.get(p_key, [])
+                p_total = len(p_list)
+                p_done = sum(1 for t in p_list if t.status == 'done')
                 if p_total == 0 or p_done < p_total:
                     current_phase_key = p_key
                     break
@@ -262,9 +266,9 @@ def _build_checklist_context(wedding, assignee_filter=''):
     for phase_idx, p_obj in enumerate(phase_objs):
         phase_key = p_obj.key
         phase_label = p_obj.label
-        phase_tasks = tasks.filter(phase=phase_key)
-        total = phase_tasks.count()
-        done = phase_tasks.filter(status='done').count()
+        phase_tasks = tasks_by_phase.get(phase_key, [])
+        total = len(phase_tasks)
+        done = sum(1 for t in phase_tasks if t.status == 'done')
         progress = round((done / total) * 100) if total > 0 else 0
 
         is_current = (phase_key == current_phase_key)
@@ -272,16 +276,17 @@ def _build_checklist_context(wedding, assignee_filter=''):
         is_upcoming = (current_phase_idx != -1 and phase_idx > current_phase_idx)
 
         overdue_tasks_in_phase = []
-        if is_past:
-            overdue_tasks_in_phase = [t for t in phase_tasks if t.status != 'done']
-            total_overdue_tasks += len(overdue_tasks_in_phase)
-            all_overdue_tasks.extend(overdue_tasks_in_phase)
-
         annotated_tasks = []
         for t in phase_tasks:
             t_is_overdue = (is_past and t.status != 'done')
             setattr(t, 'is_overdue', t_is_overdue)
             annotated_tasks.append(t)
+            if t_is_overdue:
+                overdue_tasks_in_phase.append(t)
+
+        if overdue_tasks_in_phase:
+            total_overdue_tasks += len(overdue_tasks_in_phase)
+            all_overdue_tasks.extend(overdue_tasks_in_phase)
 
         grouped_tasks[phase_key] = {
             'key': phase_key,
@@ -299,13 +304,12 @@ def _build_checklist_context(wedding, assignee_filter=''):
             'step_num': phase_idx + 1,
         }
 
-    all_tasks = TaskMilestone.objects.filter(wedding=wedding)
-    total = all_tasks.count()
-    done = all_tasks.filter(status='done').count()
+    total = len(all_tasks_list)
+    done = sum(1 for t in all_tasks_list if t.status == 'done')
     overall_progress = round((done / max(total, 1)) * 100)
 
     # Annotate Smart Guide Catalog with whether each task title is already in user's checklist
-    existing_titles_lower = {t.lower().strip() for t in all_tasks.values_list('title', flat=True)}
+    existing_titles_lower = {t.title.lower().strip() for t in all_tasks_list}
     guide_catalog = []
     for topic in TASK_GUIDE_CATALOG:
         annotated_items = []
@@ -336,7 +340,7 @@ def _build_checklist_context(wedding, assignee_filter=''):
         'total_tasks': total,
         'done_tasks': done,
         'assignee_filter': assignee_filter,
-        'task_form': TaskMilestoneForm(wedding=wedding),
+        'task_form': TaskMilestoneForm(wedding=wedding, phases=phase_objs),
         'days_remaining': days_remaining,
         'current_phase_key': current_phase_key,
         'current_phase_label': dict(phases).get(current_phase_key) if current_phase_key else None,
@@ -719,19 +723,19 @@ def operations_hub(request):
     """Operations hub: Rundown, Assets, Fabric Calculator."""
     wedding = request.wedding
 
-    # Rundown events
-    rundown = RundownEvent.objects.filter(wedding=wedding)
+    # Rundown events (evaluate once)
+    rundown = list(RundownEvent.objects.filter(wedding=wedding))
 
     # Rundown sanity checks
     sanity_warnings = _check_rundown_sanity(rundown)
 
-    # Assets
-    assets = AssetCustodian.objects.filter(wedding=wedding)
-    critical_assets = assets.filter(asset_category='critical')
-    equipment_assets = assets.filter(asset_category='equipment')
+    # Assets (single query split in Python)
+    assets = list(AssetCustodian.objects.filter(wedding=wedding))
+    critical_assets = [a for a in assets if a.asset_category == 'critical']
+    equipment_assets = [a for a in assets if a.asset_category == 'equipment']
 
-    # Fabric entries
-    fabric_entries = FabricEntry.objects.filter(wedding=wedding)
+    # Fabric entries (evaluate once)
+    fabric_entries = list(FabricEntry.objects.filter(wedding=wedding))
     fabric_totals = _calculate_fabric_totals(fabric_entries)
 
     context = {

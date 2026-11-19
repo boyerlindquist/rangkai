@@ -1,5 +1,5 @@
 ---
-name: Rangkai
+name: Rangkai.click
 description: Calm, high-precision operational wedding planning workspace combining pure Zinc neutral shadcn/ui (radix-nova) content surfaces with Rangkai's signature Deep Imperial Forest sidebar and Imperial Emerald accents.
 colors:
   canvas-light: "#f5f5f7"

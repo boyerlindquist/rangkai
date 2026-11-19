@@ -58,38 +58,96 @@
       </div>
     </div>
 
-    <!-- Kolom Kanan: Kode Undangan + Anggota Workspace -->
+    <!-- Kolom Kanan: Undangan Berbasis Peran + Privasi WO + Anggota Workspace -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
-      <!-- Kode Undangan Kolaborasi -->
-      <div class="surface-panel" x-data="{ copied: false }">
+      {% if wedding.has_wo_manager and can_access_savings %}
+      <!-- Kontrol Privasi Pengantin terhadap WO Manager -->
+      <div class="surface-panel">
         <div class="surface-panel-header">
-          <h3><i data-lucide="link" style="color: var(--wp-sage-main);"></i> Kode Undangan Kolaborasi</h3>
+          <h3><i data-lucide="shield-check" style="color: var(--primary);"></i> Privasi Data terhadap WO Manager</h3>
+          {% if wedding.allow_wo_budget_access %}
+          <span data-slot="badge" data-variant="emerald">Budget Terbuka</span>
+          {% else %}
+          <span data-slot="badge" data-variant="amber">Budget Privat</span>
+          {% endif %}
         </div>
-        <div class="surface-panel-body" style="padding: 20px 24px; text-align: center;">
-          <p class="text-secondary" style="font-size: 0.85rem; margin-bottom: 14px;">
-            Bagikan kode ini ke pasangan atau panitia/WO untuk bergabung ke workspace <strong>{{ wedding }}</strong>.
+        <div class="surface-panel-body" style="padding: 18px 22px;">
+          <p class="text-secondary" style="font-size: 0.84rem; margin: 0 0 12px; line-height: 1.55;">
+            Ruang <strong>Tabungan Pribadi</strong> selalu terkunci dan hanya dapat dilihat oleh Pengantin (Owner &amp; Co-Owner). Anda juga dapat mengatur apakah WO Manager boleh mengakses modul <strong>Budget &amp; Vendor</strong>:
           </p>
-          <div class="invite-code-display" style="margin-bottom: 16px;">{{ wedding.invite_code }}</div>
-
-          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button"
-                    class="btn btn-primary btn-sm"
-                    @click="navigator.clipboard.writeText('{{ wedding.invite_code }}'); copied = true; setTimeout(() => copied = false, 2200)">
-              <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
-              <span x-text="copied ? 'Kode Tersalin!' : 'Salin Kode'">Salin Kode</span>
+          <form method="post" action="{% url 'core:toggle_wo_privacy' %}" style="margin: 0;" hx-boost="false">
+            {% csrf_token %}
+            <button type="submit" data-slot="button" data-variant="{% if wedding.allow_wo_budget_access %}outline{% else %}default{% endif %}" data-size="sm">
+              <i data-lucide="{% if wedding.allow_wo_budget_access %}lock{% else %}unlock{% endif %}"></i>
+              {% if wedding.allow_wo_budget_access %}Kunci Budget &amp; Vendor dari WO{% else %}Izinkan WO Akses Budget &amp; Vendor{% endif %}
             </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
 
-            <form method="post" action="{% url 'core:regenerate_invite_code' %}" style="margin: 0;"
-                  onsubmit="return confirm('Buat kode undangan baru? Kode lama tidak akan bisa dipakai lagi untuk bergabung.')">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-secondary btn-sm">
-                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Buat Ulang Kode
-              </button>
-            </form>
-          </div>
-          <p class="text-muted" style="font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">
-            Anggota baru masuk sebagai <strong>Co-Owner</strong> secara default. Owner utama dapat mengubah peran menjadi <strong>Crew / Panitia</strong> di daftar anggota di bawah.
+      <!-- Undangan Berbasis Peran -->
+      <div class="surface-panel" x-data="{
+        copiedCode: '',
+        copyLink(code) {
+          const url = window.location.origin + '/register/?mode=join&code=' + code;
+          navigator.clipboard.writeText(url).then(() => {
+            this.copiedCode = code;
+            setTimeout(() => { if (this.copiedCode === code) this.copiedCode = ''; }, 2200);
+          });
+        }
+      }">
+        <div class="surface-panel-header">
+          <h3><i data-lucide="link" style="color: var(--primary);"></i> Undangan Berbasis Peran</h3>
+        </div>
+        <div class="surface-panel-body" style="padding: 18px 22px;">
+          <p class="text-secondary" style="font-size: 0.84rem; margin: 0 0 14px; line-height: 1.5;">
+            Buat kode atau link undangan yang otomatis mengatur peran anggota saat bergabung ke <strong>{{ wedding }}</strong>.
           </p>
+
+          <form method="post" action="{% url 'core:create_invitation' %}" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" hx-boost="false">
+            {% csrf_token %}
+            <select name="role" class="wp-input" style="flex:1;min-width:180px;">
+              {% for r_val, r_label in allowed_invite_roles %}
+              <option value="{{ r_val }}">{{ r_label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" data-slot="button" data-variant="default" data-size="sm">
+              <i data-lucide="plus"></i> Buat Kode
+            </button>
+          </form>
+
+          {% if invitations %}
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for inv in invitations %}
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:var(--radius-md);background:var(--muted);border:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="font-mono" style="font-weight:700;letter-spacing:0.08em;font-size:0.88rem;">{{ inv.code }}</span>
+                <span data-slot="badge" data-variant="{% if inv.role == 'owner' or inv.role == 'co_owner' %}emerald{% elif inv.role == 'wo_manager' %}secondary{% else %}outline{% endif %}">
+                  {{ inv.get_role_display }}
+                </span>
+                <span style="font-size:0.75rem;color:var(--muted-foreground);" class="font-mono">
+                  {{ inv.uses_count }}{% if inv.max_uses %}/{{ inv.max_uses }}{% endif %} dipakai
+                </span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="copyLink('{{ inv.code }}')">
+                  <i data-lucide="copy"></i>
+                  <span x-text="copiedCode === '{{ inv.code }}' ? 'Tersalin!' : 'Salin Link'">Salin Link</span>
+                </button>
+                <form method="post" action="{% url 'core:revoke_invitation' inv.pk %}" style="margin:0;" hx-boost="false">
+                  {% csrf_token %}
+                  <button type="submit" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Nonaktifkan kode" aria-label="Nonaktifkan kode">
+                    <i data-lucide="trash-2"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted" style="font-size:0.82rem;margin:0;">Belum ada kode undangan aktif. Pilih peran di atas lalu klik Buat Kode.</p>
+          {% endif %}
         </div>
       </div>
 
@@ -121,33 +179,38 @@
               </div>
 
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <span class="status-pill {% if m.role == 'owner' %}status-done{% elif m.role == 'co_owner' %}status-warning{% endif %}">
+                <span class="status-pill {% if m.role == 'owner' %}status-done{% elif m.role == 'co_owner' or m.role == 'wo_manager' %}status-warning{% endif %}">
                   <span class="dot"></span>
                   {{ m.get_role_display }}
                 </span>
 
-                {% if is_owner and m.role != 'owner' and m.user_id != request.user.id %}
-                <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="set_role">
-                  {% if m.role == 'co_owner' %}
-                  <input type="hidden" name="role" value="crew">
-                  <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.78rem;" title="Batasi akses menjadi Crew / Panitia (tanpa akses keuangan)">
-                    Jadikan Crew
-                  </button>
-                  {% else %}
-                  <input type="hidden" name="role" value="co_owner">
-                  <button type="submit" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.78rem;" title="Beri akses penuh sebagai Co-Owner (pasangan)">
-                    Jadikan Co-Owner
-                  </button>
-                  {% endif %}
-                </form>
+                {% if is_owner or is_platform_admin %}
+                  {% if m.role != 'owner' and m.user_id != request.user.id %}
+                  <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0; display:inline-flex; gap:4px; align-items:center;" hx-boost="false">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_role">
+                    <select name="role" class="wp-input" style="height:28px;font-size:0.76rem;padding:2px 8px;" onchange="this.form.submit()">
+                      <option value="co_owner" {% if m.role == 'co_owner' %}selected{% endif %}>Co-Owner</option>
+                      <option value="wo_manager" {% if m.role == 'wo_manager' %}selected{% endif %}>WO Manager</option>
+                      <option value="crew" {% if m.role == 'crew' %}selected{% endif %}>Crew</option>
+                    </select>
+                  </form>
 
-                <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;"
-                      onsubmit="return confirm('Keluarkan {{ m.user.username }} dari workspace ini?')">
+                  <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;" hx-boost="false"
+                        onsubmit="return confirm('Keluarkan {{ m.user.username }} dari workspace ini?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-terracotta-main);" aria-label="Keluarkan {{ m.user.username }}" title="Keluarkan dari workspace">
+                      <i data-lucide="user-minus" style="width: 14px; height: 14px;"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                {% elif is_wo_manager and m.role == 'crew' %}
+                <form method="post" action="{% url 'core:manage_member' m.pk %}" style="margin: 0;" hx-boost="false"
+                      onsubmit="return confirm('Keluarkan crew {{ m.user.username }} dari project ini?')">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="remove">
-                  <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-terracotta-main);" aria-label="Keluarkan {{ m.user.username }}" title="Keluarkan dari workspace">
+                  <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-terracotta-main);" aria-label="Keluarkan {{ m.user.username }}" title="Keluarkan Crew">
                     <i data-lucide="user-minus" style="width: 14px; height: 14px;"></i>
                   </button>
                 </form>

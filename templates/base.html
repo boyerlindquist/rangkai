@@ -171,9 +171,9 @@
     rel="stylesheet">
 
   <!-- Design System (shadcn/ui radix-nova + Imperial Emerald) -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=61">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=61">
-  <link rel="stylesheet" href="{% static 'css/shadcn-ui.css' %}?v=61">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=70">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=70">
+  <link rel="stylesheet" href="{% static 'css/shadcn-ui.css' %}?v=70">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -280,25 +280,67 @@
       @touchend.passive="if (isMobile && touchX !== null && touchX - $event.changedTouches[0].clientX > 60) drawerOpen = false; touchX = null">
 
       <div data-slot="sidebar-header">
-        <a href="{% url 'core:dashboard' %}" class="ui-brand-link" title="Rangkai — Ringkasan">
-          <span class="ui-brand-mark">
-            <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" />
-          </span>
-          <span class="ui-brand-meta" x-show="!rail">
-            <span class="ui-brand-name">Rangkai</span>
-            {% if wedding %}
-            <span class="ui-brand-sub">{{ wedding.groom_name|title }} &amp; {{ wedding.bride_name|title }}</span>
-            {% else %}
-            <span class="ui-brand-sub">Workspace Pernikahan</span>
-            {% endif %}
+        <a href="{% url 'core:dashboard' %}" class="ui-brand-link brand-lockup" title="Rangkai.click">
+          <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+          <span class="brand-lockup-text" x-show="!rail">
+            <span class="brand-lockup-main">Rangkai</span>
+            <span class="brand-lockup-tld">.click</span>
           </span>
         </a>
         <button type="button" class="ui-drawer-close" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="drawerOpen = false" aria-label="Tutup menu navigasi">
           <i data-lucide="x"></i>
         </button>
       </div>
+      {% if wedding and not show_workspace_switcher %}
+      <div class="ui-sidebar-ws-identity" x-show="!rail" title="{{ wedding.groom_name|title }} &amp; {{ wedding.bride_name|title }}">
+        <div class="ui-sidebar-ws-meta">
+          <div class="ui-sidebar-ws-name">{{ wedding.groom_name|title }} &amp; {{ wedding.bride_name|title }}</div>
+          <div class="ui-sidebar-ws-sub">
+            {% if wedding.wedding_date %}{{ wedding.wedding_date|date:"d M Y" }}{% if days_remaining is not None %} · <span class="font-mono">H-{{ days_remaining }}</span>{% endif %}{% else %}Workspace Pernikahan{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <nav class="sidebar-nav" data-slot="sidebar-content" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
+        {% if is_platform_admin or is_wo_account or show_workspace_switcher %}
+        <div data-slot="sidebar-group" hx-boost="false">
+          <div data-slot="sidebar-group-label">{% if is_platform_admin %}Platform{% elif is_wo_account %}Agency WO{% else %}Workspace{% endif %}</div>
+          <div data-slot="sidebar-menu">
+            {% if is_platform_admin %}
+            <a href="{% url 'core:admin_console' %}" data-slot="sidebar-menu-button" title="Admin Console" aria-label="Admin Console"
+              class="{% if '/platform-admin/' in request.path %}active{% endif %}">
+              <i data-lucide="shield"></i><span class="ui-nav-label">Admin Console</span>
+            </a>
+            {% endif %}
+            {% if is_wo_account or is_platform_admin %}
+            <a href="{% url 'core:wo_portal' %}" data-slot="sidebar-menu-button" title="Portal WO" aria-label="Portal WO"
+              class="{% if '/wo/' in request.path %}active{% endif %}">
+              <i data-lucide="briefcase"></i><span class="ui-nav-label">Portal WO</span>
+            </a>
+            {% endif %}
+            {% if show_workspace_switcher and user_weddings %}
+            <div class="ui-ws-switcher" x-data="{ wsOpen: false }" x-show="!rail" @click.away="wsOpen = false">
+              <button type="button" class="ui-ws-trigger" @click="wsOpen = !wsOpen" :aria-expanded="wsOpen.toString()">
+                <i data-lucide="arrow-left-right" style="width:14px;height:14px;flex-shrink:0;"></i>
+                <span class="ui-ws-current">{% if wedding %}{{ wedding.groom_name|title }} &amp; {{ wedding.bride_name|title }}{% else %}Pilih Project Klien{% endif %}</span>
+                <i data-lucide="chevrons-up-down" style="width:13px;height:13px;opacity:0.7;flex-shrink:0;"></i>
+              </button>
+              <div class="ui-ws-menu" x-show="wsOpen" x-cloak>
+                {% for w in user_weddings %}
+                <a href="{% url 'core:switch_workspace' w.pk %}" class="ui-ws-item {% if wedding and wedding.pk == w.pk %}is-active{% endif %}">
+                  <span>{{ w.groom_name|title }} &amp; {{ w.bride_name|title }}</span>
+                  {% if wedding and wedding.pk == w.pk %}<i data-lucide="check" style="width:13px;height:13px;"></i>{% endif %}
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if wedding %}
         <div data-slot="sidebar-group">
           <div data-slot="sidebar-group-label">Perencanaan</div>
           <div data-slot="sidebar-menu">
@@ -310,25 +352,31 @@
               class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
               <i data-lucide="check-square"></i><span class="ui-nav-label">Timeline &amp; Tugas</span>
             </a>
+            {% if can_access_finance %}
             <a href="{% url 'vendors:compare' %}" data-slot="sidebar-menu-button" title="Direktori Vendor" aria-label="Direktori Vendor"
               class="{% if '/vendors/' in request.path %}active{% endif %}">
               <i data-lucide="store"></i><span class="ui-nav-label">Direktori Vendor</span>
             </a>
+            {% endif %}
           </div>
         </div>
 
-        {% if not is_crew %}
+        {% if can_access_finance or can_access_savings %}
         <div data-slot="sidebar-group">
           <div data-slot="sidebar-group-label">Keuangan</div>
           <div data-slot="sidebar-menu">
+            {% if can_access_finance %}
             <a href="{% url 'finances:dashboard' %}" data-slot="sidebar-menu-button" title="Anggaran & Kas" aria-label="Anggaran & Kas"
               class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
               <i data-lucide="wallet"></i><span class="ui-nav-label">Anggaran &amp; Kas</span>
             </a>
+            {% endif %}
+            {% if can_access_savings %}
             <a href="{% url 'finances:savings_tracker' %}" data-slot="sidebar-menu-button" title="Tabungan Bersama" aria-label="Tabungan Bersama"
               class="{% if '/savings/' in request.path %}active{% endif %}">
               <i data-lucide="piggy-bank"></i><span class="ui-nav-label">Tabungan Bersama</span>
             </a>
+            {% endif %}
           </div>
         </div>
         {% endif %}
@@ -350,9 +398,11 @@
             </a>
           </div>
         </div>
+        {% endif %}
 
         <div data-slot="sidebar-group" style="margin-top: auto;">
           <div data-slot="sidebar-menu">
+            {% if wedding %}
             <a href="{% url 'core:guide' %}" data-slot="sidebar-menu-button" title="Panduan" aria-label="Panduan"
               class="{% if '/guide/' in request.path %}active{% endif %}">
               <i data-lucide="book-open"></i><span class="ui-nav-label">Panduan</span>
@@ -362,6 +412,7 @@
               class="{% if '/settings/' in request.path %}active{% endif %}">
               <i data-lucide="settings"></i><span class="ui-nav-label">Pengaturan</span>
             </a>
+            {% endif %}
             {% endif %}
             <button type="button" data-slot="sidebar-menu-button" role="switch"
               :aria-checked="isDark.toString()"
@@ -385,9 +436,15 @@
             <span data-slot="avatar">{{ user.username|first|upper }}</span>
             <div style="min-width: 0;">
               <div class="ui-user-name">{{ user.username }}</div>
-              {% if wedding_role %}
-              <div class="ui-user-role">{{ wedding_role }}</div>
-              {% endif %}
+              <div class="ui-user-role">
+                {% if is_platform_admin %}Platform Admin
+                {% elif wedding_role == 'wo_manager' %}WO Manager
+                {% elif wedding_role == 'owner' %}Wedding Owner
+                {% elif wedding_role == 'co_owner' %}Co-Owner
+                {% elif wedding_role == 'crew' %}Crew
+                {% elif is_wo_account %}WO Manager
+                {% endif %}
+              </div>
             </div>
           </div>
           <a href="{% url 'core:logout' %}" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Keluar" aria-label="Keluar">
@@ -399,7 +456,97 @@
     </aside>
 
     <!-- Main Inset Area -->
-    <div data-slot="sidebar-inset" :class="{ 'collapsed': rail }">
+    <div id="wp-sidebar-inset" data-slot="sidebar-inset" :class="{ 'collapsed': rail }">
+      <!-- Instant Page-Transition Skeleton (Shown immediately on HTMX sidebar/bottom-nav click) -->
+      <div id="wp-page-skeleton" class="wp-page-skeleton" aria-hidden="true">
+        <div class="wp-skel-header">
+          <div class="wp-skel-crumb">
+            <span>Rangkai.click</span>
+            <span style="opacity:0.45;">/</span>
+            <strong id="wp-skel-breadcrumb">Memuat...</strong>
+          </div>
+          <div class="wp-skel-bar" style="width:92px;height:28px;border-radius:var(--radius-md);"></div>
+        </div>
+        <div class="wp-skel-canvas">
+          <div class="wp-skel-head">
+            <div style="flex:1;min-width:220px;">
+              <div id="wp-skel-title" class="wp-skel-title-text">Memuat halaman...</div>
+              <div class="wp-skel-bar" style="width:min(340px, 82%);height:14px;"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:136px;height:36px;border-radius:var(--radius-md);"></div>
+          </div>
+
+          <div class="wp-skel-kpi-grid">
+            <div class="wp-skel-card">
+              <div class="wp-skel-bar" style="width:52%;height:12px;"></div>
+              <div class="wp-skel-bar" style="width:74%;height:26px;"></div>
+              <div class="wp-skel-bar" style="width:42%;height:11px;"></div>
+            </div>
+            <div class="wp-skel-card">
+              <div class="wp-skel-bar" style="width:48%;height:12px;"></div>
+              <div class="wp-skel-bar" style="width:68%;height:26px;"></div>
+              <div class="wp-skel-bar" style="width:55%;height:11px;"></div>
+            </div>
+            <div class="wp-skel-card">
+              <div class="wp-skel-bar" style="width:58%;height:12px;"></div>
+              <div class="wp-skel-bar" style="width:62%;height:26px;"></div>
+              <div class="wp-skel-bar" style="width:46%;height:11px;"></div>
+            </div>
+            <div class="wp-skel-card">
+              <div class="wp-skel-bar" style="width:45%;height:12px;"></div>
+              <div class="wp-skel-bar" style="width:70%;height:26px;"></div>
+              <div class="wp-skel-bar" style="width:50%;height:11px;"></div>
+            </div>
+          </div>
+
+          <div class="wp-skel-bento">
+            <div class="wp-skel-card" style="min-height:290px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <div class="wp-skel-bar" style="width:180px;height:16px;"></div>
+                <div class="wp-skel-bar" style="width:84px;height:24px;border-radius:999px;"></div>
+              </div>
+              <div class="wp-skel-bar" style="width:100%;height:185px;border-radius:var(--radius-md);"></div>
+              <div style="display:flex;gap:10px;">
+                <div class="wp-skel-bar" style="width:28%;height:12px;"></div>
+                <div class="wp-skel-bar" style="width:24%;height:12px;"></div>
+                <div class="wp-skel-bar" style="width:32%;height:12px;"></div>
+              </div>
+            </div>
+            <div class="wp-skel-card" style="min-height:290px;">
+              <div class="wp-skel-bar" style="width:150px;height:16px;margin-bottom:4px;"></div>
+              <div class="wp-skel-row">
+                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+                  <div class="wp-skel-bar" style="width:78%;height:13px;"></div>
+                  <div class="wp-skel-bar" style="width:46%;height:11px;"></div>
+                </div>
+                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
+              </div>
+              <div class="wp-skel-row">
+                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+                  <div class="wp-skel-bar" style="width:66%;height:13px;"></div>
+                  <div class="wp-skel-bar" style="width:40%;height:11px;"></div>
+                </div>
+                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
+              </div>
+              <div class="wp-skel-row">
+                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+                  <div class="wp-skel-bar" style="width:84%;height:13px;"></div>
+                  <div class="wp-skel-bar" style="width:52%;height:11px;"></div>
+                </div>
+                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
+              </div>
+              <div class="wp-skel-row">
+                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+                  <div class="wp-skel-bar" style="width:72%;height:13px;"></div>
+                  <div class="wp-skel-bar" style="width:44%;height:11px;"></div>
+                </div>
+                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <main class="main-content" data-slot="main-content">
         <!-- Sticky 52px Site Header (Updates seamlessly on HTMX navigation) -->
         <header data-slot="site-header">
@@ -418,7 +565,7 @@
             <span data-slot="separator" data-orientation="vertical" aria-hidden="true"></span>
             <nav aria-label="Breadcrumb">
               <ol data-slot="breadcrumb-list">
-                <li><a href="{% url 'core:dashboard' %}" data-slot="breadcrumb-link">Rangkai</a></li>
+                <li><a href="{% url 'core:dashboard' %}" data-slot="breadcrumb-link">Rangkai.click</a></li>
                 <li data-slot="breadcrumb-separator" aria-hidden="true"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></li>
                 <li><span data-slot="breadcrumb-page">{% block breadcrumb %}Workspace{% endblock %}</span></li>
               </ol>
@@ -428,6 +575,18 @@
             {% block header_actions %}{% endblock %}
           </div>
         </header>
+
+        {% if is_platform_admin and wedding and '/platform-admin/' not in request.path and '/wo/' not in request.path %}
+        <div class="ui-admin-banner" hx-boost="false">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <i data-lucide="shield" style="width:15px;height:15px;flex-shrink:0;"></i>
+            <span>Mode Platform Admin: Menginspeksi workspace <strong>{{ wedding }}</strong></span>
+          </div>
+          <a href="{% url 'core:exit_workspace' %}" data-slot="button" data-variant="outline" data-size="sm">
+            Kembali ke Admin Console
+          </a>
+        </div>
+        {% endif %}
 
         {% block content %}{% endblock %}
       </main>
@@ -439,7 +598,7 @@
       <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
         <i data-lucide="layout-dashboard"></i><span>Ringkasan</span>
       </a>
-      {% if is_crew %}
+      {% if not can_access_finance %}
       <a href="{% url 'operations-hub:operations_hub' %}" class="{% if '/operations/' in request.path %}active{% endif %}">
         <i data-lucide="settings-2"></i><span>Logistik</span>
       </a>
@@ -559,13 +718,73 @@
       }
     };
 
-    // Global HTMX Top Progress Bar & Error Handling
+    // Global HTMX Top Progress Bar, Instant Page Skeleton & Error Handling
     (function () {
       var activeRequests = 0;
+      var activeNavRequests = 0;
       var loaderTimer = null;
       function getLoader() { return document.getElementById('htmx-global-loader'); }
-      function startLoader() {
+      function getInset() { return document.getElementById('wp-sidebar-inset'); }
+
+      function showNavSkeleton(triggerEl) {
+        var inset = getInset();
+        if (!inset) return;
+        var label = '';
+        if (triggerEl) {
+          label = (triggerEl.getAttribute('title') || triggerEl.getAttribute('aria-label') || triggerEl.textContent || '').trim();
+          // Optimistically highlight clicked nav link right away
+          var navContainer = triggerEl.closest('.sidebar-nav, .bottom-nav');
+          if (navContainer) {
+            navContainer.querySelectorAll('a.active').forEach(function (a) { a.classList.remove('active'); });
+            triggerEl.classList.add('active');
+          }
+        }
+        var crumbEl = document.getElementById('wp-skel-breadcrumb');
+        var titleEl = document.getElementById('wp-skel-title');
+        if (crumbEl) crumbEl.textContent = label || 'Memuat...';
+        if (titleEl) titleEl.textContent = label || 'Memuat halaman...';
+
+        inset.classList.add('is-nav-loading');
+        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+      }
+
+      function finishNavRequest(evt, animateSwap) {
+        var xhr = evt && evt.detail ? evt.detail.xhr : null;
+        if (xhr) {
+          if (!xhr.__isNavReq || xhr.__navDone) return;
+          xhr.__navDone = true;
+        }
+        activeNavRequests = Math.max(0, activeNavRequests - 1);
+        if (activeNavRequests > 0) return;
+        var inset = getInset();
+        if (inset) inset.classList.remove('is-nav-loading');
+        if (animateSwap) {
+          var main = document.querySelector('.main-content');
+          if (main) {
+            main.classList.add('is-just-swapped');
+            setTimeout(function () { main.classList.remove('is-just-swapped'); }, 180);
+          }
+        }
+      }
+
+      function isMainNavRequest(evt) {
+        var detail = evt && evt.detail ? evt.detail : {};
+        var elt = detail.elt;
+        var target = detail.target;
+        var verb = (detail.requestConfig && detail.requestConfig.verb) ? detail.requestConfig.verb.toLowerCase() : 'get';
+        if (verb !== 'get' || !elt) return false;
+        if (elt.closest && elt.closest('.sidebar-nav, .bottom-nav')) return true;
+        if (elt.tagName === 'A' && target && target.classList && target.classList.contains('main-content')) return true;
+        return false;
+      }
+
+      function startLoader(evt) {
         activeRequests++;
+        if (isMainNavRequest(evt)) {
+          if (evt.detail && evt.detail.xhr) evt.detail.xhr.__isNavReq = true;
+          activeNavRequests++;
+          showNavSkeleton(evt.detail.elt);
+        }
         var el = getLoader();
         if (!el) return;
         clearTimeout(loaderTimer);
@@ -590,9 +809,25 @@
         }, 120);
       }
       document.body.addEventListener('htmx:beforeRequest', startLoader);
-      document.body.addEventListener('htmx:afterRequest', stopLoader);
+      document.body.addEventListener('htmx:afterSwap', function (evt) {
+        finishNavRequest(evt, true);
+      });
+      document.body.addEventListener('htmx:afterRequest', function (evt) {
+        stopLoader();
+        finishNavRequest(evt, false);
+      });
+      document.body.addEventListener('htmx:abort', function (evt) {
+        stopLoader();
+        finishNavRequest(evt, false);
+      });
+      document.body.addEventListener('htmx:historyRestore', function () {
+        activeNavRequests = 0;
+        var inset = getInset();
+        if (inset) inset.classList.remove('is-nav-loading');
+      });
       document.body.addEventListener('htmx:responseError', function (evt) {
         stopLoader();
+        finishNavRequest(evt, false);
         var status = evt.detail && evt.detail.xhr ? evt.detail.xhr.status : 0;
         if (status === 403) {
           window.showWpToast('Akses terbatas untuk peran akun Anda.', 'error');
@@ -602,8 +837,9 @@
           window.showWpToast('Gagal memproses permintaan (kode ' + (status || 'server') + '). Silakan coba lagi.', 'error');
         }
       });
-      document.body.addEventListener('htmx:sendError', function () {
+      document.body.addEventListener('htmx:sendError', function (evt) {
         stopLoader();
+        finishNavRequest(evt, false);
         window.showWpToast('Koneksi terputus. Periksa jaringan internet Anda lalu coba lagi.', 'error');
       });
     })();
