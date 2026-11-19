@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terjadi Kendala Teknis — Rangkai</title>
-  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=21">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=22">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <script>
     if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -16,95 +16,103 @@
   </script>
   <style>
     :root {
-      --bg: #F6FAF8;
-      --card-bg: #FFFFFF;
-      --border: rgba(13, 31, 24, 0.10);
-      --text-main: #0D1F18;
-      --text-muted: #587368;
-      --forest: #126E51;
-      --forest-hover: #0B4A36;
-      --btn-text: #FFFFFF;
+      --bg: #fafafa;
+      --card: #ffffff;
+      --border: #e4e4e7;
+      --fg: #09090b;
+      --muted: #71717a;
+      --primary: #126e51;
+      --primary-hover: #0e5a42;
+      --primary-fg: #ffffff;
+      --destructive: #dc2626;
     }
     [data-theme="dark"] {
-      --bg: #07110D;
-      --card-bg: #0D1C16;
-      --border: rgba(176, 204, 192, 0.14);
-      --text-main: #F0FAF5;
-      --text-muted: #7FA193;
-      --forest: #1E9E73;
-      --forest-hover: #27B585;
-      --btn-text: #07110D;
+      --bg: #09090b;
+      --card: #111113;
+      --border: #27272a;
+      --fg: #fafafa;
+      --muted: #a1a1aa;
+      --primary: #22a076;
+      --primary-hover: #2cb487;
+      --primary-fg: #051b14;
+      --destructive: #f87171;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg);
-      color: var(--text-main);
-      min-height: 100vh;
+      color: var(--fg);
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 24px 16px;
     }
     .card {
-      background: var(--card-bg);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px 32px;
-      max-width: 480px;
+      border-radius: 12px;
+      padding: 32px 28px;
+      max-width: 420px;
       width: 100%;
       text-align: center;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
-    .logo {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 16px;
-      display: block;
+    .mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
     }
+    .mark img { width: 22px; height: 22px; filter: brightness(0) invert(1); }
+    [data-theme="dark"] .mark img { filter: brightness(0); }
     .code {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 3.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.75rem;
       font-weight: 700;
       line-height: 1;
-      color: #C2543D;
+      color: var(--destructive);
       margin-bottom: 8px;
     }
     h1 {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.8rem;
+      font-size: 1.25rem;
       font-weight: 600;
-      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
     }
     p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
+      color: var(--muted);
+      font-size: 0.875rem;
       line-height: 1.5;
-      margin-bottom: 28px;
+      margin-bottom: 22px;
     }
     .btn {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: 100%;
-      padding: 12px 20px;
-      background: var(--forest);
-      color: #FFFFFF;
+      height: 36px;
+      background: var(--primary);
+      color: var(--primary-fg);
       font-weight: 500;
-      font-size: 0.95rem;
-      border-radius: 10px;
+      font-size: 0.875rem;
+      border-radius: 8px;
       text-decoration: none;
       transition: background 0.15s ease;
     }
-    .btn:hover {
-      background: var(--forest-hover);
-    }
+    .btn:hover { background: var(--primary-hover); }
   </style>
 </head>
 <body>
   <div class="card">
-    <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai" class="logo">
+    <span class="mark"><img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai"></span>
     <div class="code">500</div>
     <h1>Terjadi Kendala Teknis</h1>
-    <p>Sistem sedang mengalami kendala sementara saat memproses permintaanmu. Silakan refresh halaman atau kembali ke beranda.</p>
+    <p>Sistem sedang mengalami kendala sementara saat memproses permintaanmu. Silakan muat ulang halaman atau kembali ke beranda.</p>
     <a href="/" class="btn">Kembali ke Beranda</a>
   </div>
 </body>

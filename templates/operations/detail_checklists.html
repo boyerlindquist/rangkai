@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}Detail Berkas & Seserahan — Rangkai{% endblock %}
+{% block title %}Berkas & Seserahan — Rangkai{% endblock %}
+{% block breadcrumb %}Berkas &amp; Seserahan{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="file-check-2"></i>
+  Berkas {{ doc_done_count }}/{{ documents|length }}
+</span>
+<span data-slot="badge" data-variant="secondary" class="tabular-nums">
+  <i data-lucide="gift"></i>
+  Seserahan {{ ses_done_count }}/{{ seserahan|length }}
+</span>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas"

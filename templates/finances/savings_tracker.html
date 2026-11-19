@@ -1,143 +1,179 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}Tracker Tabungan Bersama — Rangkai{% endblock %}
+{% block title %}Tabungan Bersama — Rangkai{% endblock %}
+{% block breadcrumb %}Tabungan Bersama{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="trending-up"></i>
+  {{ progress_percentage|floatformat:'0' }}% Tercapai
+</span>
+<a href="{% url 'finances:dashboard' %}"
+   hx-get="{% url 'finances:dashboard' %}"
+   hx-target=".main-content"
+   hx-select=".main-content"
+   hx-swap="outerHTML show:top"
+   hx-push-url="true"
+   data-slot="button" data-variant="outline" data-size="sm">
+  <i data-lucide="wallet"></i> Anggaran &amp; Kas
+</a>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas">
   <!-- Page Header -->
-  <div class="page-header fade-in" id="guide-savings">
+  <div class="dash-page-head" id="guide-savings">
     <div>
-      <h1>Tabungan Bersama</h1>
-      <p class="page-subtitle">Pantau progres dan akselerasi tabungan pernikahan kalian menuju hari H.</p>
-    </div>
-    <div class="header-actions">
-      <span class="status-pill status-done">
-        <span class="dot"></span>
-        {{ progress_percentage|floatformat:'0' }}% Tercapai
-      </span>
+      <h1 class="dash-page-title">Tabungan Bersama</h1>
+      <p class="dash-page-subtitle">Pantau progres dan akselerasi tabungan pernikahan kalian menuju hari H.</p>
     </div>
   </div>
 
-  <!-- Savings Velocity Metric Strip -->
-  <div class="metric-strip" id="guide-savings-progress">
-    <div class="metric-item">
-      <div class="metric-label">
-        <i data-lucide="wallet" style="width: 13px; height: 13px;"></i> Total Terkumpul
+  <!-- Savings Velocity KPI Grid -->
+  <div class="dash-kpi-grid" id="guide-savings-progress">
+    <div data-slot="card" data-size="sm">
+      <div data-slot="card-header">
+        <div data-slot="card-title">Total Terkumpul</div>
+        <div data-slot="card-action">
+          <span class="dash-kpi-icon"><i data-lucide="piggy-bank"></i></span>
+        </div>
       </div>
-      <div class="metric-value" style="color: var(--wp-sage-main);">Rp {{ goal.total_saved|intcomma }}</div>
-      <div class="metric-sub">dari target Rp {{ goal.target_amount|intcomma }}</div>
-    </div>
-    <div class="metric-item">
-      <div class="metric-label">
-        <i data-lucide="target" style="width: 13px; height: 13px;"></i> Sisa Target
-      </div>
-      <div class="metric-value">
-        Rp {{ goal.remaining|intcomma }}
-      </div>
-      <div class="metric-sub">perlu dikumpulkan</div>
-    </div>
-    <div class="metric-item">
-      <div class="metric-label">
-        <i data-lucide="calendar-clock" style="width: 13px; height: 13px;"></i> Estimasi Selesai
-      </div>
-      <div class="metric-value">
-        {% if goal.target_amount <= 0 %}
-          <span style="font-size: 1.05rem; color: var(--wp-text-muted);">Belum Diatur</span>
-        {% elif estimated_months > 0 %}
-          {{ estimated_months }} <span style="font-size: 0.9rem; font-weight: 500;">Bulan</span>
-        {% else %}
-          Tercapai
-        {% endif %}
-      </div>
-      <div class="metric-sub">
-        {% if goal.target_amount <= 0 %}
-          Klik "Atur Target" di bawah
-        {% elif estimated_completion_date %}
-          Perkiraan: {{ estimated_completion_date|date:"F Y" }}
-        {% else %}
-          Target tabungan terpenuhi
-        {% endif %}
+      <div data-slot="card-content">
+        <div class="dash-kpi-value is-primary">Rp {{ goal.total_saved|intcomma }}</div>
+        <div class="dash-kpi-sub tabular-nums">dari target Rp {{ goal.target_amount|intcomma }}</div>
       </div>
     </div>
-    <div class="metric-item">
-      <div class="metric-label">
-        <i data-lucide="repeat" style="width: 13px; height: 13px;"></i> Setoran / Bulan
+
+    <div data-slot="card" data-size="sm">
+      <div data-slot="card-header">
+        <div data-slot="card-title">Sisa Target</div>
+        <div data-slot="card-action">
+          <span class="dash-kpi-icon"><i data-lucide="target"></i></span>
+        </div>
       </div>
-      <div class="metric-value">Rp {{ goal.monthly_deposit|intcomma }}</div>
-      <div class="metric-sub">target komitmen berdua</div>
+      <div data-slot="card-content">
+        <div class="dash-kpi-value">Rp {{ goal.remaining|intcomma }}</div>
+        <div class="dash-kpi-sub">perlu dikumpulkan</div>
+      </div>
+    </div>
+
+    <div data-slot="card" data-size="sm">
+      <div data-slot="card-header">
+        <div data-slot="card-title">Estimasi Selesai</div>
+        <div data-slot="card-action">
+          <span class="dash-kpi-icon"><i data-lucide="calendar-clock"></i></span>
+        </div>
+      </div>
+      <div data-slot="card-content">
+        <div class="dash-kpi-value">
+          {% if goal.target_amount <= 0 %}
+            <span class="dash-kpi-unit">Belum Diatur</span>
+          {% elif estimated_months > 0 %}
+            {{ estimated_months }} <span class="dash-kpi-unit">Bulan</span>
+          {% else %}
+            Tercapai
+          {% endif %}
+        </div>
+        <div class="dash-kpi-sub">
+          {% if goal.target_amount <= 0 %}
+            Klik "Atur Target" di bawah
+          {% elif estimated_completion_date %}
+            Perkiraan: {{ estimated_completion_date|date:"F Y" }}
+          {% else %}
+            Target tabungan terpenuhi
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div data-slot="card" data-size="sm">
+      <div data-slot="card-header">
+        <div data-slot="card-title">Setoran / Bulan</div>
+        <div data-slot="card-action">
+          <span class="dash-kpi-icon"><i data-lucide="repeat"></i></span>
+        </div>
+      </div>
+      <div data-slot="card-content">
+        <div class="dash-kpi-value">Rp {{ goal.monthly_deposit|intcomma }}</div>
+        <div class="dash-kpi-sub">target komitmen berdua</div>
+      </div>
     </div>
   </div>
 
-  <!-- Unified Savings Workspace Card (Target + Chart + Add Deposit + History Ledger) -->
-  <div class="surface-panel fade-in" id="guide-savings-target" x-data="{ showGoalForm: false, showAddDeposit: false, showChart: true }">
-    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 10px;">
+  <!-- Unified Savings Workspace Card -->
+  <section data-slot="card" data-flush="true" id="guide-savings-target" x-data="{ showGoalForm: false, showAddDeposit: false, showChart: true }">
+    <div data-slot="card-header" class="has-border" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <h3 style="margin: 0;"><i data-lucide="piggy-bank" style="color: var(--wp-gold-main);"></i> Akumulasi & Riwayat Tabungan</h3>
-        <span class="status-pill">{{ deposits|length }} Setoran</span>
+        <div data-slot="card-title">Akumulasi &amp; Riwayat Tabungan</div>
+        <span data-slot="badge" data-variant="secondary" class="tabular-nums">{{ deposits|length }} Setoran</span>
         {% for dep, total_amt in chart_data.depositor_totals.items %}
-        <span class="status-pill">{{ dep }}: <strong class="tabular-nums">Rp {{ total_amt|intcomma }}</strong></span>
+        <span data-slot="badge" data-variant="outline" class="tabular-nums">{{ dep }}: Rp {{ total_amt|intcomma }}</span>
         {% endfor %}
       </div>
 
-      <!-- Labeled Compact Action Cluster -->
       <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
-                class="btn btn-sm"
-                :class="showChart ? 'btn-gold' : 'btn-secondary'"
+                data-slot="button"
+                :data-variant="showChart ? 'secondary' : 'outline'"
+                data-size="sm"
                 @click="showChart = !showChart"
-                title="Tampilkan / Sembunyikan Grafik Akumulasi"
-                style="padding: 4px 10px;">
-          <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                title="Tampilkan / Sembunyikan Grafik Akumulasi">
+          <i data-lucide="trending-up"></i>
           <span>Grafik</span>
         </button>
         <button type="button"
-                class="btn btn-sm"
-                :class="showGoalForm ? 'btn-gold' : 'btn-secondary'"
+                data-slot="button"
+                :data-variant="showGoalForm ? 'secondary' : 'outline'"
+                data-size="sm"
                 @click="showGoalForm = !showGoalForm; if(showGoalForm) showAddDeposit = false"
-                title="Atur Target & Komitmen Tabungan Bulanan"
-                style="padding: 4px 10px;">
-          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
+                title="Atur Target & Komitmen Tabungan Bulanan">
+          <i data-lucide="target"></i>
           <span>Atur Target</span>
         </button>
         <button type="button"
-                class="btn btn-gold btn-sm"
+                data-slot="button"
+                data-variant="default"
+                data-size="sm"
                 @click="showAddDeposit = !showAddDeposit; if(showAddDeposit) showGoalForm = false"
-                title="Catat Setoran Tabungan Baru"
-                style="padding: 4px 10px;">
-          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                title="Catat Setoran Tabungan Baru">
+          <i data-lucide="plus"></i>
           <span>Setoran</span>
         </button>
       </div>
     </div>
 
     <!-- 1. Collapsible Inline Drawer: Target & Komitmen Tabungan -->
-    <div x-show="showGoalForm" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-        <strong style="font-size: 0.84rem;">Atur Target & Komitmen Bulanan</strong>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showGoalForm = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
+    <div class="ui-inline-drawer" x-show="showGoalForm" x-transition x-cloak>
+      <div class="ui-inline-drawer-head">
+        <span class="ui-inline-drawer-title">Atur Target &amp; Komitmen Bulanan</span>
+        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="showGoalForm = false" aria-label="Tutup form target">
+          <i data-lucide="x"></i>
+        </button>
       </div>
       <form action="{% url 'finances:update_savings_goal' %}" method="post" class="savings-goal-form">
         {% csrf_token %}
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" style="margin-bottom: 0;">
           <label>Target Tabungan (Rp)</label>
           {{ goal_form.target_amount }}
         </div>
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" style="margin-bottom: 0;">
           <label>Kesanggupan Nabung Per Bulan (Rp)</label>
           {{ goal_form.monthly_deposit }}
         </div>
         <div style="display: flex; gap: 6px;">
-          <button type="button" class="btn btn-ghost btn-sm" @click="showGoalForm = false">Batal</button>
-          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan Target</button>
+          <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="showGoalForm = false">Batal</button>
+          <button type="submit" data-slot="button" data-variant="default" data-size="sm"><i data-lucide="check"></i> Simpan Target</button>
         </div>
       </form>
     </div>
 
     <!-- 2. Collapsible Inline Drawer: Tambah Setoran Baru -->
-    <div x-show="showAddDeposit" x-transition x-cloak style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-        <strong style="font-size: 0.84rem;">Catat Setoran Tabungan Baru</strong>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showAddDeposit = false"><i data-lucide="x" style="width: 14px; height: 14px;"></i></button>
+    <div class="ui-inline-drawer" x-show="showAddDeposit" x-transition x-cloak>
+      <div class="ui-inline-drawer-head">
+        <span class="ui-inline-drawer-title">Catat Setoran Tabungan Baru</span>
+        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="showAddDeposit = false" aria-label="Tutup form setoran">
+          <i data-lucide="x"></i>
+        </button>
       </div>
       <form action="{% url 'finances:add_savings_deposit' %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr 1.5fr auto; gap: 10px; align-items: flex-end;">
         {% csrf_token %}
@@ -163,21 +199,21 @@
           {{ deposit_form.notes }}
         </div>
         <div style="display: flex; gap: 6px;">
-          <button type="button" class="btn btn-ghost btn-sm" @click="showAddDeposit = false">Batal</button>
-          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan</button>
+          <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="showAddDeposit = false">Batal</button>
+          <button type="submit" data-slot="button" data-variant="default" data-size="sm"><i data-lucide="check"></i> Simpan</button>
         </div>
       </form>
     </div>
 
-    <!-- 3. Cumulative Savings Line Chart Section (Inside the same card) -->
-    <div id="guide-savings-chart" x-show="showChart" style="padding: 16px 20px; border-bottom: 1px solid var(--wp-hairline);">
+    <!-- 3. Cumulative Savings Line Chart Section -->
+    <div id="guide-savings-chart" x-show="showChart" style="padding: 16px 18px; border-bottom: 1px solid var(--border);">
       <div style="margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
-          <span style="font-weight: 600; color: var(--wp-text-main);">Progres Akumulasi menuju Target (Rp {{ goal.target_amount|intcomma }})</span>
-          <span style="font-weight: 700; color: var(--wp-gold-main);" class="tabular-nums">{{ progress_percentage|floatformat:'1' }}%</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; gap: 8px;">
+          <span style="font-weight: 500; color: var(--foreground);">Progres Akumulasi menuju Target (Rp {{ goal.target_amount|intcomma }})</span>
+          <span style="font-weight: 600; color: var(--primary);" class="tabular-nums">{{ progress_percentage|floatformat:'1' }}%</span>
         </div>
-        <div style="height: 8px; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-pill); overflow: hidden; border: 1px solid var(--wp-hairline);">
-          <div style="height: 100%; background: linear-gradient(90deg, var(--wp-gold-main), var(--wp-sage-main)); width: {{ progress_percentage|floatformat:'0' }}%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+        <div data-slot="progress" aria-label="Progres tabungan {{ progress_percentage|floatformat:'0' }} persen">
+          <div data-slot="progress-indicator" style="width: {{ progress_percentage|floatformat:'0' }}%;"></div>
         </div>
       </div>
 
@@ -186,52 +222,56 @@
         <canvas id="savingsCumulativeChart"></canvas>
       </div>
       {% else %}
-      <div style="padding: 20px; text-align: center; color: var(--wp-text-muted); font-size: 0.82rem; background: var(--wp-bg-surface-subtle); border-radius: var(--wp-radius-xs);">
-        Grafik akumulasi akan otomatis terbentuk saat setoran pertama dicatat. Klik <strong>+ Setoran</strong> di kanan atas untuk mulai.
+      <div data-slot="empty" style="min-height: 150px; padding: 20px;">
+        <div data-slot="empty-icon"><i data-lucide="trending-up"></i></div>
+        <div data-slot="empty-title">Belum ada data grafik akumulasi</div>
+        <p data-slot="empty-description">Grafik akan otomatis terbentuk saat setoran pertama dicatat. Klik tombol <strong>+ Setoran</strong> di kanan atas.</p>
       </div>
       {% endif %}
     </div>
 
-    <!-- 4. Deposit History Ledger Table (Full-width inside the same card) -->
-    <div class="sheet-table-wrap" style="max-height: 380px; overflow-y: auto;">
-      <table class="sheet-table">
+    <!-- 4. Deposit History Ledger Table -->
+    <div data-slot="table-container" style="max-height: 400px; overflow-y: auto;">
+      <table data-slot="table">
         <thead>
-          <tr>
-            <th style="padding-left: 20px; min-width: 120px; white-space: nowrap;">Tanggal</th>
-            <th style="min-width: 120px; white-space: nowrap;">Penyetor</th>
-            <th class="num" style="min-width: 120px; white-space: nowrap;">Nominal</th>
-            <th>Catatan</th>
-            <th style="text-align: right; padding-right: 20px; min-width: 80px; white-space: nowrap;">Aksi</th>
+          <tr data-slot="table-row">
+            <th data-slot="table-head" style="padding-left: 18px; min-width: 120px;">Tanggal</th>
+            <th data-slot="table-head" style="min-width: 120px;">Penyetor</th>
+            <th data-slot="table-head" style="text-align: right; min-width: 130px;">Nominal</th>
+            <th data-slot="table-head">Catatan</th>
+            <th data-slot="table-head" style="text-align: right; padding-right: 18px; min-width: 84px;">Aksi</th>
           </tr>
         </thead>
         {% for deposit in deposits %}
         <tbody x-data="{ editing: false }">
-          <tr x-show="!editing">
-            <td style="padding-left: 20px; font-weight: 500; white-space: nowrap;">{{ deposit.date|date:"d M Y" }}</td>
-            <td style="white-space: nowrap;">
-              <span class="status-pill {% if deposit.depositor == 'CPP' or deposit.depositor == 'Pria' %}status-warning{% elif deposit.depositor == 'CPW' or deposit.depositor == 'Wanita' %}status-done{% endif %}" style="white-space: nowrap;">
+          <tr data-slot="table-row" x-show="!editing">
+            <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500; white-space: nowrap;" class="tabular-nums">{{ deposit.date|date:"d M Y" }}</td>
+            <td data-slot="table-cell" style="white-space: nowrap;">
+              <span data-slot="badge" data-variant="{% if deposit.depositor == 'CPP' or deposit.depositor == 'Pria' %}warning{% elif deposit.depositor == 'CPW' or deposit.depositor == 'Wanita' %}success{% else %}secondary{% endif %}">
                 {{ deposit.depositor }}
               </span>
             </td>
-            <td class="num tabular-nums" style="font-weight: 700; white-space: nowrap;">Rp {{ deposit.amount|intcomma }}</td>
-            <td class="text-secondary" style="font-size: 0.82rem;">{{ deposit.notes|default:"—" }}</td>
-            <td style="text-align: right; padding-right: 20px; white-space: nowrap;">
-              <div style="display: inline-flex; gap: 4px; white-space: nowrap;">
-                <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="editing = true" style="color: var(--wp-gold-main);" title="Edit Setoran">
-                  <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+            <td data-slot="table-cell" style="text-align: right; white-space: nowrap;">
+              <span class="dash-amount">Rp {{ deposit.amount|intcomma }}</span>
+            </td>
+            <td data-slot="table-cell" style="color: var(--muted-foreground); font-size: 0.82rem;">{{ deposit.notes|default:"—" }}</td>
+            <td data-slot="table-cell" style="text-align: right; padding-right: 18px; white-space: nowrap;">
+              <div style="display: inline-flex; gap: 4px;">
+                <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="editing = true" title="Edit Setoran" aria-label="Edit setoran">
+                  <i data-lucide="pencil"></i>
                 </button>
                 <form action="{% url 'finances:delete_savings_deposit' deposit.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Hapus setoran tabungan sebesar Rp {{ deposit.amount|intcomma }}?');">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-text-muted);" title="Hapus Setoran">
-                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                  <button type="submit" data-slot="button" data-variant="ghost" data-size="icon-sm" style="color: var(--muted-foreground);" title="Hapus Setoran" aria-label="Hapus setoran">
+                    <i data-lucide="trash-2"></i>
                   </button>
                 </form>
               </div>
             </td>
           </tr>
-          <tr x-show="editing" x-cloak style="background: var(--wp-bg-surface-subtle);">
-            <td colspan="5" style="padding: 12px 20px;">
-              <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 140px 150px 160px 1fr auto; gap: 10px; align-items: center;">
+          <tr x-show="editing" x-cloak style="background: color-mix(in srgb, var(--muted) 55%, transparent);">
+            <td colspan="5" style="padding: 12px 18px; border-bottom: 1px solid var(--border);">
+              <form action="{% url 'finances:update_savings_deposit' deposit.pk %}" method="post" class="rg-stack" style="display: grid; grid-template-columns: 145px 150px 160px 1fr auto; gap: 10px; align-items: center;">
                 {% csrf_token %}
                 <input type="date" name="date" class="wp-input" value="{{ deposit.date|date:'Y-m-d' }}" required>
                 <select name="depositor" class="wp-input">
@@ -243,8 +283,8 @@
                 <input type="number" name="amount" class="wp-input tabular-nums" value="{{ deposit.amount|floatformat:0 }}" min="0" required>
                 <input type="text" name="notes" class="wp-input" value="{{ deposit.notes }}" placeholder="Catatan...">
                 <div style="display: flex; gap: 6px;">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="editing = false">Batal</button>
-                  <button type="submit" class="btn btn-gold btn-sm">Simpan</button>
+                  <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="editing = false">Batal</button>
+                  <button type="submit" data-slot="button" data-variant="default" data-size="sm">Simpan</button>
                 </div>
               </form>
             </td>
@@ -253,15 +293,19 @@
         {% empty %}
         <tbody>
           <tr>
-            <td colspan="5" style="padding: 36px; text-align: center; color: var(--wp-text-muted);">
-              Belum ada setoran tabungan. Klik <strong>+ Setoran</strong> di kanan atas untuk mulai mencatat.
+            <td colspan="5" style="padding: 0;">
+              <div data-slot="empty">
+                <div data-slot="empty-icon"><i data-lucide="piggy-bank"></i></div>
+                <div data-slot="empty-title">Belum ada riwayat setoran</div>
+                <p data-slot="empty-description">Mulai catat setoran pertama Anda dengan menekan tombol <strong>+ Setoran</strong> di atas.</p>
+              </div>
             </td>
           </tr>
         </tbody>
         {% endfor %}
       </table>
     </div>
-  </div>
+  </section>
 </div>
 
 <script>
@@ -272,14 +316,10 @@
     const canvas = document.getElementById('savingsCumulativeChart');
     if (!canvas || !chartDataRaw || !chartDataRaw.has_data) return;
 
-    // Destroy existing instance bound to this canvas if any
     if (typeof Chart !== 'undefined') {
       const existingChart = Chart.getChart(canvas);
-      if (existingChart) {
-        existingChart.destroy();
-      }
+      if (existingChart) existingChart.destroy();
     } else {
-      // If Chart.js CDN is not yet loaded, dynamically load and retry
       if (!window.__chartJsLoading) {
         window.__chartJsLoading = true;
         const script = document.createElement('script');
@@ -296,30 +336,30 @@
     }
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const textColor = isDark ? '#E5E7EB' : '#374151';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-    const targetColor = '#E06D53'; // Coral / Terracotta
+    const textColor = isDark ? '#A1A1AA' : '#71717A';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(24, 24, 27, 0.06)';
+    const targetColor = isDark ? '#F87171' : '#DC2626';
+    const emeraldColor = isDark ? '#22A076' : '#126E51';
+    const emeraldFill = isDark ? 'rgba(34, 160, 118, 0.14)' : 'rgba(18, 110, 81, 0.10)';
 
-    // Depositor color palette
     const depositorColors = [
-      { border: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },  // Blue
-      { border: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' }, // Emerald
-      { border: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)' }, // Purple
-      { border: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' }, // Amber
-      { border: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)' }, // Pink
-      { border: '#06B6D4', bg: 'rgba(6, 182, 212, 0.1)' }   // Cyan
+      { border: '#3B82F6', bg: 'rgba(59, 130, 246, 0.10)' },
+      { border: '#14B8A6', bg: 'rgba(20, 184, 166, 0.10)' },
+      { border: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.10)' },
+      { border: '#D97706', bg: 'rgba(217, 119, 6, 0.10)' },
+      { border: '#EC4899', bg: 'rgba(236, 72, 153, 0.10)' },
+      { border: '#06B6D4', bg: 'rgba(6, 182, 212, 0.10)' }
     ];
 
     const datasets = [];
 
-    // 1. Horizontal Target Line Dataset (Dashed)
     if (chartDataRaw.target_amount > 0) {
       datasets.push({
         label: 'Garis Target (Rp ' + chartDataRaw.target_amount.toLocaleString('id-ID') + ')',
         data: chartDataRaw.target_series,
         borderColor: targetColor,
-        borderWidth: 2.5,
-        borderDash: [8, 6],
+        borderWidth: 2,
+        borderDash: [6, 5],
         pointRadius: 0,
         pointHoverRadius: 0,
         fill: false,
@@ -328,22 +368,20 @@
       });
     }
 
-    // 2. Total Cumulative Dataset
     datasets.push({
       label: 'Total Akumulasi',
       data: chartDataRaw.total_series,
-      borderColor: '#1E6B52',
-      backgroundColor: 'rgba(30, 107, 82, 0.14)',
-      borderWidth: 3,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: '#1E6B52',
+      borderColor: emeraldColor,
+      backgroundColor: emeraldFill,
+      borderWidth: 2.5,
+      pointRadius: 3.5,
+      pointHoverRadius: 6,
+      pointBackgroundColor: emeraldColor,
       tension: 0.25,
       fill: 'origin',
       order: 1
     });
 
-    // 3. Per-Depositor Lines
     if (chartDataRaw.depositors && chartDataRaw.depositors.length > 0) {
       chartDataRaw.depositors.forEach((dep, idx) => {
         const color = depositorColors[idx % depositorColors.length];
@@ -353,9 +391,9 @@
           data: seriesData,
           borderColor: color.border,
           backgroundColor: color.bg,
-          borderWidth: 2.2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
           pointBackgroundColor: color.border,
           tension: 0.25,
           fill: false,
@@ -364,7 +402,6 @@
       });
     }
 
-    // Calculate max Y for comfortable breathing room
     let maxVal = Math.max(
       chartDataRaw.target_amount || 0,
       ...(chartDataRaw.total_series || [0])
@@ -381,10 +418,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
-        },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: {
             position: 'top',
@@ -393,21 +427,17 @@
               pointStyle: 'circle',
               padding: 16,
               color: textColor,
-              font: {
-                family: "'Instrument Sans', sans-serif",
-                size: 12,
-                weight: '500'
-              }
+              font: { family: "'Inter', sans-serif", size: 12, weight: '500' }
             }
           },
           tooltip: {
-            backgroundColor: isDark ? '#0E1A15' : '#FFFFFF',
-            titleColor: isDark ? '#F2F7F4' : '#0E1D17',
-            bodyColor: isDark ? '#B4C7BE' : '#3E524A',
-            borderColor: isDark ? 'rgba(180,199,190,0.18)' : 'rgba(15,41,32,0.12)',
+            backgroundColor: isDark ? '#141417' : '#FFFFFF',
+            titleColor: isDark ? '#FAFAFA' : '#09090B',
+            bodyColor: isDark ? '#D4D4D8' : '#3F3F46',
+            borderColor: isDark ? '#27272A' : '#E4E4E7',
             borderWidth: 1,
-            padding: 12,
-            boxPadding: 6,
+            padding: 10,
+            boxPadding: 5,
             usePointStyle: true,
             callbacks: {
               label: function(context) {
@@ -416,7 +446,6 @@
                 if (context.parsed.y !== null) {
                   label += 'Rp ' + Math.round(context.parsed.y).toLocaleString('id-ID');
                 }
-                // If this is total or depositor and target > 0, show percentage
                 if (chartDataRaw.target_amount > 0 && context.dataset.borderDash === undefined) {
                   const pct = ((context.parsed.y / chartDataRaw.target_amount) * 100).toFixed(1);
                   label += ' (' + pct + '%)';
@@ -428,39 +457,20 @@
         },
         scales: {
           x: {
-            grid: {
-              color: gridColor,
-              drawBorder: false
-            },
-            ticks: {
-              color: textColor,
-              font: {
-                family: "'Instrument Sans', sans-serif",
-                size: 12
-              }
-            }
+            grid: { color: gridColor, drawBorder: false },
+            ticks: { color: textColor, font: { family: "'Inter', sans-serif", size: 12 } }
           },
           y: {
             beginAtZero: true,
             suggestedMax: suggestedMax,
-            grid: {
-              color: gridColor,
-              drawBorder: false
-            },
+            grid: { color: gridColor, drawBorder: false },
             ticks: {
               color: textColor,
-              font: {
-                family: "'Instrument Sans', sans-serif",
-                size: 12
-              },
+              font: { family: "'Inter', sans-serif", size: 12 },
               callback: function(value) {
-                if (value >= 1000000000) {
-                  return 'Rp ' + (value / 1000000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' M';
-                } else if (value >= 1000000) {
-                  return 'Rp ' + (value / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
-                } else if (value >= 1000) {
-                  return 'Rp ' + (value / 1000).toLocaleString('id-ID') + ' rb';
-                }
+                if (value >= 1000000000) return 'Rp ' + (value / 1000000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' M';
+                if (value >= 1000000) return 'Rp ' + (value / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+                if (value >= 1000) return 'Rp ' + (value / 1000).toLocaleString('id-ID') + ' rb';
                 return 'Rp ' + value.toLocaleString('id-ID');
               }
             }
@@ -470,20 +480,13 @@
     });
   }
 
-  // Run immediately (works for both initial load and HTMX inner swap)
   initSavingsChart();
-
-  // Also hook DOMContentLoaded if script runs while parsing
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSavingsChart);
   }
-
-  // Support theme switching dynamically
   window.addEventListener('themeChanged', function() {
     setTimeout(initSavingsChart, 50);
   });
 })();
 </script>
 {% endblock %}
-
-

@@ -1,9 +1,26 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Anggaran & Arus Kas — Rangkai{% endblock %}
+{% block breadcrumb %}Anggaran &amp; Kas{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="piggy-bank"></i>
+  {{ saved_vs_need_pct }}% Terkumpul
+</span>
+<a href="{% url 'finances:savings_tracker' %}"
+   hx-get="{% url 'finances:savings_tracker' %}"
+   hx-target=".main-content"
+   hx-select=".main-content"
+   hx-swap="outerHTML show:top"
+   hx-push-url="true"
+   data-slot="button" data-variant="outline" data-size="sm">
+  <i data-lucide="trending-up"></i> Tabungan Bersama
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="workspace-canvas"
+<div class="workspace-canvas is-wide"
      x-data="{ showNewCategory: false, showCashBreakdown: false, payerFilter: sessionStorage.getItem('wp_budget_payer_filter') || '' }"
      x-init="$watch('payerFilter', val => { sessionStorage.setItem('wp_budget_payer_filter', val || ''); window.dispatchEvent(new CustomEvent('budgetPayerFilterChanged', { detail: { payer: val } })); })">
   <!-- Clean Page Header -->
@@ -378,24 +395,18 @@
       opacity: 0;
       z-index: 9999 !important;
       max-width: 260px;
-      background: var(--wp-surface-elevated, #FFFFFF);
-      color: var(--wp-text-main, #0D1F18);
-      border: 1px solid var(--wp-hairline, rgba(13, 31, 24, 0.12));
-      border-radius: 6px;
+      background: var(--popover);
+      color: var(--popover-foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 8px 12px;
       font-size: 12px;
-      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+      box-shadow: var(--shadow-lg);
       transition: opacity 0.12s ease;
     }
-    [data-theme="dark"] .sankey-tooltip-card {
-      background: #142A21 !important;
-      color: #F6FAF8 !important;
-      border-color: rgba(255, 255, 255, 0.12) !important;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
-    }
     @keyframes sankeyHighlightGlow {
-      0% { outline: 2px solid var(--wp-gold-main); background-color: var(--wp-sage-soft); }
-      50% { outline: 2px solid var(--wp-sage-main); background-color: var(--wp-gold-soft); }
+      0% { outline: 2px solid var(--primary); background-color: var(--primary-soft); }
+      50% { outline: 2px solid var(--primary); background-color: var(--primary-soft); }
       100% { outline: 2px solid transparent; background-color: transparent; }
     }
     .highlight-pulse {
@@ -416,48 +427,43 @@
 
   <!-- Reconciliation Alert: Shown when Category Plans exceed Target Budget (Over-Allocated) -->
   {% if is_over_allocated %}
-  <div id="reconciliation-alert"
-       class="surface-panel fade-in"
-       style="border: 1px solid rgba(194, 84, 61, 0.4); background: var(--wp-bg-surface); padding: 18px 22px; margin-bottom: 24px; border-radius: var(--wp-radius-md); box-shadow: 0 4px 16px rgba(194, 84, 61, 0.08);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-      <div style="display: flex; align-items: flex-start; gap: 14px; max-width: 720px;">
-        <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--wp-terracotta-soft); display: flex; align-items: center; justify-content: center; color: var(--wp-terracotta-main); flex-shrink: 0; border: 1px solid rgba(194, 84, 61, 0.25);">
-          <i data-lucide="shield-alert" style="width: 20px; height: 20px;"></i>
-        </div>
-        <div>
-          <h4 style="margin: 0 0 6px 0; color: var(--wp-terracotta-main); font-size: 0.98rem; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span>Pagu Kategori Melebihi Target Anggaran</span>
-            <span class="status-pill status-danger" style="font-size: 0.75rem; padding: 2px 8px;">Over-Allocated Rp {{ over_allocated_amount|intcomma }}</span>
-          </h4>
-          <p style="margin: 0; font-size: 0.84rem; color: var(--wp-text-secondary); line-height: 1.55;">
-            Total rencana pagu dari <strong>{{ categories|length }} kategori</strong> adalah <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ total_cat_planned|intcomma }}</strong> (<strong>{{ over_allocated_pct }}%</strong>), sedangkan Target Anggaran saat ini diset <strong class="tabular-nums" style="color: var(--wp-text-main);">Rp {{ total_allocated|intcomma }}</strong> (100%). Terdapat defisit rencana sebesar <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ over_allocated_amount|intcomma }}</strong> yang belum memiliki sumber dana (ditandai dengan alur merah bata pada diagram di bawah).
-          </p>
-        </div>
+  <div id="reconciliation-alert" data-slot="alert" data-variant="destructive">
+    <div class="ui-alert-body">
+      <div class="ui-alert-icon">
+        <i data-lucide="shield-alert"></i>
       </div>
-      <div class="reconciliation-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <form hx-post="{% url 'finances:update_total_budget' %}"
-              hx-target=".main-content"
-              hx-select=".main-content"
-              hx-swap="outerHTML show:none"
-              style="margin: 0;">
-          {% csrf_token %}
-          <input type="hidden" name="total_budget" value="{{ total_cat_planned }}">
-          <button type="submit" class="btn btn-gold btn-sm" style="display: inline-flex; align-items: center; gap: 6px;" title="Naikkan Target Anggaran & Target Tabungan Bersama menjadi Rp {{ total_cat_planned|intcomma }}">
-            <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
-            Naikkan Target Jadi Rp {{ total_cat_planned|intcomma }}
-          </button>
-        </form>
-        <button type="button"
-                class="btn btn-secondary btn-sm"
-                hx-get="{% url 'finances:config_allocations' %}"
-                hx-target="#allocation-container"
-                hx-swap="innerHTML show:#allocation-container:top"
-                style="display: inline-flex; align-items: center; gap: 6px;"
-                title="Sesuaikan dan pangkas nominal kategori lain agar total kembali pas">
-          <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
-          Susun Ulang Pagu Kategori
+      <div>
+        <div class="ui-alert-title">
+          <span>Pagu Kategori Melebihi Target Anggaran</span>
+          <span data-slot="badge" data-variant="destructive" class="tabular-nums">Over-Allocated Rp {{ over_allocated_amount|intcomma }}</span>
+        </div>
+        <p class="ui-alert-desc">
+          Total rencana pagu dari <strong>{{ categories|length }} kategori</strong> adalah <strong class="tabular-nums" style="color: var(--foreground);">Rp {{ total_cat_planned|intcomma }}</strong> (<strong>{{ over_allocated_pct }}%</strong>), sedangkan Target Anggaran saat ini <strong class="tabular-nums" style="color: var(--foreground);">Rp {{ total_allocated|intcomma }}</strong> (100%). Defisit rencana sebesar <strong class="tabular-nums" style="color: var(--destructive);">Rp {{ over_allocated_amount|intcomma }}</strong> belum memiliki sumber dana.
+        </p>
+      </div>
+    </div>
+    <div class="reconciliation-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <form hx-post="{% url 'finances:update_total_budget' %}"
+            hx-target=".main-content"
+            hx-select=".main-content"
+            hx-swap="outerHTML show:none"
+            style="margin: 0;">
+        {% csrf_token %}
+        <input type="hidden" name="total_budget" value="{{ total_cat_planned }}">
+        <button type="submit" data-slot="button" data-variant="default" data-size="sm" title="Naikkan Target Anggaran & Target Tabungan Bersama menjadi Rp {{ total_cat_planned|intcomma }}">
+          <i data-lucide="arrow-up-right"></i>
+          Naikkan Target Jadi Rp {{ total_cat_planned|intcomma }}
         </button>
-      </div>
+      </form>
+      <button type="button"
+              data-slot="button" data-variant="outline" data-size="sm"
+              hx-get="{% url 'finances:config_allocations' %}"
+              hx-target="#allocation-container"
+              hx-swap="innerHTML show:#allocation-container:top"
+              title="Sesuaikan dan pangkas nominal kategori lain agar total kembali pas">
+        <i data-lucide="sliders"></i>
+        Susun Ulang Pagu
+      </button>
     </div>
   </div>
   {% endif %}
@@ -1661,33 +1667,53 @@
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const textMainColor = isDark ? '#F2FAF6' : '#0D1F18';
       const textMutedColor = isDark ? '#9CB8AC' : '#587368';
-      const headerColor = isDark ? '#7E9F90' : '#4E6B5D';
-      const titleColor = isDark ? '#9CB8AC' : '#587368';
-      const bodyColor = isDark ? '#F6FAF8' : '#0D1F18';
-      const goldColor = isDark ? '#E5B84B' : '#B8860B';
-      const tealColor = isDark ? '#14B8A6' : '#0F766E';
+      const headerColor = isDark ? '#A1A1AA' : '#6B6B76';
+      const titleColor = isDark ? '#A1A1AA' : '#6B6B76';
+      const bodyColor = isDark ? '#FAFAFA' : '#09090B';
+      const goldColor = isDark ? '#34D399' : '#126E51';
+      const tealColor = isDark ? '#2DD4BF' : '#0F766E';
 
-      // Rangkai Luxury Botanical Color System
-      const colorMap = {
+      // Rangkai Cohesive Category Palette (Flat Solid Emerald / Teal / Slate — Zero Muddy Gradients)
+      const colorMap = isDark ? {
+        'Total Tabungan (Target)': '#22A076',
+        'Tabungan Bersama': '#22A076',
+        'Belum Dialokasikan (Unused)': '#F59E0B',
+        'Belum Ada Sumber Dana': '#F87171',
+        'Pengantin Pria': '#38BDF8',
+        'Pengantin Wanita': '#34D399',
+        'Keluarga Pria': '#2DD4BF',
+        'Keluarga Wanita': '#94A3B8',
+        'Catering & F&B': '#22A076',
+        'Venue & Gedung': '#14B8A6',
+        'Dekorasi': '#34D399',
+        'Attire & MUA': '#38BDF8',
+        'Dokumentasi': '#0EA5E9',
+        'Entertainment & MC': '#64748B',
+        'Admin & Legalitas': '#94A3B8',
+        'Seserahan & Cincin': '#10B981',
+        'Buffer / Darurat': '#71717A',
+      } : {
         'Total Tabungan (Target)': '#126E51',
         'Tabungan Bersama': '#126E51',
         'Belum Dialokasikan (Unused)': '#D97706',
-        'Belum Ada Sumber Dana': '#C2543D',
-        'Pengantin Pria': '#CFA340',
-        'Pengantin Wanita': '#0F766E',
-        'Keluarga Pria': '#289E78',
-        'Keluarga Wanita': '#C2543D',
+        'Belum Ada Sumber Dana': '#DC2626',
+        'Pengantin Pria': '#0284C7',
+        'Pengantin Wanita': '#126E51',
+        'Keluarga Pria': '#0F766E',
+        'Keluarga Wanita': '#475569',
         'Catering & F&B': '#126E51',
         'Venue & Gedung': '#0F766E',
-        'Dekorasi': '#CFA340',
-        'Attire & MUA': '#289E78',
-        'Dokumentasi': '#14B8A6',
-        'Entertainment & MC': '#B88E36',
-        'Admin & Legalitas': '#1B5E45',
-        'Seserahan & Cincin': '#C2543D',
-        'Buffer / Darurat': '#395248',
+        'Dekorasi': '#1E9E73',
+        'Attire & MUA': '#0284C7',
+        'Dokumentasi': '#0D9488',
+        'Entertainment & MC': '#475569',
+        'Admin & Legalitas': '#334155',
+        'Seserahan & Cincin': '#059669',
+        'Buffer / Darurat': '#64748B',
       };
-      const fallbackPalette = ['#126E51', '#0F766E', '#CFA340', '#289E78', '#14B8A6', '#1B5E45', '#395248', '#B88E36'];
+      const fallbackPalette = isDark
+        ? ['#22A076', '#14B8A6', '#38BDF8', '#34D399', '#64748B', '#0EA5E9', '#94A3B8', '#10B981']
+        : ['#126E51', '#0F766E', '#0284C7', '#1E9E73', '#475569', '#0D9488', '#334155', '#64748B'];
       function getNodeColor(name, idx) {
         const c = cleanStr(name);
         return colorMap[c] || fallbackPalette[idx % fallbackPalette.length];
@@ -1902,35 +1928,26 @@
       const svgW = isMobile ? effectiveW : '100%';
       let svg = '<svg width="' + svgW + '" height="' + height + '" viewBox="0 0 ' + effectiveW + ' ' + height + '" preserveAspectRatio="xMidYMid meet" style="display: block; width: ' + (isMobile ? effectiveW + 'px' : '100%') + '; height: ' + height + 'px; overflow: visible; font-family: inherit;">';
 
-      svg += '<defs>';
-      links1.concat(links2).forEach(function(l, idx) {
-        const gradId = 'bsankey-grad-' + idx;
-        svg += '<linearGradient id="' + gradId + '" x1="0%" y1="0%" x2="100%" y2="0%">' +
-               '<stop offset="0%" stop-color="' + l.color + '" stop-opacity="0.38" />' +
-               '<stop offset="100%" stop-color="' + l.tgtColor + '" stop-opacity="0.24" />' +
-               '</linearGradient>';
-      });
-      svg += '</defs>';
-
       // Column Headers: 1. Total Tabungan (Target), 2. Kategori & Unused, 3. Rincian Item
-      svg += '<g style="font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;">' +
+      svg += '<g style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">' +
              '<text x="' + x0 + '" y="18" fill="' + headerColor + '">1. Total Tabungan (Target)</text>' +
              '<text x="' + x1 + '" y="18" fill="' + headerColor + '">2. Kategori &amp; Unused</text>' +
              '<text x="' + x2 + '" y="18" fill="' + headerColor + '">3. Rincian Item (Klik untuk Edit)</text>' +
              '</g>';
 
-      // Draw Ribbons
-      links1.concat(links2).forEach(function(l, idx) {
-        const gradId = 'bsankey-grad-' + idx;
+      // Draw Flat Solid Category-Colored Ribbons (No Gradients)
+      const baseFillOpacity = isDark ? '0.26' : '0.20';
+      links1.concat(links2).forEach(function(l) {
+        const catColor = l.targetCol === 1 ? l.tgtColor : l.color;
         const dashAttr = l.kind === 'unused' ? 'stroke-dasharray="5,3" ' : '';
         svg += '<path class="sankey-link" d="' + makePath(l) + '" ' +
-               'fill="url(#' + gradId + ')" ' +
+               'fill="' + catColor + '" fill-opacity="' + baseFillOpacity + '" ' +
                dashAttr +
-               'stroke="' + l.color + '" stroke-opacity="0.32" stroke-width="0.9" ' +
+               'stroke="' + catColor + '" stroke-opacity="0.28" stroke-width="0.8" ' +
                'data-from="' + cleanStr(l.from) + '" data-to="' + cleanStr(l.to) + '" ' +
                'data-target-col="' + l.targetCol + '" ' +
                'data-weight="' + formatRp(l.weight) + '" ' +
-               'style="cursor: pointer; transition: fill-opacity 0.2s ease, stroke 0.2s ease;" />';
+               'style="cursor: pointer; transition: fill-opacity 0.18s ease, stroke-opacity 0.18s ease;" />';
       });
 
       const activeNodeName = (window.__activeSankeyNodeName || '').toLowerCase();

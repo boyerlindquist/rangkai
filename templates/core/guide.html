@@ -1,22 +1,23 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}Panduan & Masterclass — Rangkai{% endblock %}
+{% block breadcrumb %}Panduan{% endblock %}
+
+{% block header_actions %}
+<button type="button" data-slot="button" data-variant="default" data-size="sm" onclick="startComprehensiveTour()">
+  <i data-lucide="play-circle"></i> Mulai Tur Interaktif
+</button>
+{% endblock %}
 
 {% block content %}
+<div class="workspace-canvas">
 <!-- Hero Section -->
-<div class="page-header fade-in" style="margin-bottom: 32px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px;">
+<div class="page-header fade-in">
   <div>
-    <h1 style="font-family: var(--wp-font-display); font-size: 2.4rem; margin: 0; color: var(--wp-text-main); line-height: 1.15;">
-      Panduan Lengkap Rangkai
-    </h1>
-    <p class="page-subtitle" style="margin-top: 8px; margin-bottom: 0; font-size: 0.95rem; max-width: 72ch; line-height: 1.6;">
-      Panduan komprehensif menguasai setiap modul pintar untuk merencanakan pernikahan impian yang terstruktur, rasional, dan tanpa stres.
+    <h1>Panduan Lengkap Rangkai</h1>
+    <p class="page-subtitle">
+      Panduan komprehensif menguasai setiap modul untuk merencanakan pernikahan yang terstruktur, rasional, dan tanpa stres.
     </p>
-  </div>
-  <div class="header-actions" style="margin-top: 6px;">
-    <button class="btn btn-gold" onclick="startComprehensiveTour()" style="padding: 10px 22px; font-size: 0.88rem;">
-      <i data-lucide="play-circle" style="width: 17px; height: 17px;"></i> Mulai Tur Interaktif
-    </button>
   </div>
 </div>
 
@@ -312,6 +313,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 {% endblock %}

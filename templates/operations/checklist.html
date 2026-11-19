@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Checklist — Rangkai{% endblock %}
+{% block title %}Timeline & Tugas — Rangkai{% endblock %}
+{% block breadcrumb %}Timeline &amp; Tugas{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="check-circle-2"></i>
+  {{ overall_progress }}% Tuntas ({{ done_tasks }}/{{ total_tasks }})
+</span>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas"

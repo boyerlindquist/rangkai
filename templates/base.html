@@ -7,9 +7,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description"
-    content="Rangkai Ã¢â‚¬â€ Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
+    content="Rangkai — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
   <title>{% block title %}Rangkai{% endblock %}</title>
-  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=21">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=22">
 
   <!-- Theme Initialization (Prevents flicker) -->
   <script>
@@ -163,16 +163,17 @@
     };
   </script>
 
-  <!-- Google Fonts: Botanical Editorial & Crisp UI Typography -->
+  <!-- Google Fonts: Inter (UI) & JetBrains Mono (Tabular Rupiah/Data) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
 
-  <!-- Design System -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=45">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=45">
+  <!-- Design System (shadcn/ui radix-nova + Imperial Emerald) -->
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=59">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=59">
+  <link rel="stylesheet" href="{% static 'css/shadcn-ui.css' %}?v=59">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -198,18 +199,33 @@
   </div>
 
   {% block body %}
-  <div class="app-shell" x-data="{ 
+  <div class="app-shell" data-slot="sidebar-wrapper" x-data="{ 
          collapsed: (localStorage.getItem('sidebarCollapsed') === null) ? window.innerWidth < 1100 : localStorage.getItem('sidebarCollapsed') === 'true',
           isMobile: window.innerWidth <= 768,
           drawerOpen: false,
           touchX: null,
           get rail() { return this.collapsed && !this.isMobile; },
+          toggleSidebarDesktop() {
+            this.collapsed = !this.collapsed;
+            localStorage.setItem('sidebarCollapsed', this.collapsed);
+            setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+          },
           init() {
             const mq = window.matchMedia('(max-width: 768px)');
             const sync = () => { this.isMobile = mq.matches; if (!mq.matches) this.drawerOpen = false; };
             mq.addEventListener('change', sync); sync();
             window.addEventListener('toggle-drawer', () => { this.drawerOpen = !this.drawerOpen; });
             window.addEventListener('close-drawer', () => { this.drawerOpen = false; });
+            window.addEventListener('keydown', (e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b' && !this.isMobile) {
+                const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+                if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+                  e.preventDefault();
+                  this.toggleSidebarDesktop();
+                }
+              }
+            });
             this.$watch('drawerOpen', v => { document.body.classList.toggle('drawer-open', v); if (v) this.$nextTick(() => { if (window.lucide) lucide.createIcons(); }); });
           },
          isDark: document.documentElement.getAttribute('data-theme') === 'dark',
@@ -224,7 +240,7 @@
            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
          },
          openInspector(title, content) {
-           this.inspectorTitle = title || 'Details';
+           this.inspectorTitle = title || 'Detail';
            if (content) {
              document.getElementById('inspectorContent').innerHTML = content;
            }
@@ -237,173 +253,188 @@
        }" @open-inspector.window="openInspector($event.detail.title, $event.detail.content)"
     @close-inspector.window="closeInspector()">
 
-    <!-- Mobile Header -->
-    <div class="mobile-header">
-      <button class="hamburger-btn" @click="drawerOpen = !drawerOpen" :aria-expanded="drawerOpen" aria-controls="sidebar" aria-label="Buka menu navigasi"><i
-          data-lucide="menu"></i></button>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" style="width: 24px; height: 24px;" />
-        <span class="brand-text" style="font-size: 1.4rem;">Rangkai</span>
-      </div>
-      <span></span>
-    </div>
+    <!-- Mobile Sidebar Sheet Backdrop -->
+    <div data-slot="sidebar-backdrop" id="sidebarOverlay" :class="{ 'open': drawerOpen }" @click="drawerOpen = false"></div>
 
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" :class="{ 'open': drawerOpen }" @click="drawerOpen = false"></div>
-
-    <!-- Global Slide-Over Inspector Drawer (Spatial 3-Pane Component) -->
+    <!-- Global Right Inspector Sheet -->
     <div class="inspector-backdrop" x-show="inspectorOpen" x-transition.opacity @click="closeInspector()" x-cloak></div>
-    <aside class="inspector-drawer" role="dialog" aria-modal="true" :aria-label="inspectorTitle || 'Detail'"
+    <aside class="inspector-drawer" data-slot="sheet-content" role="dialog" aria-modal="true" :aria-label="inspectorTitle || 'Detail'"
       @keydown.escape.window="if (inspectorOpen) closeInspector()"
-      x-show="inspectorOpen" x-transition:enter="transition ease-out duration-300"
+      x-show="inspectorOpen" x-transition:enter="transition ease-out duration-250"
       x-transition:enter-start="transform translate-x-full" x-transition:enter-end="transform translate-x-0"
       x-transition:leave="transition ease-in duration-200" x-transition:leave-start="transform translate-x-0"
       x-transition:leave-end="transform translate-x-full" x-cloak>
       <div class="inspector-header">
-        <h3 x-text="inspectorTitle || 'Details'"></h3>
-        <button class="inspector-close-btn" @click="closeInspector()" aria-label="Close Inspector">
+        <h3 x-text="inspectorTitle || 'Detail'"></h3>
+        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="closeInspector()" aria-label="Tutup panel detail">
           <i data-lucide="x"></i>
         </button>
       </div>
-      <div class="inspector-body" id="inspectorContent">
-        <!-- Dynamic content or HTMX target -->
-      </div>
+      <div class="inspector-body" id="inspectorContent"></div>
     </aside>
 
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar" :class="{ 'collapsed': rail, 'open': drawerOpen }"
+    <!-- shadcn Collapsible Inset Sidebar / Mobile Sheet -->
+    <aside id="sidebar" data-slot="sidebar" :data-state="rail ? 'collapsed' : 'expanded'" :class="{ 'open': drawerOpen }"
       @keydown.escape.window="drawerOpen = false"
       @touchstart.passive="touchX = $event.touches[0].clientX"
       @touchend.passive="if (isMobile && touchX !== null && touchX - $event.changedTouches[0].clientX > 60) drawerOpen = false; touchX = null">
-      <div class="sidebar-brand">
-        <a href="{% url 'core:dashboard' %}" class="brand-link" x-show="!rail">
-          <div class="brand-info">
-            <div class="brand-title-row">
-              <img src="{% static 'img/logo.svg' %}?v=21" alt="Rangkai Logo" class="brand-logo-icon" />
-              <span class="brand-text">Rangkai</span>
-            </div>
+
+      <div data-slot="sidebar-header">
+        <a href="{% url 'core:dashboard' %}" class="ui-brand-link" title="Rangkai — Ringkasan">
+          <span class="ui-brand-mark">
+            <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai" />
+          </span>
+          <span class="ui-brand-meta" x-show="!rail">
+            <span class="ui-brand-name">Rangkai</span>
             {% if wedding %}
-            <div class="couple-names">
-              {{ wedding.groom_name|title }} & {{ wedding.bride_name|title }}
-            </div>
+            <span class="ui-brand-sub">{{ wedding.groom_name|title }} &amp; {{ wedding.bride_name|title }}</span>
+            {% else %}
+            <span class="ui-brand-sub">Workspace Pernikahan</span>
             {% endif %}
-          </div>
+          </span>
         </a>
-        <button type="button"
-                class="sidebar-collapse-btn"
-                @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed); setTimeout(() => lucide.createIcons(), 50); setTimeout(() => window.dispatchEvent(new Event('resize')), 350);"
-                :title="rail ? 'Perluas Sidebar' : 'Kecilkan Sidebar'"
-                :aria-label="rail ? 'Perluas Sidebar' : 'Kecilkan Sidebar'">
-          <i x-show="!rail" data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
-          <i x-show="rail" data-lucide="panel-left-open" style="width: 17px; height: 17px;"></i>
+        <button type="button" class="ui-drawer-close" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="drawerOpen = false" aria-label="Tutup menu navigasi">
+          <i data-lucide="x"></i>
         </button>
-        <button type="button" class="drawer-close-btn" @click="drawerOpen = false" aria-label="Tutup menu navigasi"><i data-lucide="x"></i></button>
       </div>
 
-      <nav class="sidebar-nav" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
-        <div class="sidebar-group-label" x-show="!rail">Perencanaan</div>
-        <a href="{% url 'core:dashboard' %}" title="Ringkasan" aria-label="Ringkasan"
-          class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> <span class="nav-text">Ringkasan</span>
-        </a>
-        <a href="{% url 'operations-checklist:checklist' %}" title="Timeline & Tugas" aria-label="Timeline & Tugas"
-          class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="check-square"></i></span> <span class="nav-text">Timeline & Tugas</span>
-        </a>
-        <a href="{% url 'vendors:compare' %}" title="Direktori Vendor" aria-label="Direktori Vendor"
-          class="{% if '/vendors/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="store"></i></span> <span class="nav-text">Direktori Vendor</span>
-        </a>
+      <nav class="sidebar-nav" data-slot="sidebar-content" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
+        <div data-slot="sidebar-group">
+          <div data-slot="sidebar-group-label">Perencanaan</div>
+          <div data-slot="sidebar-menu">
+            <a href="{% url 'core:dashboard' %}" data-slot="sidebar-menu-button" title="Ringkasan" aria-label="Ringkasan"
+              class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
+              <i data-lucide="layout-dashboard"></i><span class="ui-nav-label">Ringkasan</span>
+            </a>
+            <a href="{% url 'operations-checklist:checklist' %}" data-slot="sidebar-menu-button" title="Timeline & Tugas" aria-label="Timeline & Tugas"
+              class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
+              <i data-lucide="check-square"></i><span class="ui-nav-label">Timeline &amp; Tugas</span>
+            </a>
+            <a href="{% url 'vendors:compare' %}" data-slot="sidebar-menu-button" title="Direktori Vendor" aria-label="Direktori Vendor"
+              class="{% if '/vendors/' in request.path %}active{% endif %}">
+              <i data-lucide="store"></i><span class="ui-nav-label">Direktori Vendor</span>
+            </a>
+          </div>
+        </div>
 
         {% if not is_crew %}
-        <div class="sidebar-group-label" x-show="!rail">Keuangan</div>
-        <a href="{% url 'finances:dashboard' %}" title="Anggaran & Kas" aria-label="Anggaran & Kas"
-          class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="wallet"></i></span> <span class="nav-text">Anggaran & Kas</span>
-        </a>
-        <a href="{% url 'finances:savings_tracker' %}" title="Tabungan Bersama" aria-label="Tabungan Bersama"
-          class="{% if '/savings/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="piggy-bank"></i></span> <span class="nav-text">Tabungan Bersama</span>
-        </a>
+        <div data-slot="sidebar-group">
+          <div data-slot="sidebar-group-label">Keuangan</div>
+          <div data-slot="sidebar-menu">
+            <a href="{% url 'finances:dashboard' %}" data-slot="sidebar-menu-button" title="Anggaran & Kas" aria-label="Anggaran & Kas"
+              class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
+              <i data-lucide="wallet"></i><span class="ui-nav-label">Anggaran &amp; Kas</span>
+            </a>
+            <a href="{% url 'finances:savings_tracker' %}" data-slot="sidebar-menu-button" title="Tabungan Bersama" aria-label="Tabungan Bersama"
+              class="{% if '/savings/' in request.path %}active{% endif %}">
+              <i data-lucide="piggy-bank"></i><span class="ui-nav-label">Tabungan Bersama</span>
+            </a>
+          </div>
+        </div>
         {% endif %}
 
-        <div class="sidebar-group-label" x-show="!rail">Hari-H & Tamu</div>
-        <a href="{% url 'guests:list' %}" title="Tamu & Katering" aria-label="Tamu & Katering"
-          class="{% if '/guests/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="users"></i></span> <span class="nav-text">Tamu & Katering</span>
-        </a>
-        <a href="{% url 'operations-checklist:detail_checklists' %}" title="Berkas & Seserahan" aria-label="Berkas & Seserahan"
-          class="{% if '/details/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="file-check-2"></i></span> <span class="nav-text">Berkas & Seserahan</span>
-        </a>
-        <a href="{% url 'operations-hub:operations_hub' %}" title="Logistik Hari-H" aria-label="Logistik Hari-H"
-          class="{% if '/operations/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="settings-2"></i></span> <span class="nav-text">Logistik Hari-H</span>
-        </a>
+        <div data-slot="sidebar-group">
+          <div data-slot="sidebar-group-label">Hari-H &amp; Tamu</div>
+          <div data-slot="sidebar-menu">
+            <a href="{% url 'guests:list' %}" data-slot="sidebar-menu-button" title="Tamu & Katering" aria-label="Tamu & Katering"
+              class="{% if '/guests/' in request.path %}active{% endif %}">
+              <i data-lucide="users"></i><span class="ui-nav-label">Tamu &amp; Katering</span>
+            </a>
+            <a href="{% url 'operations-checklist:detail_checklists' %}" data-slot="sidebar-menu-button" title="Berkas & Seserahan" aria-label="Berkas & Seserahan"
+              class="{% if '/details/' in request.path %}active{% endif %}">
+              <i data-lucide="file-check-2"></i><span class="ui-nav-label">Berkas &amp; Seserahan</span>
+            </a>
+            <a href="{% url 'operations-hub:operations_hub' %}" data-slot="sidebar-menu-button" title="Logistik Hari-H" aria-label="Logistik Hari-H"
+              class="{% if '/operations/' in request.path %}active{% endif %}">
+              <i data-lucide="settings-2"></i><span class="ui-nav-label">Logistik Hari-H</span>
+            </a>
+          </div>
+        </div>
 
-        <a href="{% url 'core:guide' %}" title="Panduan" aria-label="Panduan"
-          class="{% if '/guide/' in request.path %}active{% endif %}"
-          style="margin-top: auto;">
-          <span class="nav-icon"><i data-lucide="book-open"></i></span> <span class="nav-text">Panduan</span>
-        </a>
-        {% if not is_crew %}
-        <a href="{% url 'core:settings' %}" title="Pengaturan" aria-label="Pengaturan"
-          class="{% if '/settings/' in request.path %}active{% endif %}">
-          <span class="nav-icon"><i data-lucide="settings"></i></span> <span class="nav-text">Pengaturan</span>
-        </a>
-        {% endif %}
-
-        <!-- Theme Toggle Switch Row (Accessible Semantic Switch) -->
-        <button type="button" class="sidebar-theme-toggle-row" role="switch"
-          :aria-checked="isDark.toString()"
-          :aria-label="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
-          @click="toggleTheme()"
-          :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
-          <span class="nav-icon"><i :data-lucide="isDark ? 'moon' : 'sun'"></i></span>
-          <span class="nav-text" x-show="!rail" x-text="isDark ? 'Mode Gelap' : 'Mode Terang'">Mode Gelap</span>
-          <span class="theme-switch" x-show="!rail" aria-hidden="true">
-            <span class="theme-switch-slider" :class="{ 'active': isDark }"></span>
-          </span>
-        </button>
+        <div data-slot="sidebar-group" style="margin-top: auto;">
+          <div data-slot="sidebar-menu">
+            <a href="{% url 'core:guide' %}" data-slot="sidebar-menu-button" title="Panduan" aria-label="Panduan"
+              class="{% if '/guide/' in request.path %}active{% endif %}">
+              <i data-lucide="book-open"></i><span class="ui-nav-label">Panduan</span>
+            </a>
+            {% if not is_crew %}
+            <a href="{% url 'core:settings' %}" data-slot="sidebar-menu-button" title="Pengaturan" aria-label="Pengaturan"
+              class="{% if '/settings/' in request.path %}active{% endif %}">
+              <i data-lucide="settings"></i><span class="ui-nav-label">Pengaturan</span>
+            </a>
+            {% endif %}
+            <button type="button" data-slot="sidebar-menu-button" role="switch"
+              :aria-checked="isDark.toString()"
+              :aria-label="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'"
+              @click="toggleTheme()"
+              :title="isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
+              <i :data-lucide="isDark ? 'moon' : 'sun'"></i>
+              <span class="ui-nav-label" style="flex: 1; text-align: left;" x-text="isDark ? 'Mode Gelap' : 'Mode Terang'">Mode Terang</span>
+              <span data-slot="switch" :data-state="isDark ? 'checked' : 'unchecked'" x-show="!rail" aria-hidden="true">
+                <span data-slot="switch-thumb"></span>
+              </span>
+            </button>
+          </div>
+        </div>
       </nav>
 
-      <div class="sidebar-footer" :style="rail ? 'padding: 16px 8px;' : ''">
+      <div data-slot="sidebar-footer">
         {% if user.is_authenticated %}
-        <div class="user-profile-row">
-          <!-- Profile Info (Left) Ã¢â‚¬â€ Avatar on Left, Name & Role stacked on Right -->
-          <div class="user-info" x-show="!rail">
-            <div class="user-avatar">
-              {{ user.username|first|upper }}
-            </div>
-            <div class="user-text">
-              <div class="user-name">
-                {{ user.username }}
-              </div>
+        <div class="ui-sidebar-user">
+          <div class="ui-user-identity" x-show="!rail">
+            <span data-slot="avatar">{{ user.username|first|upper }}</span>
+            <div style="min-width: 0;">
+              <div class="ui-user-name">{{ user.username }}</div>
               {% if wedding_role %}
-              <div class="user-role">
-                {{ wedding_role }}
-              </div>
+              <div class="ui-user-role">{{ wedding_role }}</div>
               {% endif %}
             </div>
           </div>
-
-          <!-- Logout Button (Right when expanded, Centered when collapsed) -->
-          <a href="{% url 'core:logout' %}" class="btn btn-ghost logout-btn" title="Logout"
-            :style="rail ? 'width: 100%; display: flex; justify-content: center;' : ''">
-            <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+          <a href="{% url 'core:logout' %}" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Keluar" aria-label="Keluar">
+            <i data-lucide="log-out"></i>
           </a>
         </div>
         {% endif %}
       </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="main-content" :class="{ 'collapsed': rail }">
-      {% block content %}{% endblock %}
-    </main>
+    <!-- Main Inset Area -->
+    <div data-slot="sidebar-inset" :class="{ 'collapsed': rail }">
+      <main class="main-content" data-slot="main-content">
+        <!-- Sticky 52px Site Header (Updates seamlessly on HTMX navigation) -->
+        <header data-slot="site-header">
+          <div class="ui-header-left">
+            <button type="button" class="ui-desktop-trigger" data-slot="button" data-variant="ghost" data-size="icon-sm"
+              @click="toggleSidebarDesktop()"
+              :title="rail ? 'Perluas Sidebar (Ctrl+B)' : 'Kecilkan Sidebar (Ctrl+B)'"
+              :aria-label="rail ? 'Perluas Sidebar' : 'Kecilkan Sidebar'">
+              <i data-lucide="panel-left"></i>
+            </button>
+            <button type="button" class="ui-mobile-trigger" data-slot="button" data-variant="ghost" data-size="icon-sm"
+              @click="drawerOpen = !drawerOpen"
+              :aria-expanded="drawerOpen" aria-controls="sidebar" aria-label="Buka menu navigasi">
+              <i data-lucide="menu"></i>
+            </button>
+            <span data-slot="separator" data-orientation="vertical" aria-hidden="true"></span>
+            <nav aria-label="Breadcrumb">
+              <ol data-slot="breadcrumb-list">
+                <li><a href="{% url 'core:dashboard' %}" data-slot="breadcrumb-link">Rangkai</a></li>
+                <li data-slot="breadcrumb-separator" aria-hidden="true"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></li>
+                <li><span data-slot="breadcrumb-page">{% block breadcrumb %}Workspace{% endblock %}</span></li>
+              </ol>
+            </nav>
+          </div>
+          <div class="ui-header-right">
+            {% block header_actions %}{% endblock %}
+          </div>
+        </header>
 
-    <!-- Mobile Bottom Navigation (primary destinations within thumb reach) -->
-    <nav class="bottom-nav" aria-label="Navigasi utama"
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation (4 primary destinations + Menu Sheet) -->
+    <nav class="bottom-nav" data-slot="bottom-nav" aria-label="Navigasi utama"
          hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top" hx-sync="this:replace">
       <a href="{% url 'core:dashboard' %}" class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
         <i data-lucide="layout-dashboard"></i><span>Ringkasan</span>
@@ -424,9 +455,10 @@
         <i data-lucide="users"></i><span>Tamu</span>
       </a>
       <button type="button" @click="drawerOpen = true" aria-label="Buka menu lengkap">
-        <i data-lucide="layout-grid"></i><span>Menu</span>
+        <i data-lucide="panel-left"></i><span>Menu</span>
       </button>
-    </nav>  </div>
+    </nav>
+  </div>
   {% endblock %}
 
   <!-- Google Charts -->

@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Database Tamu & Katering — Rangkai{% endblock %}
+{% block breadcrumb %}Tamu &amp; Katering{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="user-check"></i>
+  {{ stats.attending|default:"0" }} Hadir ({{ stats.attending_pax|default:"0" }} pax)
+</span>
+{% if not is_crew %}
+<a href="{% url 'guests:download_template' %}" data-slot="button" data-variant="outline" data-size="sm">
+  <i data-lucide="download"></i> Template Excel
+</a>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas" x-data="{ showSimulator: sessionStorage.getItem('wp_guest_sim') === 'true' }" x-init="$watch('showSimulator', v => sessionStorage.setItem('wp_guest_sim', v))">

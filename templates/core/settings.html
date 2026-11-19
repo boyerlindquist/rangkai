@@ -1,12 +1,20 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Pengaturan — Rangkai{% endblock %}
+{% block breadcrumb %}Pengaturan{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="secondary" class="tabular-nums">
+  <i data-lucide="users"></i>
+  {{ memberships|length }} Anggota
+</span>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas">
   <div class="page-header fade-in">
     <div>
-      <h1>Pengaturan <span class="serif-accent">Workspace</span></h1>
+      <h1>Pengaturan Workspace</h1>
       <p class="page-subtitle">Konfigurasi data pernikahan, kode undangan kolaborasi, dan pengelolaan peran anggota.</p>
     </div>
   </div>

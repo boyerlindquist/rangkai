@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Vendor Comparator — Rangkai{% endblock %}
+{% block title %}Direktori & Evaluasi Vendor — Rangkai{% endblock %}
+{% block breadcrumb %}Direktori Vendor{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="secondary" class="tabular-nums">
+  <i data-lucide="store"></i>
+  {{ vendor_groups|length }} Kategori Aktif
+</span>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas" x-data="{ showForm: false, showWeights: false }">

@@ -1,248 +1,354 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Dashboard — Rangkai{% endblock %}
+{% block title %}Ringkasan — Rangkai{% endblock %}
+{% block breadcrumb %}Ringkasan{% endblock %}
+
+{% block header_actions %}
+{% if days_remaining is not None %}
+<span data-slot="badge" data-variant="success" class="tabular-nums">
+  <i data-lucide="calendar-heart"></i>
+  H-{{ days_remaining }} Hari
+</span>
+{% endif %}
+<div data-slot="dropdown-menu" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+  <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="open = !open" :aria-expanded="open">
+    <i data-lucide="zap"></i>
+    <span>Pintasan</span>
+    <i data-lucide="chevron-down" style="width: 13px; height: 13px; opacity: 0.7;"></i>
+  </button>
+  <div data-slot="dropdown-menu-content" x-show="open" x-transition.opacity.duration.120ms x-cloak
+       hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
+    <div data-slot="dropdown-menu-label">Akses Cepat Modul</div>
+    {% if not is_crew %}
+    <a href="{% url 'finances:dashboard' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="wallet"></i> Anggaran &amp; Kas
+    </a>
+    <a href="{% url 'finances:savings_tracker' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="piggy-bank"></i> Tabungan Bersama
+    </a>
+    {% endif %}
+    <a href="{% url 'guests:list' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="users"></i> Tamu &amp; Katering
+    </a>
+    <a href="{% url 'vendors:compare' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="store"></i> Direktori Vendor
+    </a>
+    <a href="{% url 'operations-checklist:checklist' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="check-square"></i> Timeline &amp; Tugas
+    </a>
+    <a href="{% url 'operations-hub:operations_hub' %}" data-slot="dropdown-menu-item" @click="open = false">
+      <i data-lucide="settings-2"></i> Logistik Hari-H
+    </a>
+  </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="workspace-canvas">
-  <div class="page-header fade-in" id="guide-overview">
-    <div>
-      <h1>Ringkasan Persiapan</h1>
-      <p class="page-subtitle">Pantau langkah prioritas, keseimbangan anggaran, dan kesiapan hari bahagia Anda dengan tenang.</p>
-    </div>
-    {% if days_remaining is not None %}
-    <div class="header-actions">
-      <span class="status-pill status-done" style="font-size: 0.85rem; padding: 6px 14px;">
-        <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
-        H-{{ days_remaining }} Hari Menuju Hari Bahagia
-      </span>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Spatial Metric Strip (Overview Mission Control) -->
-  <div class="metric-strip" id="guide-dday">
-    <!-- D-Day Countdown -->
-    <div class="metric-item">
-      <div class="metric-label">
-        <i data-lucide="calendar-heart" style="width: 13px; height: 13px;"></i> Hitung Mundur
+<div class="ui-page-container">
+  <div class="dash-stack">
+    <!-- Page Heading -->
+    <div class="dash-page-head" id="guide-overview">
+      <div>
+        <h1 class="dash-page-title">Ringkasan Persiapan</h1>
+        <p class="dash-page-subtitle">Pantau langkah prioritas, keseimbangan anggaran, dan kesiapan hari bahagia Anda dengan tenang.</p>
       </div>
-      <div class="metric-value" style="color: var(--wp-gold-main);">
-        {% if days_remaining is not None %}{{ days_remaining }} <span style="font-size: 0.9rem; font-weight: 500;">Hari</span>{% else %}—{% endif %}
-      </div>
-      <div class="metric-sub">
-        {% if days_remaining is not None %}menuju hari pernikahan{% else %}Atur tanggal di Pengaturan{% endif %}
-      </div>
-    </div>
-
-    <!-- Budget Remaining (Couple only) -->
-    {% if not is_crew %}
-    <div class="metric-item" id="guide-budget-rem">
-      <div class="metric-label">
-        <i data-lucide="wallet" style="width: 13px; height: 13px;"></i> Sisa Ruang Anggaran
-      </div>
-      <div class="metric-value">Rp {{ budget_remaining|intcomma }}</div>
-      <div class="metric-sub">Terbayar Rp {{ total_paid|intcomma }} dari Rp {{ total_actual|intcomma }}</div>
-    </div>
-    {% endif %}
-
-    <!-- RSVP -->
-    <div class="metric-item" id="guide-rsvp">
-      <div class="metric-label">
-        <i data-lucide="users" style="width: 13px; height: 13px;"></i> Konfirmasi Tamu
-      </div>
-      <div class="metric-value" style="color: var(--wp-sage-main);">{{ guest_stats.attending|default:"0" }}</div>
-      <div class="metric-sub">dari {{ guest_stats.total|default:"0" }} undangan ({{ guest_stats.attending_pax|default:"0" }} pax)</div>
-    </div>
-
-    <!-- Task Progress -->
-    <div class="metric-item" id="guide-task-prog">
-      <div class="metric-label">
-        <i data-lucide="check-circle-2" style="width: 13px; height: 13px;"></i> Kesiapan Tugas
-      </div>
-      <div class="metric-value">{{ task_progress }}%</div>
-      <div class="metric-sub">{{ task_stats.done }} dari {{ task_stats.total }} langkah tuntas</div>
-    </div>
-  </div>
-
-  <!-- Operational Grid (Jadwal Pembayaran & Fokus Tugas) -->
-  <div class="dashboard-split-grid" style="margin-bottom: 24px;">
-    {% if not is_crew %}
-    <!-- Jadwal Pembayaran Terdekat -->
-    <div class="surface-panel" id="guide-attention">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="calendar-clock" style="color: var(--wp-gold-main);"></i> Jadwal Pembayaran Perlu Tindak Lanjut</h3>
-        <a href="{% url 'finances:dashboard' %}" class="btn btn-ghost btn-sm" style="font-size: 0.78rem;">Buka Kas</a>
-      </div>
-      <div class="surface-panel-body" style="height: 300px; overflow-y: auto; padding: 16px 20px;">
-        {% if overdue_items %}
-        {% for item in overdue_items %}
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 12px 14px; border-radius: var(--wp-radius-sm); background: var(--wp-gold-soft); border: 1px solid var(--wp-gold-border);">
-          <span style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--wp-surface-panel); color: var(--wp-gold-dark); flex-shrink: 0; border: 1px solid var(--wp-gold-border);">
-            <i data-lucide="banknote" style="width: 16px; height: 16px;"></i>
-          </span>
-          <div style="flex: 1; min-width: 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; flex-wrap: wrap;">
-              <strong style="color: var(--wp-text-main); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.name }}</strong>
-              <span class="status-pill status-warning" style="font-size: 0.75rem; padding: 2px 8px;">Jatuh Tempo: {{ item.due_date }}</span>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
-              <span class="tabular-nums" style="font-size: 0.82rem; color: var(--wp-text-secondary); font-weight: 600;">Sisa termin Rp {{ item.remaining|intcomma }}</span>
-              <button type="button"
-                      class="btn btn-gold btn-sm"
-                      hx-post="{% url 'finances:toggle_status' item.pk %}?settle=1&from=dashboard"
-                      hx-confirm="Tandai '{{ item.name }}' lunas penuh (sisa termin Rp {{ item.remaining|intcomma }})?"
-                      hx-target=".main-content"
-                      hx-select=".main-content"
-                      hx-swap="outerHTML show:none"
-                      style="padding: 3px 10px; min-height: 26px; font-size: 0.75rem;">
-                <i data-lucide="check" style="width: 12px; height: 12px;"></i> Tandai Lunas
-              </button>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="empty-state" style="padding: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="check-circle" style="width: 36px; height: 36px; color: var(--wp-sage-main);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Semua jadwal pembayaran terkendali. Tidak ada tagihan mendesak saat ini.</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Tugas Aktif (In Progress) -->
-    <div class="surface-panel" id="guide-active-tasks">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="compass" style="color: var(--wp-sage-main);"></i> Fokus Persiapan Saat Ini</h3>
-        <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-ghost btn-sm" style="font-size: 0.78rem;">Lihat Semua</a>
-      </div>
-      <div class="surface-panel-body" style="height: 300px; overflow-y: auto; padding: 16px 20px;">
-        {% if active_tasks %}
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          {% for task in active_tasks %}
-          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle); border: 1px solid var(--wp-hairline);">
-            <button type="button"
-                    class="task-checkbox {% if task.status == 'in_progress' %}in-progress{% endif %}"
-                    hx-post="{% url 'operations-checklist:toggle_task' task.pk %}?from=dashboard"
-                    hx-target=".main-content"
-                    hx-select=".main-content"
-                    hx-swap="outerHTML show:none"
-                    title="Klik untuk langsung menandai tugas ini Selesai">
-              {% if task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px;"></i>{% endif %}
-            </button>
-            <div style="flex: 1; min-width: 0; font-size: 0.88rem; font-weight: 500; color: var(--wp-text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              {{ task.title }}
-              {% if task.is_critical %}<span class="status-pill status-warning" style="font-size: 0.75rem; margin-left: 6px;">Prioritas Utama</span>{% endif %}
-            </div>
-            <span class="status-pill" style="font-size: 0.75rem;">{{ task.get_assignee_display }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="party-popper" style="width: 36px; height: 36px; color: var(--wp-gold-main);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Seluruh langkah pada fase ini telah tuntas dengan baik!</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick Actions Segment -->
-  <div class="surface-panel" id="guide-quick-actions">
-    <div class="surface-panel-header">
-      <h3><i data-lucide="zap" style="color: var(--wp-gold-main);"></i> Pintasan Akselerasi</h3>
-    </div>
-    <div class="surface-panel-body" style="padding: 18px 24px;">
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        {% if not is_crew %}
-        <a href="{% url 'finances:dashboard' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="wallet"></i> Anggaran & Kas</a>
-        {% endif %}
-        <a href="{% url 'guests:list' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="users"></i> Tamu & Katering</a>
-        <a href="{% url 'vendors:compare' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="store"></i> Direktori Vendor</a>
-        <a href="{% url 'operations-checklist:checklist' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="check-square"></i> Timeline & Tugas</a>
-        <a href="{% url 'operations-hub:operations_hub' %}" class="btn btn-ghost btn-sm" style="border: 1px solid var(--wp-hairline);"><i data-lucide="settings-2"></i> Logistik Hari-H</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Vendor & Budget Flow Summary -->
-  <div class="dashboard-split-grid" style="margin-bottom: 24px;">
-    <!-- Vendor Terpilih -->
-    <div class="surface-panel" id="guide-vendors">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="store" style="color: var(--wp-gold-main);"></i> Vendor Terpilih (Booked)</h3>
-        <a href="{% url 'vendors:compare' %}" class="btn btn-ghost btn-sm" style="font-size: 0.78rem;">Kelola</a>
-      </div>
-      <div class="surface-panel-body" style="height: 340px; overflow-y: auto; padding: 16px 20px;">
-        {% if booked_vendors %}
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          {% for vendor in booked_vendors %}
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); background: var(--wp-bg-surface-subtle);">
-            <div>
-              <div style="font-weight: 600; font-size: 0.9rem; color: var(--wp-text-main);">{{ vendor.name }}</div>
-              <div class="text-muted" style="font-size: 0.75rem;">{{ vendor.get_category_display }}</div>
-            </div>
-            <div class="tabular-nums" style="font-weight: 700; font-size: 0.95rem; color: var(--wp-gold-dark);">
-              Rp {{ vendor.price_estimate|intcomma }}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="store" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada vendor dengan status Booked.</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-
-    {% if not is_crew %}
-    <!-- Sankey Diagram -->
-    <div class="surface-panel" id="guide-sankey">
-      <div class="surface-panel-header">
-        <h3><i data-lucide="git-merge" style="color: var(--wp-gold-main);"></i> Visualisasi Alur Budget</h3>
-        <a href="{% url 'finances:dashboard' %}" class="btn btn-ghost btn-sm" style="font-size: 0.78rem;">
-          <i data-lucide="wallet" style="width: 13px; height: 13px;"></i> Kelola
+      <div class="dash-head-actions" id="guide-quick-actions" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
+        <a href="{% url 'operations-checklist:checklist' %}" data-slot="button" data-variant="outline" data-size="sm">
+          <i data-lucide="check-square"></i> Timeline &amp; Tugas
         </a>
-      </div>
-      <div class="surface-panel-body" style="padding: 0; min-height: 450px; overflow: hidden; background: var(--wp-surface-panel); display: block;">
-        {% if sankey_data_json and sankey_data_json != '[]' %}
-        <div id="sankey_chart" style="width: 100%; height: 450px; display: block;"></div>
-        {% else %}
-        <div class="empty-state" style="padding: 32px; width: 100%; height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <div class="empty-icon" style="margin-bottom: 8px;"><i data-lucide="wallet" style="width: 36px; height: 36px; color: var(--wp-text-muted);"></i></div>
-          <p class="text-secondary" style="font-size: 0.88rem;">Belum ada pengeluaran aktual untuk divisualisasikan.</p>
-        </div>
+        {% if not is_crew %}
+        <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="default" data-size="sm">
+          <i data-lucide="wallet"></i> Kelola Anggaran
+        </a>
         {% endif %}
       </div>
     </div>
-    {% endif %}
-  </div>
 
-  {% if wedding and not is_crew %}
-  <!-- Invite Code Section -->
-  <div class="surface-panel">
-    <div class="surface-panel-header">
-      <h3><i data-lucide="link" style="color: var(--wp-gold-main);"></i> Kode Undangan Pasangan</h3>
+    <!-- KPI Metric Grid -->
+    <div class="dash-kpi-grid {% if is_crew %}is-crew{% endif %}" id="guide-dday">
+      <!-- Hitung Mundur -->
+      <div data-slot="card" data-size="sm">
+        <div data-slot="card-header">
+          <div data-slot="card-title">Hitung Mundur</div>
+          <div data-slot="card-action">
+            <span class="dash-kpi-icon"><i data-lucide="calendar-heart"></i></span>
+          </div>
+        </div>
+        <div data-slot="card-content">
+          <div class="dash-kpi-value is-primary">
+            {% if days_remaining is not None %}{{ days_remaining }} <span class="dash-kpi-unit">Hari</span>{% else %}—{% endif %}
+          </div>
+          <div class="dash-kpi-sub">
+            {% if days_remaining is not None %}menuju hari pernikahan{% else %}Atur tanggal di Pengaturan{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Sisa Ruang Anggaran (Couple only) -->
+      {% if not is_crew %}
+      <div data-slot="card" data-size="sm" id="guide-budget-rem">
+        <div data-slot="card-header">
+          <div data-slot="card-title">Sisa Ruang Anggaran</div>
+          <div data-slot="card-action">
+            <span class="dash-kpi-icon"><i data-lucide="wallet"></i></span>
+          </div>
+        </div>
+        <div data-slot="card-content">
+          <div class="dash-kpi-value">Rp {{ budget_remaining|intcomma }}</div>
+          <div class="dash-kpi-sub tabular-nums">Terbayar Rp {{ total_paid|intcomma }} dari Rp {{ total_actual|intcomma }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Konfirmasi Tamu -->
+      <div data-slot="card" data-size="sm" id="guide-rsvp">
+        <div data-slot="card-header">
+          <div data-slot="card-title">Konfirmasi Tamu</div>
+          <div data-slot="card-action">
+            <span class="dash-kpi-icon"><i data-lucide="users"></i></span>
+          </div>
+        </div>
+        <div data-slot="card-content">
+          <div class="dash-kpi-value">{{ guest_stats.attending|default:"0" }}</div>
+          <div class="dash-kpi-sub tabular-nums">dari {{ guest_stats.total|default:"0" }} undangan ({{ guest_stats.attending_pax|default:"0" }} pax)</div>
+        </div>
+      </div>
+
+      <!-- Kesiapan Tugas -->
+      <div data-slot="card" data-size="sm" id="guide-task-prog">
+        <div data-slot="card-header">
+          <div data-slot="card-title">Kesiapan Tugas</div>
+          <div data-slot="card-action">
+            <span class="dash-kpi-icon"><i data-lucide="check-circle-2"></i></span>
+          </div>
+        </div>
+        <div data-slot="card-content">
+          <div class="dash-kpi-value">{{ task_progress }}%</div>
+          <div data-slot="progress" style="margin-top: 8px;" aria-label="Progres kesiapan tugas {{ task_progress }} persen">
+            <div data-slot="progress-indicator" style="width: {{ task_progress }}%;"></div>
+          </div>
+          <div class="dash-kpi-sub tabular-nums">{{ task_stats.done }} dari {{ task_stats.total }} langkah tuntas</div>
+        </div>
+      </div>
     </div>
-    <div class="surface-panel-body text-center" style="padding: 28px 24px;" x-data="{ copied: false }">
-      <p class="text-secondary" style="margin-bottom: 14px; font-size: 0.9rem;">Bagikan kode ini ke pasanganmu agar bisa bergabung mengelola workspace bersama:</p>
-      <div style="display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;">
-        <div class="invite-code-display">{{ wedding.invite_code }}</div>
+
+    <!-- Actionable Split Grid: Pembayaran & Fokus Tugas -->
+    <div class="dash-split-grid {% if is_crew %}is-single{% endif %}">
+      {% if not is_crew %}
+      <section data-slot="card" data-flush="true" id="guide-attention">
+        <div data-slot="card-header" class="has-border">
+          <div>
+            <div data-slot="card-title">Jadwal Pembayaran Perlu Tindak Lanjut</div>
+            <div data-slot="card-description">Termin vendor yang mendekati atau melewati jatuh tempo.</div>
+          </div>
+          <div data-slot="card-action">
+            <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="ghost" data-size="sm">
+              Buka Kas <i data-lucide="arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="dash-scroll-body">
+          {% if overdue_items %}
+          <div class="dash-list">
+            {% for item in overdue_items %}
+            <div class="dash-row">
+              <div class="dash-row-main">
+                <div class="dash-row-text">
+                  <div class="dash-row-title">{{ item.name }}</div>
+                  <div class="dash-row-meta">
+                    <span data-slot="badge" data-variant="warning" class="tabular-nums">Jatuh Tempo: {{ item.due_date }}</span>
+                    <span class="tabular-nums">Sisa Rp {{ item.remaining|intcomma }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="dash-row-end">
+                <button type="button"
+                        data-slot="button"
+                        data-variant="outline"
+                        data-size="sm"
+                        hx-post="{% url 'finances:toggle_status' item.pk %}?settle=1&from=dashboard"
+                        hx-confirm="Tandai '{{ item.name }}' lunas penuh (sisa termin Rp {{ item.remaining|intcomma }})?"
+                        hx-target=".main-content"
+                        hx-select=".main-content"
+                        hx-swap="outerHTML show:none">
+                  <i data-lucide="check"></i> Tandai Lunas
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div data-slot="empty">
+            <div data-slot="empty-icon"><i data-lucide="check-circle-2"></i></div>
+            <div data-slot="empty-title">Semua jadwal pembayaran terkendali</div>
+            <p data-slot="empty-description">Tidak ada tagihan mendesak atau jatuh tempo yang tertunda saat ini.</p>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section data-slot="card" data-flush="true" id="guide-active-tasks">
+        <div data-slot="card-header" class="has-border">
+          <div>
+            <div data-slot="card-title">Fokus Persiapan Saat Ini</div>
+            <div data-slot="card-description">Klik kotak centang untuk langsung menandai tugas selesai.</div>
+          </div>
+          <div data-slot="card-action">
+            <a href="{% url 'operations-checklist:checklist' %}" data-slot="button" data-variant="ghost" data-size="sm">
+              Lihat Semua <i data-lucide="arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="dash-scroll-body">
+          {% if active_tasks %}
+          <div class="dash-list">
+            {% for task in active_tasks %}
+            <div class="dash-row">
+              <div class="dash-row-main">
+                <button type="button"
+                        data-slot="checkbox"
+                        data-state="{% if task.status == 'in_progress' %}indeterminate{% else %}unchecked{% endif %}"
+                        hx-post="{% url 'operations-checklist:toggle_task' task.pk %}?from=dashboard"
+                        hx-target=".main-content"
+                        hx-select=".main-content"
+                        hx-swap="outerHTML show:none"
+                        title="Klik untuk menandai tugas ini Selesai"
+                        aria-label="Tandai selesai: {{ task.title }}">
+                  {% if task.status == 'in_progress' %}<i data-lucide="clock"></i>{% endif %}
+                </button>
+                <div class="dash-row-text">
+                  <div class="dash-row-title">{{ task.title }}</div>
+                </div>
+              </div>
+              <div class="dash-row-end" style="gap: 5px;">
+                {% if task.is_critical %}
+                <button type="button" data-slot="icon-badge" data-variant="warning" data-tooltip="Prioritas Utama" data-tooltip-align="right" aria-label="Prioritas Utama">
+                  <i data-lucide="flame"></i>
+                </button>
+                {% endif %}
+                <button type="button" data-slot="icon-badge"
+                        {% if task.assignee == 'groom' %}data-variant="groom"{% elif task.assignee == 'bride' %}data-variant="bride"{% endif %}
+                        data-tooltip="PJ: {% if task.assignee == 'groom' %}Pria (Groom){% elif task.assignee == 'bride' %}Wanita (Bride){% else %}{{ task.get_assignee_display }}{% endif %}"
+                        data-tooltip-align="right"
+                        aria-label="PJ: {{ task.get_assignee_display }}">
+                  {% if task.assignee == 'groom' %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="14" r="5"/><path d="M19 5l-5.4 5.4"/><path d="M15 5h4v4"/></svg>
+                  {% elif task.assignee == 'bride' %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="M12 14v7"/><path d="M9 18h6"/></svg>
+                  {% elif task.assignee == 'family' %}<i data-lucide="briefcase"></i>
+                  {% else %}<i data-lucide="users"></i>{% endif %}
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div data-slot="empty">
+            <div data-slot="empty-icon"><i data-lucide="sparkles"></i></div>
+            <div data-slot="empty-title">Semua tugas aktif sudah tuntas</div>
+            <p data-slot="empty-description">Seluruh langkah pada fase persiapan saat ini telah diselesaikan dengan baik.</p>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+
+    <!-- Summary Split Grid: Vendor Terpilih & Visualisasi Alur Budget -->
+    <div class="dash-split-grid {% if is_crew %}is-single{% endif %}">
+      <section data-slot="card" data-flush="true" id="guide-vendors">
+        <div data-slot="card-header" class="has-border">
+          <div>
+            <div data-slot="card-title">Vendor Terpilih</div>
+            <div data-slot="card-description">Daftar vendor yang sudah berstatus Booked beserta estimasi nilainya.</div>
+          </div>
+          <div data-slot="card-action">
+            <a href="{% url 'vendors:compare' %}" data-slot="button" data-variant="ghost" data-size="sm">
+              Kelola <i data-lucide="arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="dash-scroll-body">
+          {% if booked_vendors %}
+          <div class="dash-list">
+            {% for vendor in booked_vendors %}
+            <div class="dash-row">
+              <div class="dash-row-text">
+                <div class="dash-row-title">{{ vendor.name }}</div>
+                <div class="dash-row-meta">{{ vendor.get_category_display }}</div>
+              </div>
+              <div class="dash-row-end">
+                <span class="dash-amount">Rp {{ vendor.price_estimate|intcomma }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div data-slot="empty">
+            <div data-slot="empty-icon"><i data-lucide="store"></i></div>
+            <div data-slot="empty-title">Belum ada vendor terpilih</div>
+            <p data-slot="empty-description">Bandingkan kandidat vendor dan ubah status menjadi Booked agar tampil di ringkasan ini.</p>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if not is_crew %}
+      <section data-slot="card" data-flush="true" id="guide-sankey">
+        <div data-slot="card-header" class="has-border">
+          <div>
+            <div data-slot="card-title">Visualisasi Alur Budget</div>
+            <div data-slot="card-description">Distribusi pengeluaran aktual per kategori anggaran.</div>
+          </div>
+          <div data-slot="card-action">
+            <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="ghost" data-size="sm">
+              Kelola <i data-lucide="arrow-up-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="dash-sankey-wrap">
+          {% if sankey_data_json and sankey_data_json != '[]' %}
+          <div id="sankey_chart" style="width: 100%; height: 340px;"></div>
+          {% else %}
+          <div data-slot="empty" style="min-height: 300px;">
+            <div data-slot="empty-icon"><i data-lucide="git-merge"></i></div>
+            <div data-slot="empty-title">Belum ada data pengeluaran aktual</div>
+            <p data-slot="empty-description">Catat transaksi pada modul Anggaran &amp; Kas untuk memvisualisasikan alur budget Anda.</p>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    {% if wedding and not is_crew %}
+    <!-- Compact Workspace Invite Strip -->
+    <div class="dash-invite-bar" x-data="{ copied: false }">
+      <div class="dash-invite-info">
+        <span class="dash-invite-icon"><i data-lucide="link"></i></span>
+        <div style="min-width: 0;">
+          <div style="font-size: 0.875rem; font-weight: 600; color: var(--foreground);">Kode Undangan Workspace</div>
+          <div style="font-size: 0.78rem; color: var(--muted-foreground);">Bagikan kode ini ke pasangan atau panitia untuk bergabung ke workspace bersama.</div>
+        </div>
+      </div>
+      <div class="dash-invite-actions">
+        <span data-slot="kbd">{{ wedding.invite_code }}</span>
         <button type="button"
-                class="btn btn-gold btn-sm"
+                data-slot="button"
+                data-variant="outline"
+                data-size="sm"
                 @click="navigator.clipboard.writeText('{{ wedding.invite_code }}'); copied = true; setTimeout(() => copied = false, 2000);">
-          <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
-          <span x-text="copied ? 'Kode Tersalin!' : 'Salin Kode'">Salin Kode</span>
+          <i :data-lucide="copied ? 'check' : 'copy'"></i>
+          <span x-text="copied ? 'Tersalin' : 'Salin Kode'">Salin Kode</span>
         </button>
       </div>
-      <p class="text-muted" style="font-size: 0.78rem; margin-top: 12px;">Kode ini bisa dimasukkan pada menu "Gabung Workspace".</p>
     </div>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 
 {% if sankey_data_json and sankey_data_json != '[]' %}
@@ -258,7 +364,7 @@
       function draw() {
         if (!document.getElementById('sankey_chart')) return;
         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        var labelColor = isDark ? '#F0FAF5' : '#0D1F18';
+        var labelColor = isDark ? '#FAFAFA' : '#09090B';
 
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'Dari');
@@ -266,24 +372,28 @@
         data.addColumn('number', 'Alokasi (Rp)');
         data.addRows(chartData);
 
-        var colors = ['#126E51', '#0F766E', '#289E78', '#14B8A6', '#0B4A36', '#0284C7', '#395248', '#C2543D'];
+        var colors = isDark
+          ? ['#22A076', '#14B8A6', '#38BDF8', '#34D399', '#64748B', '#0EA5E9', '#94A3B8', '#10B981']
+          : ['#126E51', '#0F766E', '#0284C7', '#1E9E73', '#475569', '#0D9488', '#334155', '#64748B'];
+
         var options = {
           width: '100%',
-          height: 450,
+          height: 340,
           sankey: {
             node: {
               colors: colors,
-              nodePadding: 18,
-              width: 12,
+              nodePadding: 16,
+              width: 10,
               label: {
-                fontName: 'Instrument Sans',
+                fontName: 'Inter',
                 fontSize: 12,
                 color: labelColor,
                 bold: false
               }
             },
             link: {
-              colorMode: 'gradient',
+              colorMode: 'target',
+              fillOpacity: isDark ? 0.30 : 0.22,
               colors: colors
             }
           }
@@ -301,23 +411,18 @@
           draw();
         }
       } else {
-        // Retry shortly if google charts loader script is still fetching
         setTimeout(renderSankey, 100);
       }
     }
 
-    // Run immediately when script is evaluated (HTMX swap or page load)
     renderSankey();
 
-    // Also run on DOMContentLoaded just in case
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', renderSankey);
     }
 
-    // Redraw immediately when user toggles dark/light mode
     window.addEventListener('themeChanged', renderSankey);
 
-    // Redraw on parent container resize
     const chartContainer = document.getElementById('sankey_chart');
     if (chartContainer && window.ResizeObserver) {
       let resizeTimer;
@@ -332,5 +437,4 @@
   })();
 </script>
 {% endif %}
-
 {% endblock %}

@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Logistik Hari-H — Rangkai{% endblock %}
+{% block breadcrumb %}Logistik Hari-H{% endblock %}
+
+{% block header_actions %}
+<span data-slot="badge" data-variant="{% if sanity_warnings %}warning{% else %}success{% endif %}" class="tabular-nums">
+  <i data-lucide="clock"></i>
+  {{ rundown|length }} Sesi Rundown
+</span>
+{% endblock %}
 
 {% block content %}
 <div class="workspace-canvas"
