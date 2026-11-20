@@ -271,6 +271,9 @@
       </a>
       <div style="display:flex;align-items:center;gap:10px;">
         <span data-slot="badge" data-variant="outline" class="font-mono">{{ order.order_code }}</span>
+        <a href="{% url 'core:onboarding' %}" data-slot="button" data-variant="ghost" data-size="sm">
+          <i data-lucide="arrow-left"></i> Ganti Pilihan
+        </a>
       </div>
     </div>
   </header>

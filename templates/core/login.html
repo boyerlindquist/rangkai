@@ -4,10 +4,10 @@
 
 {% block body %}
 <div class="auth-page">
-  <div class="auth-card fade-in">
+  <div class="auth-card">
     <div class="auth-brand">
       <div style="display: flex; justify-content: center; margin-bottom: 14px;">
-        <a href="{% url 'core:landing' %}" class="brand-lockup is-lg" aria-label="Rangkai.click">
+        <a href="{% url 'core:landing' %}" class="brand-lockup is-lg" aria-label="Kembali ke beranda Rangkai.click">
           <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
           <span class="brand-lockup-text">
             <span class="brand-lockup-main">Rangkai</span>
@@ -15,19 +15,36 @@
           </span>
         </a>
       </div>
-      <p>Masuk ke workspace pernikahanmu</p>
+      <h1>Masuk ke Akun Anda</h1>
+      <p>Lanjutkan perencanaan pernikahan, kelola project WO, atau gabung workspace Anda.</p>
     </div>
+
+    {% if invite_preview and invite_preview.wedding %}
+    <div style="margin-bottom: 14px; padding: 11px 13px; border-radius: var(--radius-md); background: var(--success-soft); border: 1px solid var(--success-border); color: var(--success); font-size: 0.82rem; display: flex; align-items: flex-start; gap: 9px; line-height: 1.45;">
+      <i data-lucide="check-circle-2" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;"></i>
+      <div>
+        Masuk untuk bergabung ke workspace <strong>{{ invite_preview.wedding }}</strong> sebagai <strong>{{ invite_preview.role_label }}</strong>.
+      </div>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div data-slot="alert" data-variant="{% if msg.tags == 'error' %}destructive{% else %}default{% endif %}" style="margin-bottom:14px;font-size:0.84rem;">
+      <i data-lucide="{% if msg.tags == 'error' %}alert-circle{% else %}info{% endif %}"></i>
+      <div>{{ msg }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
 
     <form method="post">
       {% csrf_token %}
-      {% if next or request.GET.next %}
-      <input type="hidden" name="next" value="{{ next|default:request.GET.next }}">
-      {% endif %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
       {% if form.errors %}
       <div class="alert alert-danger">
-        <span><i data-lucide="alert-triangle"></i></span>
-        <div>Username atau password salah.</div>
+        <span><i data-lucide="alert-triangle" style="width: 15px; height: 15px;"></i></span>
+        <div>Username atau password salah. Silakan coba lagi.</div>
       </div>
       {% endif %}
 
@@ -44,12 +61,11 @@
         {{ form.password }}
       </div>
 
-      <button type="submit" class="btn btn-primary">Login</button>
+      <button type="submit" class="btn btn-primary">Masuk</button>
     </form>
 
-    <div class="auth-links" style="display:flex;flex-direction:column;gap:8px;align-items:center;">
-      <div>Belum punya akun? <a href="{% url 'core:checkout' %}">Pilih Paket &amp; Daftar</a></div>
-      <div style="font-size:0.8rem;color:var(--muted-foreground);">Punya kode undangan? <a href="{% url 'core:register' %}?mode=join">Gabung Workspace</a></div>
+    <div class="auth-links">
+      Belum punya akun? <a href="{% url 'core:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Daftar Akun Baru</a>
     </div>
   </div>
 </div>

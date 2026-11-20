@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Mulai di Rangkai.click{% endblock %}
+
+{% block extra_css %}
+<style>
+  .onb-page {
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    padding-bottom: 64px;
+  }
+
+  .onb-nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .onb-nav-inner {
+    max-width: 1040px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .onb-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 36px 24px 0;
+  }
+
+  .onb-head {
+    margin-bottom: 24px;
+  }
+
+  .onb-head h1 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .onb-head p {
+    margin: 6px 0 0;
+    font-size: 0.92rem;
+    color: var(--muted-foreground);
+  }
+
+  .onb-resume {
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .onb-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+    gap: 22px;
+    align-items: stretch;
+  }
+
+  .onb-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .onb-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .onb-card-head h2 {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 650;
+  }
+
+  .onb-plan-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .onb-plan-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .onb-plan-box.is-featured {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    background: color-mix(in srgb, var(--primary) 4%, var(--card));
+  }
+
+  .onb-plan-price {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .onb-plan-meta {
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .onb-join-box {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+  }
+
+  .onb-bullets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+  }
+
+  .onb-bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+  }
+
+  .onb-bullets li svg {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 860px) {
+    .onb-grid, .onb-plan-list { grid-template-columns: 1fr; }
+    .onb-wrap { padding: 24px 16px 0; }
+    .onb-card { padding: 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="onb-page">
+  <header class="onb-nav">
+    <div class="onb-nav-inner">
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
+        </span>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span data-slot="badge" data-variant="outline" class="font-mono">@{{ request.user.username }}</span>
+        <a href="{% url 'core:logout' %}" data-slot="button" data-variant="ghost" data-size="sm">
+          <i data-lucide="log-out"></i> Keluar
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="onb-wrap">
+    <div class="onb-head">
+      <h1>Pilih Cara Mulai di Rangkai.click</h1>
+      <p>Akun <strong>{{ request.user.username }}</strong> sudah aktif. Pilih paket untuk membuat workspace baru, atau masukkan kode undangan jika Anda diundang oleh pasangan atau WO.</p>
+    </div>
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div data-slot="alert" data-variant="{% if msg.tags == 'error' %}destructive{% else %}default{% endif %}" style="margin-bottom:18px;">
+      <i data-lucide="{% if msg.tags == 'error' %}alert-circle{% else %}info{% endif %}"></i>
+      <div>{{ msg }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if active_pending_order %}
+    <div class="onb-resume">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span data-slot="badge" data-variant="amber">Menunggu Pembayaran QRIS</span>
+          <strong class="font-mono" style="font-size:0.86rem;">{{ active_pending_order.order_code }}</strong>
+        </div>
+        <div style="font-size:0.84rem;color:var(--muted-foreground);">
+          Tagihan {{ active_pending_order.get_plan_type_display }} sebesar
+          <strong class="font-mono" style="color:var(--foreground);">Rp {{ active_pending_order.amount|floatformat:0|intcomma }}</strong>
+          masih aktif.
+        </div>
+      </div>
+      <a href="{% url 'core:checkout_pay' active_pending_order.order_code %}" data-slot="button" data-variant="default">
+        <i data-lucide="qr-code"></i> Lanjutkan Pembayaran QRIS
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="onb-grid">
+      <!-- Path A: Buy a Package -->
+      <section class="onb-card">
+        <div class="onb-card-head">
+          <h2>Buat Workspace Baru</h2>
+          <span data-slot="badge" data-variant="emerald">Pilih Paket</span>
+        </div>
+        <p style="margin:0;font-size:0.86rem;color:var(--muted-foreground);line-height:1.5;">
+          Cocok untuk calon pengantin yang baru mulai merencanakan pernikahan, atau Wedding Organizer yang mengelola beberapa klien sekaligus.
+        </p>
+
+        <div class="onb-plan-list">
+          <div class="onb-plan-box">
+            <span data-slot="badge" data-variant="outline" style="width:fit-content;">Pengantin</span>
+            <strong style="font-size:0.98rem;">Paket Wedding Owner</strong>
+            <div class="onb-plan-price">{{ plans.wedding_owner.price_display }}</div>
+            <div class="onb-plan-meta">Sekali bayar sampai hari-H. 1 workspace lengkap, undang pasangan &amp; crew tanpa batas.</div>
+            <a href="{% url 'core:checkout' %}?plan=wedding_owner" data-slot="button" data-variant="outline" style="width:100%;justify-content:center;margin-top:6px;">
+              Pilih Wedding Owner
+            </a>
+          </div>
+
+          <div class="onb-plan-box is-featured">
+            <span data-slot="badge" data-variant="emerald" style="width:fit-content;">Wedding Organizer</span>
+            <strong style="font-size:0.98rem;">Paket WO Manager</strong>
+            <div class="onb-plan-price">{{ plans.wo_manager.price_display }}</div>
+            <div class="onb-plan-meta">Per bulan hingga 10 project klien aktif, Portal WO, &amp; link undangan privat pengantin.</div>
+            <a href="{% url 'core:checkout' %}?plan=wo_manager" data-slot="button" data-variant="default" style="width:100%;justify-content:center;margin-top:6px;">
+              Pilih WO Manager
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Path B: Join via Invite Code (Free) -->
+      <section class="onb-card">
+        <div class="onb-card-head">
+          <h2>Gabung Pakai Kode Undangan</h2>
+          <span data-slot="badge" data-variant="outline">Tanpa Biaya</span>
+        </div>
+        <p style="margin:0;font-size:0.86rem;color:var(--muted-foreground);line-height:1.5;">
+          Sudah mendapat kode 8 karakter dari pasangan (Wedding Owner) atau Wedding Organizer? Masukkan kodenya di bawah untuk langsung masuk.
+        </p>
+
+        <ul class="onb-bullets">
+          <li><i data-lucide="check"></i> Pasangan (Co-Owner) dapat akses penuh termasuk Tabungan Bersama</li>
+          <li><i data-lucide="check"></i> Crew Operasional langsung masuk ke Checklist, Tamu, &amp; Rundown</li>
+          <li><i data-lucide="check"></i> Tidak perlu membeli paket tambahan</li>
+        </ul>
+
+        <form method="post" action="{% url 'core:join_workspace' %}" class="onb-join-box">
+          {% csrf_token %}
+          <label for="id_invite_code" style="font-size:0.8rem;font-weight:600;">Kode Undangan (8 Karakter)</label>
+          {{ join_form.invite_code }}
+          <button type="submit" data-slot="button" data-variant="default" style="width:100%;justify-content:center;">
+            <i data-lucide="log-in"></i> Gabung Workspace Sekarang
+          </button>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+{% endblock %}

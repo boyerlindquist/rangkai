@@ -12,6 +12,7 @@ EXEMPT_URLS = [
     '/login/',
     '/logout/',
     '/register/',
+    '/onboarding/',
     '/join/',
     '/landing/',
     '/checkout/',
@@ -26,9 +27,22 @@ EXEMPT_URLS = [
     '/media/',
 ]
 
+# URLs allowed for authenticated users whose plan_status != 'active' (Layer-2 onboarding gate)
+UNPAID_ALLOWED_URLS = [
+    '/onboarding/',
+    '/checkout/',
+    '/join/',
+    '/logout/',
+    '/account/',
+    '/landing/',
+    '/static/',
+    '/media/',
+]
+
 FULL_PAGE_REDIRECT_URLS = [
     '/login/',
     '/register/',
+    '/onboarding/',
     '/join/',
     '/checkout/',
     '/webhooks/',
@@ -60,6 +74,11 @@ class WorkspaceMiddleware:
             active_wedding_id = request.session.get('active_wedding_id')
             path = request.path
             is_exempt = any(path.startswith(url) for url in EXEMPT_URLS)
+
+            # Layer-2 Gate: authenticated users without active access cannot enter Layer-3 app routes
+            if not request.is_platform_admin and profile.plan_status != 'active':
+                if not any(path.startswith(url) for url in UNPAID_ALLOWED_URLS):
+                    return redirect(reverse('core:onboarding'))
 
             if request.is_platform_admin:
                 # Platform Admin can inspect any wedding via session active_wedding_id
@@ -106,7 +125,7 @@ class WorkspaceMiddleware:
                 elif not is_exempt:
                     if profile.is_wo_account:
                         return redirect(reverse('core:wo_portal'))
-                    return redirect(reverse('core:join_workspace'))
+                    return redirect(reverse('core:onboarding'))
 
         response = self.get_response(request)
 

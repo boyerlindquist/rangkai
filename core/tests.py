@@ -22,13 +22,19 @@ class RoleManagementAndCheckoutTests(TestCase):
         self.client = Client()
 
     def test_checkout_wedding_owner_provisions_workspace(self):
-        resp = self.client.post(reverse('core:checkout'), {
-            'plan_type': 'wedding_owner',
-            'payment_method': 'qris',
+        # Layer 1: Register account
+        reg = self.client.post(reverse('core:register'), {
             'username': 'pengantin_a',
             'email': 'a@example.com',
             'password': 'password123',
             'password_confirm': 'password123',
+        })
+        self.assertRedirects(reg, reverse('core:onboarding'))
+
+        # Layer 2: Checkout Paket Wedding Owner
+        resp = self.client.post(reverse('core:checkout'), {
+            'plan_type': 'wedding_owner',
+            'payment_method': 'qris',
             'groom_name': 'Dimas',
             'bride_name': 'Nadya',
         })
@@ -41,13 +47,19 @@ class RoleManagementAndCheckoutTests(TestCase):
         self.assertEqual(membership.role, 'owner')
 
     def test_checkout_wo_manager_provisions_wo_portal(self):
-        resp = self.client.post(reverse('core:checkout'), {
-            'plan_type': 'wo_manager',
-            'payment_method': 'va_bca',
+        # Layer 1: Register account
+        reg = self.client.post(reverse('core:register'), {
             'username': 'wo_surya',
             'email': 'surya@example.com',
             'password': 'password123',
             'password_confirm': 'password123',
+        })
+        self.assertRedirects(reg, reverse('core:onboarding'))
+
+        # Layer 2: Checkout Paket WO Manager
+        resp = self.client.post(reverse('core:checkout'), {
+            'plan_type': 'wo_manager',
+            'payment_method': 'qris',
             'organization_name': 'Surya Wedding Organizer',
         })
         self.assertRedirects(resp, reverse('core:wo_portal'))
@@ -116,14 +128,13 @@ class RoleManagementAndCheckoutTests(TestCase):
         self.assertEqual(couple_inv.max_uses, 2)
 
         c_spouse1 = Client()
-        resp_join1 = c_spouse1.post(reverse('core:register'), {
-            'mode': 'join',
+        c_spouse1.post(reverse('core:register'), {
             'username': 'budi_groom',
             'email': 'budi@example.com',
             'password': 'password123',
             'password_confirm': 'password123',
-            'invite_code': couple_inv.code,
         })
+        resp_join1 = c_spouse1.post(reverse('core:join_workspace'), {'invite_code': couple_inv.code})
         self.assertRedirects(resp_join1, reverse('core:dashboard'))
         self.assertEqual(WeddingMembership.objects.get(user__username='budi_groom', wedding=w1).role, 'owner')
 
@@ -142,13 +153,12 @@ class RoleManagementAndCheckoutTests(TestCase):
         # Spouse 2 joins with same invite -> becomes co_owner, then invite deactivates
         c_spouse2 = Client()
         c_spouse2.post(reverse('core:register'), {
-            'mode': 'join',
             'username': 'ani_bride',
             'email': 'ani@example.com',
             'password': 'password123',
             'password_confirm': 'password123',
-            'invite_code': couple_inv.code,
         })
+        c_spouse2.post(reverse('core:join_workspace'), {'invite_code': couple_inv.code})
         self.assertEqual(WeddingMembership.objects.get(user__username='ani_bride', wedding=w1).role, 'co_owner')
         couple_inv.refresh_from_db()
         self.assertFalse(couple_inv.is_active)
@@ -419,13 +429,19 @@ class SumopodPaymentTests(TestCase):
         }
 
         with override_settings(SUMOPOD_API_KEY='sk_sandbox_test'):
+            # Layer 1: Register account first
+            reg = self.client.post(reverse('core:register'), {
+                'username': 'sumo_couple',
+                'email': 'sumo@example.com',
+                'password': 'password123',
+                'password_confirm': 'password123',
+            })
+            self.assertRedirects(reg, reverse('core:onboarding'))
+
+            # Layer 2: Checkout generates Sumopod QRIS
             with patch('core.services.sumopod.create_payment', return_value=mock_create_resp) as m_create:
                 resp = self.client.post(reverse('core:checkout'), {
                     'plan_type': 'wedding_owner',
-                    'username': 'sumo_couple',
-                    'email': 'sumo@example.com',
-                    'password': 'password123',
-                    'password_confirm': 'password123',
                     'groom_name': 'Raka',
                     'bride_name': 'Sinta',
                     'payment_method': 'qris',
@@ -473,24 +489,28 @@ class SumopodPaymentTests(TestCase):
             done_resp = self.client.get(reverse('core:checkout_pay', kwargs={'order_code': order.order_code}))
             self.assertRedirects(done_resp, reverse('core:dashboard'))
 
-    def test_sumopod_checkout_error_rolls_back_user(self):
+    def test_sumopod_checkout_error_rolls_back_order_keeps_account(self):
         from unittest.mock import patch
         from django.test import override_settings
         from core.services.sumopod import SumopodError
 
+        # Layer 1: Register account first
+        self.client.post(reverse('core:register'), {
+            'username': 'rollback_wo',
+            'email': 'rollback@example.com',
+            'password': 'password123',
+            'password_confirm': 'password123',
+        })
         with override_settings(SUMOPOD_API_KEY='sk_sandbox_test'):
             with patch('core.services.sumopod.create_payment', side_effect=SumopodError('Gateway timeout')):
                 resp = self.client.post(reverse('core:checkout'), {
                     'plan_type': 'wo_manager',
-                    'username': 'rollback_wo',
-                    'email': 'rollback@example.com',
-                    'password': 'password123',
-                    'password_confirm': 'password123',
                     'organization_name': 'Rollback WO',
                     'payment_method': 'qris',
                 })
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(User.objects.filter(username='rollback_wo').exists())
+        self.assertTrue(User.objects.filter(username='rollback_wo').exists())
+        self.assertEqual(Order.objects.filter(user__username='rollback_wo').count(), 0)
 
     def test_sumopod_webhook_token_svix_isolation_and_idempotency(self):
         import base64
@@ -594,14 +614,14 @@ class SumopodPaymentTests(TestCase):
             self.assertEqual(order.gateway_fee, 1343)
             self.assertEqual(WeddingMembership.objects.filter(user=user, role='owner').count(), 1)
 
-    def test_unpaid_user_cannot_login_redirected_to_select_plan_and_can_repay(self):
+    def test_decoupled_3_layer_onboarding_pending_gate_and_admin_activation(self):
         from datetime import timedelta
         from unittest.mock import patch
         from django.test import override_settings
         from django.utils import timezone
         from core.models import Order
 
-        # 1. Unpaid user with active pending QRIS order -> redirected to /checkout/select-plan/
+        # 1. Pending user logs in -> routed to /onboarding/ & blocked from Layer-3 app routes
         u1 = User.objects.create_user(username='unpaid_1', email='u1@example.com', password='password123')
         AccountProfile.objects.create(user=u1, account_type='couple', project_quota=0, plan_status='pending')
         o1 = Order.objects.create(
@@ -616,15 +636,18 @@ class SumopodPaymentTests(TestCase):
             metadata={'groom_name': 'Aldi', 'bride_name': 'Rani'},
         )
         r1 = self.client.post(reverse('core:login'), {'username': 'unpaid_1', 'password': 'password123'})
-        self.assertRedirects(r1, reverse('core:checkout_select_plan'))
-        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertRedirects(r1, reverse('core:onboarding'))
 
-        # Dedicated select-plan page shows resume banner for active pending QRIS
-        sp_get = self.client.get(reverse('core:checkout_select_plan'))
-        self.assertEqual(sp_get.status_code, 200)
-        self.assertContains(sp_get, o1.order_code)
+        # Pending user cannot access Layer-3 routes (budgets, vendors, settings)
+        self.assertRedirects(self.client.get(reverse('finances:dashboard')), reverse('core:onboarding'))
+        self.assertRedirects(self.client.get(reverse('vendors:compare')), reverse('core:onboarding'))
 
-        # Submitting select-plan generates a fresh QRIS order & cancels the old pending order
+        # Onboarding Hub shows resume banner for active pending QRIS
+        onb_get = self.client.get(reverse('core:onboarding'))
+        self.assertEqual(onb_get.status_code, 200)
+        self.assertContains(onb_get, o1.order_code)
+
+        # Submitting /checkout/ generates a fresh QRIS order & cancels the old pending order
         mock_create_resp = {
             'payment_id': 'pay-uuid-fresh',
             'order_id': 'RNK-FRESH',
@@ -639,16 +662,17 @@ class SumopodPaymentTests(TestCase):
         }
         with override_settings(SUMOPOD_API_KEY='sk_live_test'):
             with patch('core.services.sumopod.create_payment', return_value=mock_create_resp):
-                sp_post = self.client.post(reverse('core:checkout_select_plan'), {
+                co_post = self.client.post(reverse('core:checkout'), {
                     'plan_type': 'wo_manager',
                     'organization_name': 'Aldi Events WO',
+                    'payment_method': 'qris',
                 })
         o1.refresh_from_db()
         self.assertEqual(o1.status, 'cancelled')
         new_order = Order.objects.filter(user=u1, status='pending').first()
         self.assertIsNotNone(new_order)
         self.assertEqual(new_order.plan_type, 'wo_manager')
-        self.assertRedirects(sp_post, reverse('core:checkout_pay', kwargs={'order_code': new_order.order_code}))
+        self.assertRedirects(co_post, reverse('core:checkout_pay', kwargs={'order_code': new_order.order_code}))
 
         # 2. Admin Console manual "Tandai Lunas" activates pending order & profile
         adm = User.objects.create_user(username='pay_admin', password='adminpass123', is_staff=True, is_superuser=True)
@@ -705,24 +729,34 @@ class SumopodPaymentTests(TestCase):
         self.assertIn('no-store', resp.headers.get('Cache-Control', ''))
         self.assertEqual(resp.headers.get('Pragma'), 'no-cache')
 
-    def test_register_cannot_bypass_checkout_paywall(self):
-        # Direct GET /register/ without invite mode/code redirects to /checkout/
-        r_get = self.client.get(reverse('core:register'))
-        self.assertRedirects(r_get, reverse('core:checkout'))
+    def test_pending_user_can_join_via_invite_code_and_guest_preserves_next(self):
+        # Create an existing workspace + invite code
+        owner = User.objects.create_user(username='inv_host', password='password123')
+        AccountProfile.objects.create(user=owner, account_type='couple', project_quota=1, plan_status='active')
+        w = Wedding.objects.create(groom_name='Bima', bride_name='Citra')
+        WeddingMembership.objects.create(user=owner, wedding=w, role='owner')
+        inv = WorkspaceInvitation.objects.create(wedding=w, role='co_owner', max_uses=1, created_by=owner)
 
-        # Direct POST /register/ with mode=create is blocked and redirected to /checkout/
-        r_post = self.client.post(reverse('core:register'), {
-            'mode': 'create',
-            'username': 'free_bypass',
-            'email': 'free@example.com',
+        # 1. Guest opening /join/?code=XXXX redirects to /register/?next=... and shows preview
+        r_guest = self.client.get(reverse('core:join_workspace') + f'?code={inv.code}', follow=True)
+        self.assertEqual(r_guest.status_code, 200)
+        self.assertContains(r_guest, 'Bima &amp; Citra')
+        self.assertContains(r_guest, 'Co-Owner')
+
+        # 2. Guest registers cleanly -> redirected to /join/?code=XXXX -> submits -> active free Co-Owner!
+        r_reg = self.client.post(reverse('core:register'), {
+            'username': 'invited_partner',
+            'email': 'partner@example.com',
             'password': 'password123',
             'password_confirm': 'password123',
-            'groom_name': 'Free',
-            'bride_name': 'Bypass',
+            'next': reverse('core:join_workspace') + f'?code={inv.code}',
         })
-        self.assertRedirects(r_post, reverse('core:checkout'))
-        self.assertFalse(User.objects.filter(username='free_bypass').exists())
+        self.assertRedirects(r_reg, reverse('core:join_workspace') + f'?code={inv.code}')
+        u_partner = User.objects.get(username='invited_partner')
+        self.assertEqual(u_partner.profile.plan_status, 'pending')
 
-        # Invite-code registration (/register/?mode=join) still works cleanly
-        r_join = self.client.get(reverse('core:register') + '?mode=join')
-        self.assertEqual(r_join.status_code, 200)
+        r_join = self.client.post(reverse('core:join_workspace'), {'invite_code': inv.code})
+        self.assertRedirects(r_join, reverse('core:dashboard'))
+        u_partner.profile.refresh_from_db()
+        self.assertEqual(u_partner.profile.plan_status, 'active')
+        self.assertTrue(WeddingMembership.objects.filter(user=u_partner, wedding=w, role='co_owner').exists())

@@ -266,17 +266,8 @@ def _get_effective_plans():
     return PRICING_PLANS, 0
 
 
-def _redirect_unpaid_user(request, user):
-    """
-    If a user's AccountProfile is not active (e.g. pending/expired payment),
-    block app access and redirect them to the dedicated /checkout/select-plan/ page.
-    Returns an HttpResponseRedirect or None if the user is allowed to proceed.
-    """
-    profile = get_or_create_profile(user)
-    if profile.is_platform_admin or profile.plan_status == 'active':
-        return None
-
-    request.session['unpaid_user_id'] = user.pk
+def _get_active_pending_order(user):
+    """Return latest non-expired pending Order with payment_link_url for user, or None."""
     pending_order = (
         Order.objects.filter(user=user, status='pending')
         .order_by('-created_at')
@@ -285,34 +276,80 @@ def _redirect_unpaid_user(request, user):
     if pending_order and pending_order.expires_at and timezone.now() > pending_order.expires_at:
         pending_order.status = 'expired'
         pending_order.save(update_fields=['status'])
-        pending_order = None
+        return None
+    if pending_order and not pending_order.payment_link_url:
+        return None
+    return pending_order
 
-    if pending_order and pending_order.payment_link_url:
-        request.session['pending_order_code'] = pending_order.order_code
 
-    messages.info(
-        request,
-        'Akun Anda belum aktif karena pembayaran paket belum selesai. Pilih paket atau lanjutkan pembayaran QRIS di bawah.',
-    )
-    return redirect('core:checkout_select_plan')
+def _extract_invite_preview(request, next_url=''):
+    """Extract optional invite preview dict from ?code= or from ?next=/join/?code=XXXX."""
+    from urllib.parse import urlparse, parse_qs
+
+    code = (request.GET.get('code') or '').strip().upper()
+    if not code and next_url:
+        parsed = urlparse(next_url)
+        qs = parse_qs(parsed.query)
+        raw_codes = qs.get('code') or []
+        if raw_codes:
+            code = raw_codes[0].strip().upper()
+    if not code:
+        return None
+
+    p_wedding, p_role, _, p_err = resolve_invite_code(code)
+    if p_err:
+        return {'code': code, 'error': p_err}
+    if p_wedding:
+        return {
+            'code': code,
+            'wedding': p_wedding,
+            'role_label': dict(WeddingMembership.ROLE_CHOICES).get(p_role, p_role),
+        }
+    return None
 
 
 def home_view(request):
     """Show public landing page to guests, or appropriate home to authenticated users."""
     if request.user.is_authenticated:
-        unpaid_resp = _redirect_unpaid_user(request, request.user)
-        if unpaid_resp:
-            logout(request)
-            return unpaid_resp
         if getattr(request, 'wedding', None):
             return dashboard_view(request)
         if getattr(request, 'is_platform_admin', False):
             return redirect('core:admin_console')
-        profile = getattr(request, 'account_profile', None)
-        if profile and profile.is_wo_account:
+        profile = getattr(request, 'account_profile', None) or get_or_create_profile(request.user)
+        if profile.plan_status != 'active':
+            return redirect('core:onboarding')
+        if profile.is_wo_account:
             return redirect('core:wo_portal')
-        return redirect('core:join_workspace')
+        return redirect('core:onboarding')
     return landing_view(request)
+
+
+@login_required
+def onboarding_view(request):
+    """
+    Layer-2 Onboarding Hub for authenticated users who don't yet have active workspace access.
+    Presents two equal paths side by side:
+      A) Purchase a package (Wedding Owner or WO Manager) -> /checkout/
+      B) Join an existing workspace via 8-char invite code (free) -> /join/
+    """
+    profile = get_or_create_profile(request.user)
+    if profile.is_platform_admin:
+        return redirect('core:admin_console')
+    if profile.plan_status == 'active':
+        if profile.is_wo_account:
+            return redirect('core:wo_portal')
+        if WeddingMembership.objects.filter(user=request.user).exists():
+            return redirect('core:dashboard')
+
+    effective_plans, test_amount = _get_effective_plans()
+    active_pending_order = _get_active_pending_order(request.user)
+
+    return render(request, 'core/onboarding.html', {
+        'plans': effective_plans,
+        'active_pending_order': active_pending_order,
+        'join_form': JoinWorkspaceForm(),
+        'test_amount': test_amount,
+    })
 
 
 def _fulfill_paid_order(order, paid_at=None, fee=None, net_amount=None):
@@ -441,17 +478,22 @@ def _can_access_order(request, order):
 
 def checkout_view(request):
     """
-    Checkout for Paket Wedding Owner & Paket WO Manager.
-    Uses Sumopod Managed Payment (QRIS) when SUMOPOD_API_KEY is configured,
-    or falls back to instant local simulation when unconfigured in dev.
+    Layer-2 Package Checkout (for authenticated users without an active paid plan).
+    Guests are redirected to /register/?next=/checkout/... so account creation stays clean and separate.
     """
-    if request.user.is_authenticated:
-        if getattr(request, 'is_platform_admin', False):
-            return redirect('core:admin_console')
-        profile = getattr(request, 'account_profile', None)
-        if profile and profile.is_wo_account:
+    if not request.user.is_authenticated:
+        from urllib.parse import quote
+        next_target = quote(request.get_full_path(), safe='')
+        return redirect(f"{reverse('core:register')}?next={next_target}")
+
+    profile = get_or_create_profile(request.user)
+    if profile.is_platform_admin:
+        return redirect('core:admin_console')
+    if profile.plan_status == 'active':
+        if profile.is_wo_account:
             return redirect('core:wo_portal')
-        return redirect('core:dashboard')
+        if WeddingMembership.objects.filter(user=request.user).exists():
+            return redirect('core:dashboard')
 
     selected_plan = request.GET.get('plan') or request.POST.get('plan_type') or 'wedding_owner'
     if selected_plan not in PRICING_PLANS:
@@ -459,6 +501,7 @@ def checkout_view(request):
 
     sumopod_enabled = sumopod.is_configured()
     effective_plans, test_amount = _get_effective_plans()
+    active_pending_order = _get_active_pending_order(request.user)
 
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
@@ -473,30 +516,19 @@ def checkout_view(request):
                 'organization_name': (form.cleaned_data.get('organization_name') or '').strip(),
             }
 
+            user = request.user
+            Order.objects.filter(user=user, status='pending').update(status='cancelled')
+            order = Order.objects.create(
+                user=user,
+                customer_email=user.email,
+                plan_type=plan_key,
+                amount=plan_info['price'],
+                payment_method=form.cleaned_data.get('payment_method') or 'qris',
+                status='pending',
+                metadata=onboarding_meta,
+            )
+
             if sumopod_enabled:
-                with transaction.atomic():
-                    user = form.save(commit=False)
-                    user.set_password(form.cleaned_data['password'])
-                    user.save()
-
-                    AccountProfile.objects.create(
-                        user=user,
-                        account_type=plan_info['account_type'],
-                        organization_name=onboarding_meta['organization_name'],
-                        project_quota=0,
-                        plan_status='pending',
-                    )
-
-                    order = Order.objects.create(
-                        user=user,
-                        customer_email=user.email,
-                        plan_type=plan_key,
-                        amount=plan_info['price'],
-                        payment_method='qris',
-                        status='pending',
-                        metadata=onboarding_meta,
-                    )
-
                 pay_path = reverse('core:checkout_pay', kwargs={'order_code': order.order_code})
                 success_url = request.build_absolute_uri(f'{pay_path}?returned=1')
                 cancel_url = request.build_absolute_uri(f'{pay_path}?cancelled=1')
@@ -510,9 +542,7 @@ def checkout_view(request):
                         payment_method_type_code='QRIS',
                     )
                 except sumopod.SumopodError as exc:
-                    # Clean up pending account/order so user can retry immediately with same username
                     order.delete()
-                    user.delete()
                     messages.error(
                         request,
                         f'Gagal membuat tagihan QRIS di Sumopod: {exc}. Silakan coba lagi.',
@@ -523,6 +553,7 @@ def checkout_view(request):
                         'selected_plan': plan_key,
                         'active_plan': plan_info,
                         'sumopod_enabled': sumopod_enabled,
+                        'active_pending_order': active_pending_order,
                         'test_amount': test_amount,
                     })
 
@@ -539,32 +570,9 @@ def checkout_view(request):
                 return redirect('core:checkout_pay', order_code=order.order_code)
 
             # Local dev fallback (simulated payment when SUMOPOD_API_KEY is empty)
-            with transaction.atomic():
-                user = form.save(commit=False)
-                user.set_password(form.cleaned_data['password'])
-                user.save()
-
-                profile = AccountProfile.objects.create(
-                    user=user,
-                    account_type=plan_info['account_type'],
-                    organization_name=onboarding_meta['organization_name'],
-                    project_quota=plan_info['quota'],
-                    plan_status='pending',
-                )
-
-                order = Order.objects.create(
-                    user=user,
-                    customer_email=user.email,
-                    plan_type=plan_key,
-                    amount=plan_info['price'],
-                    payment_method=form.cleaned_data['payment_method'],
-                    status='pending',
-                    gateway_ref=f'SIM-{timezone.now().strftime("%H%M%S")}',
-                    metadata=onboarding_meta,
-                )
-
+            order.gateway_ref = f'SIM-{timezone.now().strftime("%H%M%S")}'
+            order.save(update_fields=['gateway_ref'])
             order, wedding, _ = _fulfill_paid_order(order)
-            login(request, user)
             if plan_key == 'wedding_owner' and wedding:
                 request.session['active_wedding_id'] = wedding.pk
                 messages.success(
@@ -575,11 +583,20 @@ def checkout_view(request):
 
             messages.success(
                 request,
-                f'Pembayaran simulasi {order.order_code} berhasil! Selamat datang di Portal WO {profile.organization_name}.',
+                f'Pembayaran simulasi {order.order_code} berhasil! Selamat datang di Portal WO {onboarding_meta["organization_name"]}.',
             )
             return redirect('core:wo_portal')
     else:
-        form = CheckoutForm(initial={'plan_type': selected_plan, 'payment_method': 'qris'})
+        latest_order = Order.objects.filter(user=request.user).order_by('-created_at').first()
+        prev_meta = (latest_order.metadata if latest_order and isinstance(latest_order.metadata, dict) else {}) or {}
+        form = CheckoutForm(initial={
+            'plan_type': selected_plan,
+            'payment_method': 'qris',
+            'groom_name': prev_meta.get('groom_name', ''),
+            'bride_name': prev_meta.get('bride_name', ''),
+            'wedding_date': prev_meta.get('wedding_date', ''),
+            'organization_name': prev_meta.get('organization_name') or profile.organization_name or '',
+        })
 
     return render(request, 'core/checkout.html', {
         'form': form,
@@ -587,142 +604,16 @@ def checkout_view(request):
         'selected_plan': selected_plan,
         'active_plan': effective_plans[selected_plan],
         'sumopod_enabled': sumopod_enabled,
+        'active_pending_order': active_pending_order,
         'test_amount': test_amount,
     })
 
 
 def checkout_select_plan_view(request):
-    """
-    Dedicated package selection page for existing unpaid accounts (plan_status != 'active').
-    No re-registration fields required; lets the user resume an active pending QRIS invoice
-    or choose/switch plan and generate a fresh QRIS payment.
-    """
-    unpaid_user_id = request.session.get('unpaid_user_id')
-    if not unpaid_user_id:
-        if request.user.is_authenticated:
-            return redirect('core:dashboard')
-        return redirect('core:checkout')
-
-    user = User.objects.filter(pk=unpaid_user_id).first()
-    if not user:
-        request.session.pop('unpaid_user_id', None)
-        return redirect('core:checkout')
-
-    profile = get_or_create_profile(user)
-    if profile.is_platform_admin or profile.plan_status == 'active':
-        request.session.pop('unpaid_user_id', None)
-        return redirect('core:login')
-
-    effective_plans, test_amount = _get_effective_plans()
-    sumopod_enabled = sumopod.is_configured()
-
-    # Check if user has an active (non-expired) pending QRIS order
-    active_pending_order = (
-        Order.objects.filter(user=user, status='pending')
-        .order_by('-created_at')
-        .first()
-    )
-    if active_pending_order and active_pending_order.expires_at and timezone.now() > active_pending_order.expires_at:
-        active_pending_order.status = 'expired'
-        active_pending_order.save(update_fields=['status'])
-        active_pending_order = None
-    if active_pending_order and not active_pending_order.payment_link_url:
-        active_pending_order = None
-
-    latest_order = Order.objects.filter(user=user).order_by('-created_at').first()
-    prev_meta = (latest_order.metadata if latest_order and isinstance(latest_order.metadata, dict) else {}) or {}
-
-    selected_plan = (
-        request.POST.get('plan_type')
-        or request.GET.get('plan')
-        or (latest_order.plan_type if latest_order else None)
-        or ('wo_manager' if profile.account_type == 'wo_manager' else 'wedding_owner')
-    )
-    if selected_plan not in effective_plans:
-        selected_plan = 'wedding_owner'
-
-    form_data = {
-        'groom_name': prev_meta.get('groom_name', ''),
-        'bride_name': prev_meta.get('bride_name', ''),
-        'wedding_date': prev_meta.get('wedding_date', ''),
-        'organization_name': prev_meta.get('organization_name') or profile.organization_name or '',
-    }
-    error_msg = ''
-
-    if request.method == 'POST':
-        form_data = {
-            'groom_name': (request.POST.get('groom_name') or '').strip(),
-            'bride_name': (request.POST.get('bride_name') or '').strip(),
-            'wedding_date': (request.POST.get('wedding_date') or '').strip(),
-            'organization_name': (request.POST.get('organization_name') or '').strip(),
-        }
-        plan_info = effective_plans[selected_plan]
-
-        if selected_plan == 'wedding_owner' and (not form_data['groom_name'] or not form_data['bride_name']):
-            error_msg = 'Nama pengantin pria dan wanita wajib diisi untuk Paket Wedding Owner.'
-        elif selected_plan == 'wo_manager' and not form_data['organization_name']:
-            error_msg = 'Nama Wedding Organizer / brand wajib diisi untuk Paket WO Manager.'
-        else:
-            # Cancel older pending orders before creating a fresh one
-            Order.objects.filter(user=user, status='pending').update(status='cancelled')
-            order = Order.objects.create(
-                user=user,
-                customer_email=user.email,
-                plan_type=selected_plan,
-                amount=plan_info['price'],
-                payment_method='qris',
-                status='pending',
-                metadata=form_data,
-            )
-            if sumopod_enabled:
-                pay_path = reverse('core:checkout_pay', kwargs={'order_code': order.order_code})
-                success_url = request.build_absolute_uri(f'{pay_path}?returned=1')
-                cancel_url = request.build_absolute_uri(f'{pay_path}?cancelled=1')
-                try:
-                    payment = sumopod.create_payment(
-                        order_id=order.order_code,
-                        amount=int(order.amount),
-                        success_return_url=success_url,
-                        cancel_return_url=cancel_url,
-                        payment_method_type_code='QRIS',
-                    )
-                except sumopod.SumopodError as exc:
-                    order.delete()
-                    error_msg = f'Gagal membuat tagihan QRIS di Sumopod: {exc}. Silakan coba lagi.'
-                else:
-                    order.gateway_ref = payment['payment_id']
-                    order.payment_link_url = payment['payment_link_url']
-                    order.expires_at = payment['expires_at']
-                    order.gateway_fee = payment['fee']
-                    order.net_amount = payment['net_amount']
-                    order.save(update_fields=[
-                        'gateway_ref', 'payment_link_url', 'expires_at', 'gateway_fee', 'net_amount',
-                    ])
-                    request.session['pending_order_code'] = order.order_code
-                    return redirect('core:checkout_pay', order_code=order.order_code)
-            else:
-                order.gateway_ref = f'SIM-{timezone.now().strftime("%H%M%S")}'
-                order.save(update_fields=['gateway_ref'])
-                order, wedding, _ = _fulfill_paid_order(order)
-                request.session.pop('unpaid_user_id', None)
-                login(request, user)
-                if selected_plan == 'wedding_owner' and wedding:
-                    request.session['active_wedding_id'] = wedding.pk
-                    messages.success(request, f'Pembayaran simulasi {order.order_code} berhasil! Workspace {wedding} siap digunakan.')
-                    return redirect('core:dashboard')
-                messages.success(request, f'Pembayaran simulasi {order.order_code} berhasil! Selamat datang di Portal WO.')
-                return redirect('core:wo_portal')
-
-    return render(request, 'core/checkout_select_plan.html', {
-        'unpaid_user': user,
-        'plans': effective_plans,
-        'selected_plan': selected_plan,
-        'active_pending_order': active_pending_order,
-        'form_data': form_data,
-        'error_msg': error_msg,
-        'sumopod_enabled': sumopod_enabled,
-        'test_amount': test_amount,
-    })
+    """Legacy URL alias redirecting cleanly to the Layer-2 Onboarding Hub."""
+    if request.user.is_authenticated:
+        return redirect('core:onboarding')
+    return redirect('core:login')
 
 
 def checkout_pay_view(request, order_code):
@@ -874,118 +765,92 @@ def sumopod_webhook_view(request):
 
 def register_view(request):
     """
-    Invite-only registration for Co-Owner, Couple (invited by WO), or Crew.
-    Creating a brand-new workspace requires purchasing a package via /checkout/
-    (prevents bypassing the paywall).
+    Layer-1 Pure Identity Registration (username, email, password only).
+    Creates a pending account, logs the user in, and routes them either to ?next=
+    (e.g. /checkout/?plan=... or /join/?code=...) or to the Layer-2 Onboarding Hub (/onboarding/).
     """
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    next_url = (request.POST.get('next') or request.GET.get('next') or '').strip()
     if request.user.is_authenticated:
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
         return redirect('core:dashboard')
 
-    prefill_code = (request.GET.get('code') or '').strip().upper()
-    active_mode = (request.GET.get('mode') or '').strip().lower()
-
-    # Block free workspace creation backdoor: direct /register/ without join mode or invite code -> /checkout/
-    if request.method == 'GET' and active_mode != 'join' and not prefill_code:
-        return redirect('core:checkout')
-
     if request.method == 'POST':
-        post_mode = (request.POST.get('mode') or 'join').strip().lower()
-        if post_mode != 'join':
-            return redirect('core:checkout')
-        post_data = request.POST.copy()
-        post_data['mode'] = 'join'
-        form = RegisterForm(post_data)
+        form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.save()
-
-            wedding = form.cleaned_data['target_wedding']
-            target_role = form.cleaned_data['target_role']
-            invitation = form.cleaned_data.get('target_invitation')
-
-            acc_type = 'couple' if target_role in ('owner', 'co_owner') else (
-                'wo_manager' if target_role == 'wo_manager' else 'crew'
-            )
-            AccountProfile.objects.create(
-                user=user,
-                account_type=acc_type,
-                project_quota=1 if acc_type == 'couple' else (10 if acc_type == 'wo_manager' else 0),
-                plan_status='active',
-            )
-
-            WeddingMembership.objects.create(
-                user=user,
-                wedding=wedding,
-                role=target_role,
-            )
-            if invitation:
-                invitation.uses_count += 1
-                if invitation.max_uses and invitation.uses_count >= invitation.max_uses:
-                    invitation.is_active = False
-                invitation.save(update_fields=['uses_count', 'is_active'])
-
+            with transaction.atomic():
+                user = form.save(commit=False)
+                user.set_password(form.cleaned_data['password'])
+                user.save()
+                AccountProfile.objects.create(
+                    user=user,
+                    account_type='couple',
+                    project_quota=0,
+                    plan_status='pending',
+                )
             login(request, user)
-            request.session['active_wedding_id'] = wedding.pk
-            role_label = dict(WeddingMembership.ROLE_CHOICES).get(target_role, target_role)
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
             messages.success(
                 request,
-                f'Selamat datang, {user.username}! Berhasil bergabung ke workspace {wedding} sebagai {role_label}.',
+                f'Akun {user.username} berhasil dibuat! Pilih paket atau masukkan kode undangan untuk mulai.',
             )
-            return redirect('core:dashboard')
+            return redirect('core:onboarding')
     else:
-        initial = {'mode': 'join'}
-        if prefill_code:
-            initial['invite_code'] = prefill_code
-        form = RegisterForm(initial=initial)
+        form = RegisterForm()
 
-    invite_preview = None
-    if prefill_code:
-        p_wedding, p_role, _, p_err = resolve_invite_code(prefill_code)
-        if p_err:
-            invite_preview = {'error': p_err}
-        elif p_wedding:
-            invite_preview = {
-                'wedding': p_wedding,
-                'role_label': dict(WeddingMembership.ROLE_CHOICES).get(p_role, p_role),
-            }
-
+    invite_preview = _extract_invite_preview(request, next_url)
     return render(request, 'core/register.html', {
         'form': form,
-        'active_mode': 'join',
+        'next': next_url,
         'invite_preview': invite_preview,
     })
 
 
 def login_view(request):
-    """User login with role-aware default redirect."""
-    if request.user.is_authenticated:
-        return redirect('core:dashboard')
+    """
+    Layer-1 Pure Login.
+    Authenticated users without active access (plan_status != 'active') are routed
+    to Layer-2 (/onboarding/) and blocked from Layer-3 routes by WorkspaceMiddleware.
+    """
+    from django.utils.http import url_has_allowed_host_and_scheme
 
-    next_url = request.POST.get('next') or request.GET.get('next') or ''
+    next_url = (request.POST.get('next') or request.GET.get('next') or '').strip()
+    if request.user.is_authenticated:
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
+        return redirect('core:dashboard')
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            unpaid_resp = _redirect_unpaid_user(request, user)
-            if unpaid_resp:
-                return unpaid_resp
             login(request, user)
-            messages.success(request, f'Selamat datang kembali, {user.username}!')
-            from django.utils.http import url_has_allowed_host_and_scheme
             if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                 return redirect(next_url)
             profile = get_or_create_profile(user)
             if profile.is_platform_admin:
+                messages.success(request, f'Selamat datang kembali, {user.username}!')
                 return redirect('core:admin_console')
+            if profile.plan_status != 'active':
+                return redirect('core:onboarding')
+            messages.success(request, f'Selamat datang kembali, {user.username}!')
             if profile.is_wo_account:
                 return redirect('core:wo_portal')
-            return redirect('core:dashboard')
+            if WeddingMembership.objects.filter(user=user).exists():
+                return redirect('core:dashboard')
+            return redirect('core:onboarding')
     else:
         form = LoginForm()
 
-    return render(request, 'core/login.html', {'form': form, 'next': next_url})
+    invite_preview = _extract_invite_preview(request, next_url)
+    return render(request, 'core/login.html', {
+        'form': form,
+        'next': next_url,
+        'invite_preview': invite_preview,
+    })
 
 
 def logout_view(request):
@@ -1018,16 +883,15 @@ def change_password_view(request):
 
 
 def join_workspace_view(request):
-    """Join an existing workspace via role-bound invite code (guests go to Register Join tab)."""
+    """
+    Layer-2 Join Workspace via role-bound 8-character invite code (free).
+    Guests are redirected to /register/?next=/join/?code=... so account creation
+    and invite joining stay cleanly decoupled.
+    """
     if not request.user.is_authenticated:
-        code = (request.GET.get('code') or '').strip().upper()
-        target_url = reverse('core:register') + '?mode=join' + (f'&code={code}' if code else '')
-        return redirect(target_url)
-
-    unpaid_resp = _redirect_unpaid_user(request, request.user)
-    if unpaid_resp:
-        logout(request)
-        return unpaid_resp
+        from urllib.parse import quote
+        next_target = quote(request.get_full_path(), safe='')
+        return redirect(f"{reverse('core:register')}?next={next_target}")
 
     prefill_code = (request.GET.get('code') or '').strip().upper()
     has_couple_wedding = WeddingMembership.objects.filter(
@@ -1043,6 +907,10 @@ def join_workspace_view(request):
             if err:
                 form.add_error('invite_code', err)
             elif WeddingMembership.objects.filter(user=request.user, wedding=wedding).exists():
+                profile = get_or_create_profile(request.user)
+                if profile.plan_status != 'active':
+                    profile.plan_status = 'active'
+                    profile.save(update_fields=['plan_status'])
                 request.session['active_wedding_id'] = wedding.pk
                 messages.info(request, f'Anda sudah tergabung di workspace {wedding}.')
                 return redirect('core:dashboard')
@@ -1066,6 +934,19 @@ def join_workspace_view(request):
                         if invitation.max_uses and invitation.uses_count >= invitation.max_uses:
                             invitation.is_active = False
                         invitation.save(update_fields=['uses_count', 'is_active'])
+
+                    # Activate pending accounts joining via valid invite code (free access)
+                    profile = get_or_create_profile(request.user)
+                    if profile.plan_status != 'active':
+                        acc_type = 'couple' if target_role in ('owner', 'co_owner') else (
+                            'wo_manager' if target_role == 'wo_manager' else 'crew'
+                        )
+                        profile.account_type = acc_type
+                        profile.project_quota = 1 if acc_type == 'couple' else (10 if acc_type == 'wo_manager' else 0)
+                        profile.plan_status = 'active'
+                        profile.save(update_fields=['account_type', 'project_quota', 'plan_status'])
+                        Order.objects.filter(user=request.user, status='pending').update(status='cancelled')
+
                     request.session['active_wedding_id'] = wedding.pk
                     role_label = dict(WeddingMembership.ROLE_CHOICES).get(target_role, target_role)
                     messages.success(request, f'Berhasil bergabung ke workspace {wedding} sebagai {role_label}!')
@@ -1073,7 +954,11 @@ def join_workspace_view(request):
     else:
         form = JoinWorkspaceForm(initial={'invite_code': prefill_code} if prefill_code else None)
 
-    return render(request, 'core/join_workspace.html', {'form': form})
+    invite_preview = _extract_invite_preview(request)
+    return render(request, 'core/join_workspace.html', {
+        'form': form,
+        'invite_preview': invite_preview,
+    })
 
 
 @login_required

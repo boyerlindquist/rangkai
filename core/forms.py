@@ -31,13 +31,7 @@ def resolve_invite_code(code):
 
 
 class RegisterForm(forms.ModelForm):
-    """User registration supporting creating a Wedding Owner workspace OR joining via role-bound invite code."""
-    mode = forms.ChoiceField(
-        choices=[('create', 'Buat Workspace Baru'), ('join', 'Gabung Workspace')],
-        initial='create',
-        required=False,
-        widget=forms.HiddenInput(),
-    )
+    """Pure Layer-1 identity registration (username, email, password only)."""
     password = forms.CharField(
         min_length=8,
         widget=forms.PasswordInput(attrs={
@@ -50,42 +44,6 @@ class RegisterForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Ulangi password',
             'class': 'wp-input',
-        }),
-    )
-    groom_name = forms.CharField(
-        label='Nama Pengantin Pria',
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Nama panggilan / lengkap pria',
-            'class': 'wp-input',
-        }),
-    )
-    bride_name = forms.CharField(
-        label='Nama Pengantin Wanita',
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Nama panggilan / lengkap wanita',
-            'class': 'wp-input',
-        }),
-    )
-    wedding_date = forms.DateField(
-        label='Tanggal Pernikahan (Opsional)',
-        required=False,
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'wp-input',
-        }, format='%Y-%m-%d'),
-    )
-    invite_code = forms.CharField(
-        label='Kode Undangan (8 Karakter)',
-        max_length=8,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'CONTOH: AB12CD34',
-            'class': 'wp-input font-mono',
-            'style': 'text-transform: uppercase; letter-spacing: 0.14em; text-align: center;',
         }),
     )
 
@@ -94,8 +52,9 @@ class RegisterForm(forms.ModelForm):
         fields = ['username', 'email']
         widgets = {
             'username': forms.TextInput(attrs={
-                'placeholder': 'Username',
+                'placeholder': 'Username akun',
                 'class': 'wp-input',
+                'autofocus': True,
             }),
             'email': forms.EmailInput(attrs={
                 'placeholder': 'email@contoh.com',
@@ -103,35 +62,21 @@ class RegisterForm(forms.ModelForm):
             }),
         }
 
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if not email:
+            raise forms.ValidationError('Email wajib diisi.')
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get('password') != cleaned_data.get('password_confirm'):
             self.add_error('password_confirm', 'Konfirmasi password tidak cocok.')
-
-        mode = cleaned_data.get('mode') or 'create'
-        cleaned_data['mode'] = mode
-
-        if mode == 'join':
-            code = (cleaned_data.get('invite_code') or '').strip().upper()
-            cleaned_data['invite_code'] = code
-            wedding, target_role, invitation, err = resolve_invite_code(code)
-            if err:
-                self.add_error('invite_code', err)
-            else:
-                cleaned_data['target_wedding'] = wedding
-                cleaned_data['target_role'] = target_role
-                cleaned_data['target_invitation'] = invitation
-        else:
-            if not (cleaned_data.get('groom_name') or '').strip():
-                self.add_error('groom_name', 'Nama pengantin pria wajib diisi untuk membuat workspace baru.')
-            if not (cleaned_data.get('bride_name') or '').strip():
-                self.add_error('bride_name', 'Nama pengantin wanita wajib diisi untuk membuat workspace baru.')
-
         return cleaned_data
 
 
-class CheckoutForm(forms.ModelForm):
-    """Simulated Payment Gateway checkout form for Wedding Owner or WO Manager packages."""
+class CheckoutForm(forms.Form):
+    """Pure Layer-2 package & workspace checkout form (for already-authenticated users)."""
     plan_type = forms.ChoiceField(
         choices=Order.PLAN_CHOICES,
         initial='wedding_owner',
@@ -140,21 +85,8 @@ class CheckoutForm(forms.ModelForm):
     payment_method = forms.ChoiceField(
         choices=Order.PAYMENT_METHOD_CHOICES,
         initial='qris',
+        required=False,
         widget=forms.RadioSelect(),
-    )
-    password = forms.CharField(
-        min_length=8,
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Minimal 8 karakter',
-            'class': 'wp-input',
-        }),
-    )
-    password_confirm = forms.CharField(
-        label='Konfirmasi Password',
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Ulangi password',
-            'class': 'wp-input',
-        }),
     )
     # Couple-specific fields
     groom_name = forms.CharField(
@@ -194,25 +126,9 @@ class CheckoutForm(forms.ModelForm):
         }),
     )
 
-    class Meta:
-        model = User
-        fields = ['username', 'email']
-        widgets = {
-            'username': forms.TextInput(attrs={
-                'placeholder': 'Username akun',
-                'class': 'wp-input',
-            }),
-            'email': forms.EmailInput(attrs={
-                'placeholder': 'email@contoh.com',
-                'class': 'wp-input',
-            }),
-        }
-
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get('password') != cleaned_data.get('password_confirm'):
-            self.add_error('password_confirm', 'Konfirmasi password tidak cocok.')
-
+        cleaned_data['payment_method'] = cleaned_data.get('payment_method') or 'qris'
         plan = cleaned_data.get('plan_type') or 'wedding_owner'
         if plan == 'wedding_owner':
             if not (cleaned_data.get('groom_name') or '').strip():
