@@ -9,12 +9,13 @@ class TaskMilestoneForm(forms.ModelForm):
     """Form for creating custom task milestones."""
     class Meta:
         model = TaskMilestone
-        fields = ['phase', 'category', 'title', 'assignee', 'is_critical', 'linked_tool']
+        fields = ['phase', 'category', 'title', 'assignee', 'due_date', 'is_critical', 'linked_tool']
         widgets = {
             'phase': forms.Select(attrs={'class': 'wp-input'}),
             'category': forms.Select(attrs={'class': 'wp-input'}),
             'title': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Judul tugas'}),
             'assignee': forms.Select(attrs={'class': 'wp-input'}),
+            'due_date': forms.DateInput(attrs={'type': 'date', 'class': 'wp-input'}, format='%Y-%m-%d'),
             'linked_tool': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Nama tool terkait (opsional)'}),
         }
 

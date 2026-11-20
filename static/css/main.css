@@ -3842,13 +3842,13 @@ textarea.wp-input {
 }
 
 .phase-rail-line-top {
-  top: 0;
+  top: -6px;
   bottom: 50%;
 }
 
 .phase-rail-line-bottom {
   top: 50%;
-  bottom: 0;
+  bottom: -6px;
 }
 
 .phase-rail-line-top.is-filled,

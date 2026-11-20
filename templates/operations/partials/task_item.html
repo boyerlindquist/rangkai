@@ -18,6 +18,17 @@
 
   <div class="task-meta">
     <div class="task-meta-badges" style="display: inline-flex; align-items: center; gap: 5px;">
+      {% if task.due_date %}
+      <span data-slot="badge"
+            data-variant="{% if task.is_deadline_overdue and task.status != 'done' %}destructive{% else %}outline{% endif %}"
+            class="font-mono tabular-nums"
+            style="font-size: 0.75rem; gap: 4px;"
+            title="Tenggat Waktu: {{ task.due_date|date:'d M Y' }}">
+        <i data-lucide="calendar" style="width: 11px; height: 11px;"></i>
+        {{ task.due_date|date:"d M" }}
+      </span>
+      {% endif %}
+
       {% if task.is_overdue and task.status != 'done' %}
       <button type="button" data-slot="icon-badge" data-variant="destructive" data-tooltip="Perlu Tindak Lanjut (Lewat Jadwal)" aria-label="Perlu Tindak Lanjut">
         <i data-lucide="alert-triangle"></i>

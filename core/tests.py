@@ -760,3 +760,121 @@ class SumopodPaymentTests(TestCase):
         u_partner.profile.refresh_from_db()
         self.assertEqual(u_partner.profile.plan_status, 'active')
         self.assertTrue(WeddingMembership.objects.filter(user=u_partner, wedding=w, role='co_owner').exists())
+
+
+@override_settings(SUMOPOD_API_KEY='', SUMOPOD_TEST_AMOUNT=0)
+class CalendarAndPhaseRangeTests(TestCase):
+    """Tests for TimelinePhase non-overlapping H-minus ranges and /calendar/ view."""
+
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        self.owner = User.objects.create_user(username='cal_owner', password='password123')
+        AccountProfile.objects.create(user=self.owner, account_type='couple', project_quota=1, plan_status='active')
+        self.wedding = Wedding.objects.create(
+            groom_name='Fajar',
+            bride_name='Laras',
+            wedding_date=timezone.localdate() + timedelta(days=120),  # H-120 -> Fase 2 (180..91)
+        )
+        WeddingMembership.objects.create(user=self.owner, wedding=self.wedding, role='owner')
+        self.client.login(username='cal_owner', password='password123')
+
+    def test_calendar_page_detects_active_phase_and_respects_finance_privacy(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from finances.models import BudgetCategory, BudgetItem
+        from operations.models import TimelinePhase, TaskMilestone
+
+        # Create a payment due date & a task deadline
+        cat = BudgetCategory.objects.create(wedding=self.wedding, name='Venue', allocation_percentage=20)
+        BudgetItem.objects.create(
+            wedding=self.wedding,
+            category=cat,
+            name='DP Gedung Rahasia',
+            actual_cost=25000000,
+            due_date=timezone.localdate() + timedelta(days=5),
+        )
+        TaskMilestone.objects.create(
+            wedding=self.wedding,
+            phase='d180',
+            title='Fitting Kebaya Final',
+            due_date=timezone.localdate() + timedelta(days=7),
+        )
+
+        # 1. Owner sees active phase, task deadline, national holidays, and payment due date
+        resp_owner = self.client.get(reverse('calendar'))
+        self.assertEqual(resp_owner.status_code, 200)
+        self.assertContains(resp_owner, 'H-180 s/d H-91')
+        self.assertContains(resp_owner, 'DP Gedung Rahasia')
+        self.assertContains(resp_owner, 'Fitting Kebaya Final')
+        self.assertContains(resp_owner, 'Hari Kemerdekaan RI')
+        self.assertEqual(TimelinePhase.objects.filter(wedding=self.wedding).count(), 5)
+
+        # Dashboard Ringkasan shows today's active phase inside Hitung Mundur card
+        resp_dash_in = self.client.get(reverse('core:dashboard'))
+        self.assertContains(resp_dash_in, 'Fase 2: Vendor Utama &amp; Berkas')
+
+        # When wedding date is outside all phase ranges (H-500), Dashboard falls back to pure countdown
+        self.wedding.wedding_date = timezone.localdate() + timedelta(days=500)
+        self.wedding.save(update_fields=['wedding_date'])
+        resp_dash_out = self.client.get(reverse('core:dashboard'))
+        self.assertContains(resp_dash_out, 'menuju hari pernikahan')
+        self.wedding.wedding_date = timezone.localdate() + timedelta(days=120)
+        self.wedding.save(update_fields=['wedding_date'])
+
+        # 2. Crew sees phases & task deadlines, but NEVER sees financial payment due dates
+        crew = User.objects.create_user(username='cal_crew', password='password123')
+        AccountProfile.objects.create(user=crew, account_type='crew', project_quota=0, plan_status='active')
+        WeddingMembership.objects.create(user=crew, wedding=self.wedding, role='crew')
+        c_crew = Client()
+        c_crew.login(username='cal_crew', password='password123')
+        resp_crew = c_crew.get(reverse('calendar'))
+        self.assertEqual(resp_crew.status_code, 200)
+        self.assertContains(resp_crew, 'H-180 s/d H-91')
+        self.assertContains(resp_crew, 'Fitting Kebaya Final')
+        self.assertNotContains(resp_crew, 'DP Gedung Rahasia')
+
+    def test_phase_range_overlap_validation_blocks_overlap_and_accepts_clean_custom(self):
+        from operations.models import TimelinePhase
+
+        # Trigger default 5-phase seed
+        self.client.get(reverse('operations-checklist:checklist'))
+        self.assertEqual(TimelinePhase.objects.filter(wedding=self.wedding).count(), 5)
+
+        # 1. Adding a phase that overlaps existing H-180..H-91 is rejected
+        self.client.post(reverse('operations-checklist:add_phase'), {
+            'label': 'Fase Bentrok',
+            'start_day_before': '150',
+            'end_day_before': '100',
+        })
+        self.assertFalse(TimelinePhase.objects.filter(wedding=self.wedding, label='Fase Bentrok').exists())
+
+        # 2. Adding a phase outside existing ranges (H-450..H-361) succeeds
+        self.client.post(reverse('operations-checklist:add_phase'), {
+            'label': 'Pra-Lamaran',
+            'start_day_before': '450',
+            'end_day_before': '361',
+        })
+        self.assertTrue(TimelinePhase.objects.filter(wedding=self.wedding, label='Pra-Lamaran').exists())
+
+        # 3. Start from zero with overlapping custom phases is rejected & preserves existing phases
+        self.client.post(reverse('operations-checklist:reset_or_apply_preset'), {
+            'mode': 'start_from_zero',
+            'custom_phase_labels': ['Tahap A', 'Tahap B'],
+            'custom_phase_starts': ['180', '100'],
+            'custom_phase_ends': ['90', '30'],  # 90..100 overlaps!
+        })
+        self.assertFalse(TimelinePhase.objects.filter(wedding=self.wedding, label='Tahap A').exists())
+        self.assertTrue(TimelinePhase.objects.filter(wedding=self.wedding, label='Pra-Lamaran').exists())
+
+        # 4. Start from zero with clean non-overlapping custom phases succeeds
+        self.client.post(reverse('operations-checklist:reset_or_apply_preset'), {
+            'mode': 'start_from_zero',
+            'custom_phase_labels': ['Tahap 1', 'Tahap 2', 'Tahap 3'],
+            'custom_phase_starts': ['120', '60', '14'],
+            'custom_phase_ends': ['61', '15', '0'],
+        })
+        custom = list(TimelinePhase.objects.filter(wedding=self.wedding).order_by('sort_order'))
+        self.assertEqual(len(custom), 3)
+        self.assertEqual(custom[0].range_display, 'H-120 s/d H-61')
+        self.assertEqual(custom[2].range_display, 'H-14 s/d Hari-H')

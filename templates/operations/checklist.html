@@ -21,7 +21,11 @@
        deletingPhaseKey: null,
        deleteTaskAction: 'move',
        showGuide: {{ total_tasks|yesno:'false,true' }},
-       customZeroPhases: ['Tahap 1: Persiapan & Anggaran', 'Tahap 2: Venue & Vendor Utama', 'Tahap 3: Finalisasi & Hari-H'],
+       customZeroPhases: [
+         { label: 'Tahap 1: Persiapan & Anggaran', start: 180, end: 91 },
+         { label: 'Tahap 2: Venue & Vendor Utama', start: 90, end: 31 },
+         { label: 'Tahap 3: Finalisasi & Hari-H', start: 30, end: 0 }
+       ],
        selectedAssignee: '{{ assignee_filter|default:'' }}',
        phaseKeys: {{ phase_keys_json|default:'[\"d360\",\"d180\",\"d90\",\"d30\",\"dday\"]' }},
        selectedPhase: (function() {
@@ -221,20 +225,38 @@
       <div x-show="managerTab === 'edit'">
         <form method="post" action="{% url 'operations-checklist:bulk_manage_phases' %}">
           {% csrf_token %}
+          <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 8px;">
+            Atur rentang waktu tiap fase dalam satuan <strong>H-</strong> sebelum Hari-H (contoh: <code>360</code> s/d <code>181</code>, <code>0</code> = Hari-H, <code>-1</code> = H+1). Rentang antar fase tidak boleh saling tumpang tindih (overlap).
+          </p>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
             {% for p in phase_objs %}
-            <div style="display: grid; grid-template-columns: 64px minmax(180px, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline);">
+            <div style="display: grid; grid-template-columns: 54px minmax(150px, 1fr) 82px 82px 96px auto; gap: 6px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); background: var(--wp-bg-surface); border: 1px solid var(--wp-hairline);">
               <input type="number" name="order_{{ p.key }}" value="{{ forloop.counter }}" min="1" max="30" class="wp-input tabular-nums" style="padding: 4px 6px; font-size: 0.78rem;" title="Nomor urut fase">
               <input type="text" name="label_{{ p.key }}" value="{{ p.label }}" required class="wp-input" style="padding: 4px 8px; font-size: 0.8rem;">
-              <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; cursor: pointer; color: var(--wp-text-secondary); padding: 0 4px;">
+              <input type="number" name="start_{{ p.key }}" value="{{ p.start_day_before }}" min="-30" max="1095" required class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.76rem;" title="Mulai (H-)" placeholder="H- Mulai">
+              <input type="number" name="end_{{ p.key }}" value="{{ p.end_day_before }}" min="-30" max="1095" required class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.76rem;" title="Selesai (H-)" placeholder="H- Selesai">
+              <select name="color_{{ p.key }}" class="wp-input" style="padding: 4px 6px; font-size: 0.76rem;" title="Warna di Kalender">
+                {% for c_val, c_lbl in phase_color_choices %}
+                <option value="{{ c_val }}" {% if p.color == c_val %}selected{% endif %}>{{ c_lbl }}</option>
+                {% endfor %}
+              </select>
+              <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; color: var(--wp-text-secondary); padding: 0 2px; white-space: nowrap;">
                 <input type="radio" name="active_phase_key" value="{{ p.key }}" {% if p.key == current_phase_key %}checked{% endif %}>
                 Aktif
               </label>
             </div>
             {% endfor %}
-            <div style="display: grid; grid-template-columns: 64px minmax(180px, 1fr); gap: 8px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); border: 1px dashed var(--wp-border-strong);">
+            <div style="display: grid; grid-template-columns: 54px minmax(150px, 1fr) 82px 82px 96px auto; gap: 6px; align-items: center; padding: 6px 10px; border-radius: var(--wp-radius-xs); border: 1px dashed var(--wp-border-strong);">
               <span style="font-size: 0.75rem; font-weight: 700; color: var(--wp-gold-dark); text-align: center;">+ Baru</span>
-              <input type="text" name="new_phase_label" placeholder="Ketik nama fase tambahan (opsional)..." class="wp-input" style="padding: 4px 8px; font-size: 0.8rem;">
+              <input type="text" name="new_phase_label" placeholder="Nama fase tambahan (opsional)..." class="wp-input" style="padding: 4px 8px; font-size: 0.8rem;">
+              <input type="number" name="new_phase_start" min="-30" max="1095" placeholder="H- Mulai" class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.76rem;">
+              <input type="number" name="new_phase_end" min="-30" max="1095" placeholder="H- Selesai" class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.76rem;">
+              <select name="new_phase_color" class="wp-input" style="padding: 4px 6px; font-size: 0.76rem;">
+                {% for c_val, c_lbl in phase_color_choices %}
+                <option value="{{ c_val }}">{{ c_lbl }}</option>
+                {% endfor %}
+              </select>
+              <span style="font-size: 0.75rem; color: var(--muted-foreground);"></span>
             </div>
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 6px;">
@@ -257,8 +279,8 @@
               <div style="font-weight: 700; font-size: 0.84rem; color: var(--wp-text-main); margin-bottom: 3px;">{{ preset.name }}</div>
               <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 6px;">{{ preset.desc }}</p>
               <ol style="margin: 0; padding-left: 15px; font-size: 0.75rem; color: var(--wp-text-secondary); display: flex; flex-direction: column; gap: 2px;">
-                {% for _, ph_label in preset.phases %}
-                <li>{{ ph_label }}</li>
+                {% for _, ph_label, ph_s, ph_e, _ in preset.phases %}
+                <li>{{ ph_label }} <span class="font-mono" style="font-size: 0.75rem; opacity: 0.8;">(H-{{ ph_s }} s/d {% if ph_e < 0 %}H+{{ ph_e|stringformat:"d"|slice:"1:" }}{% elif ph_e == 0 %}Hari-H{% else %}H-{{ ph_e }}{% endif %})</span></li>
                 {% endfor %}
               </ol>
             </div>
@@ -298,18 +320,21 @@
                   onsubmit="return confirm('Rombak total seluruh fase dan tugas dari 0?');">
               {% csrf_token %}
               <input type="hidden" name="mode" value="start_from_zero">
-              <div style="font-weight: 700; font-size: 0.84rem; color: var(--wp-text-main); margin-bottom: 4px;">Opsi B: Rombak Total Fase & Tugas dari 0</div>
-              <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
-                <template x-for="(lbl, idx) in customZeroPhases" :key="idx">
-                  <div style="display: flex; align-items: center; gap: 5px;">
-                    <span class="badge badge-muted tabular-nums" x-text="idx + 1"></span>
-                    <input type="text" name="custom_phase_labels" x-model="customZeroPhases[idx]" required class="wp-input" style="padding: 3px 8px; font-size: 0.76rem; flex: 1;">
+              <div style="font-weight: 700; font-size: 0.84rem; color: var(--wp-text-main); margin-bottom: 4px;">Opsi B: Rombak Total Fase &amp; Tugas dari 0</div>
+              <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 8px;">Wajib sertakan rentang <strong>H- Mulai</strong> s/d <strong>H- Selesai</strong> untuk setiap fase (tidak boleh overlap).</p>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+                <template x-for="(item, idx) in customZeroPhases" :key="idx">
+                  <div style="display: grid; grid-template-columns: 24px 1fr 68px 68px auto; align-items: center; gap: 5px;">
+                    <span class="badge badge-muted tabular-nums" x-text="idx + 1" style="justify-content:center;"></span>
+                    <input type="text" name="custom_phase_labels" x-model="customZeroPhases[idx].label" required class="wp-input" style="padding: 3px 8px; font-size: 0.76rem;" placeholder="Nama fase">
+                    <input type="number" name="custom_phase_starts" x-model.number="customZeroPhases[idx].start" min="-30" max="1095" required class="wp-input font-mono tabular-nums" style="padding: 3px 6px; font-size: 0.75rem;" placeholder="H- Mulai" title="Mulai (H-)">
+                    <input type="number" name="custom_phase_ends" x-model.number="customZeroPhases[idx].end" min="-30" max="1095" required class="wp-input font-mono tabular-nums" style="padding: 3px 6px; font-size: 0.75rem;" placeholder="H- Selesai" title="Selesai (H-)">
                     <button type="button" class="btn btn-ghost btn-icon btn-sm" x-show="customZeroPhases.length > 1" @click="customZeroPhases.splice(idx, 1)">
                       <i data-lucide="x" style="width: 12px; height: 12px;"></i>
                     </button>
                   </div>
                 </template>
-                <button type="button" class="btn btn-ghost btn-sm" style="align-self: flex-start; font-size: 0.75rem; padding: 2px 6px;" @click="customZeroPhases.push('Tahap ' + (customZeroPhases.length + 1) + ': ')">
+                <button type="button" class="btn btn-ghost btn-sm" style="align-self: flex-start; font-size: 0.75rem; padding: 2px 6px;" @click="const prev = customZeroPhases[customZeroPhases.length - 1]; const nextStart = prev ? Math.max(prev.end - 1, 0) : 30; const nextEnd = Math.max(nextStart - 15, 0); customZeroPhases.push({ label: 'Tahap ' + (customZeroPhases.length + 1) + ': ', start: nextStart, end: nextEnd });">
                   + Baris Fase
                 </button>
               </div>
@@ -381,6 +406,9 @@
                   {{ phase_data.progress }}%
                 </span>
               </div>
+              <div class="font-mono tabular-nums" style="font-size: 0.75rem; color: var(--muted-foreground);">
+                {{ phase_data.range_display }}
+              </div>
 
               <div style="height: 4px; width: 100%; background: var(--wp-border-light); border-radius: 999px; overflow: hidden;">
                 <div style="height: 100%; width: {{ phase_data.progress }}%; background: {% if phase_data.progress == 100 %}var(--wp-sage-main){% else %}var(--wp-gold-main){% endif %}; transition: width 0.3s ease;"></div>
@@ -412,11 +440,15 @@
                   style="width: 100%; justify-content: center; font-size: 0.75rem; padding: 3px 8px; border: 1px dashed var(--wp-border-strong);">
             <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Fase Baru
           </button>
-          <form x-show="showInlineAddPhase" x-cloak method="post" action="{% url 'operations-checklist:add_phase' %}" style="display: flex; gap: 4px; align-items: center;">
+          <form x-show="showInlineAddPhase" x-cloak method="post" action="{% url 'operations-checklist:add_phase' %}" style="display: flex; flex-direction: column; gap: 5px;">
             {% csrf_token %}
-            <input type="text" x-ref="newPhaseInput" name="label" required placeholder="Nama fase baru..." class="wp-input" style="padding: 4px 8px; font-size: 0.76rem; flex: 1;">
-            <button type="submit" class="btn btn-gold btn-icon btn-sm" title="Simpan Fase"><i data-lucide="check" style="width: 13px; height: 13px;"></i></button>
-            <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showInlineAddPhase = false" title="Batal"><i data-lucide="x" style="width: 13px; height: 13px;"></i></button>
+            <input type="text" x-ref="newPhaseInput" name="label" required placeholder="Nama fase baru..." class="wp-input" style="padding: 4px 8px; font-size: 0.76rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 4px; align-items: center;">
+              <input type="number" name="start_day_before" required min="-30" max="1095" placeholder="H- Mulai" class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.75rem;" title="Mulai (H-)">
+              <input type="number" name="end_day_before" required min="-30" max="1095" placeholder="H- Selesai" class="wp-input font-mono tabular-nums" style="padding: 4px 6px; font-size: 0.75rem;" title="Selesai (H-)">
+              <button type="submit" class="btn btn-gold btn-icon btn-sm" title="Simpan Fase"><i data-lucide="check" style="width: 13px; height: 13px;"></i></button>
+              <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showInlineAddPhase = false" title="Batal"><i data-lucide="x" style="width: 13px; height: 13px;"></i></button>
+            </div>
           </form>
         </div>
       </aside>
@@ -430,7 +462,8 @@
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
               <div id="phase-detail-header-stats-{{ phase_key }}">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span class="badge badge-sage tabular-nums" style="font-size: 0.7rem;">Tahap {{ phase_data.step_num }}/{{ phase_count }}</span>
+                  <span class="badge badge-sage tabular-nums" style="font-size: 0.75rem;">Tahap {{ phase_data.step_num }}/{{ phase_count }}</span>
+                  <span data-slot="badge" data-variant="outline" class="font-mono tabular-nums" style="font-size: 0.75rem;">{{ phase_data.range_display }}</span>
                   <h2 style="margin: 0; font-size: 1.04rem; font-weight: 700; color: var(--wp-text-main);">
                     {{ phase_data.label }}
                   </h2>

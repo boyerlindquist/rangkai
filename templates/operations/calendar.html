@@ -1,0 +1,850 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Kalender Fase | Rangkai.click{% endblock %}
+{% block breadcrumb %}Kalender Fase{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'operations-checklist:checklist' %}" data-slot="button" data-variant="outline" data-size="sm">
+  <i data-lucide="sliders-horizontal"></i> Atur Fase &amp; Tugas
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* Placed inside block content so HTMX boosted navigation always loads Calendar styles immediately */
+  .cal-scope {
+    --ph-emerald: #126e51;
+    --ph-emerald-bg: rgba(18, 110, 81, 0.10);
+    --ph-blue: #2563eb;
+    --ph-blue-bg: rgba(37, 99, 235, 0.10);
+    --ph-violet: #7c3aed;
+    --ph-violet-bg: rgba(124, 58, 237, 0.10);
+    --ph-amber: #d97706;
+    --ph-amber-bg: rgba(217, 119, 6, 0.12);
+    --ph-rose: #e11d48;
+    --ph-rose-bg: rgba(225, 29, 72, 0.10);
+    --ph-teal: #0d9488;
+    --ph-teal-bg: rgba(13, 148, 136, 0.10);
+    --ph-slate: #475569;
+    --ph-slate-bg: rgba(71, 85, 105, 0.10);
+  }
+
+  [data-theme="dark"] .cal-scope {
+    --ph-emerald: #22a076;
+    --ph-emerald-bg: rgba(34, 160, 118, 0.16);
+    --ph-blue: #60a5fa;
+    --ph-blue-bg: rgba(96, 165, 250, 0.15);
+    --ph-violet: #a78bfa;
+    --ph-violet-bg: rgba(167, 139, 250, 0.15);
+    --ph-amber: #fbbf24;
+    --ph-amber-bg: rgba(251, 191, 36, 0.15);
+    --ph-rose: #fb7185;
+    --ph-rose-bg: rgba(251, 113, 133, 0.15);
+    --ph-teal: #2dd4bf;
+    --ph-teal-bg: rgba(45, 212, 191, 0.15);
+    --ph-slate: #94a3b8;
+    --ph-slate-bg: rgba(148, 163, 184, 0.15);
+  }
+
+  .cal-status-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .cal-status-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .cal-phase-vline {
+    width: 3.5px;
+    border-radius: 9999px;
+    align-self: stretch;
+    min-height: 18px;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+
+  .cal-bar-emerald { background: var(--ph-emerald); }
+  .cal-bar-blue { background: var(--ph-blue); }
+  .cal-bar-violet { background: var(--ph-violet); }
+  .cal-bar-amber { background: var(--ph-amber); }
+  .cal-bar-rose { background: var(--ph-rose); }
+  .cal-bar-teal { background: var(--ph-teal); }
+  .cal-bar-slate { background: var(--ph-slate); }
+
+  .cal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.92fr);
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .cal-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+
+  .cal-toolbar {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cal-month-title {
+    font-size: 1.04rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    color: var(--foreground);
+    min-width: 155px;
+    text-align: center;
+  }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+  }
+
+  .cal-weekday {
+    padding: 9px 6px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .cal-weekday.is-weekend {
+    color: var(--destructive);
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .cal-cell {
+    appearance: none;
+    border: 0;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    min-height: 84px;
+    padding: 7px 8px 6px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+    position: relative;
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .cal-cell:nth-of-type(7n) {
+    border-right: 0;
+  }
+
+  .cal-cell.is-outside {
+    opacity: 0.42;
+  }
+
+  .cal-cell:hover {
+    z-index: 1;
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--foreground) 22%, transparent);
+  }
+
+  .cal-cell.is-selected,
+  .cal-cell.is-today {
+    z-index: 2;
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+
+  .cal-cell[data-phase-color="emerald"] { background: var(--ph-emerald-bg); }
+  .cal-cell[data-phase-color="blue"] { background: var(--ph-blue-bg); }
+  .cal-cell[data-phase-color="violet"] { background: var(--ph-violet-bg); }
+  .cal-cell[data-phase-color="amber"] { background: var(--ph-amber-bg); }
+  .cal-cell[data-phase-color="rose"] { background: var(--ph-rose-bg); }
+  .cal-cell[data-phase-color="teal"] { background: var(--ph-teal-bg); }
+  .cal-cell[data-phase-color="slate"] { background: var(--ph-slate-bg); }
+
+  .cal-phase-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .cal-cell-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .cal-day-num {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+    line-height: 1;
+  }
+
+  .cal-cell.is-holiday .cal-day-num {
+    color: var(--destructive);
+  }
+
+  .cal-cell.is-today .cal-day-num {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    padding: 2px 5px;
+    border-radius: 5px;
+  }
+
+  .cal-holiday-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--destructive);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .cal-h-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .cal-cell-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .cal-marker-chip {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+  }
+
+  .cal-marker-wedding {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .cal-marker-task {
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--border));
+  }
+
+  .cal-marker-task.is-done {
+    opacity: 0.6;
+    text-decoration: line-through;
+  }
+
+  .cal-marker-task.is-overdue {
+    border-color: var(--destructive);
+    color: var(--destructive);
+  }
+
+  .cal-marker-pay {
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+  }
+
+  /* Unified Right Panel matching exact calendar height with smooth internal scroll */
+  .cal-side-slot {
+    position: relative;
+    min-height: 100%;
+  }
+
+  .cal-unified-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+
+  .cal-panel-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .cal-panel-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--card);
+    flex-shrink: 0;
+  }
+
+  .cal-panel-head h2 {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 650;
+  }
+
+  .cal-panel-section {
+    padding: 15px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .cal-subhead {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: var(--foreground);
+  }
+
+  .cal-legend-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cal-legend-item {
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    transition: background-color 120ms ease;
+    width: 100%;
+  }
+
+  .cal-legend-item:last-child {
+    border-bottom: 0;
+  }
+
+  .cal-legend-item:hover {
+    background: var(--muted);
+  }
+
+  .cal-legend-item.is-current {
+    background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  }
+
+  .cal-legend-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .cal-legend-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .cal-legend-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--foreground);
+    min-width: 0;
+  }
+
+  .cal-legend-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .cal-progress-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--muted);
+    overflow: hidden;
+  }
+
+  .cal-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+  }
+
+  @media (max-width: 960px) {
+    .cal-layout {
+      grid-template-columns: 1fr;
+    }
+    .cal-side-slot {
+      position: static;
+      min-height: 0;
+    }
+    .cal-unified-panel {
+      position: static;
+      max-height: 560px;
+    }
+    .cal-cell {
+      min-height: 64px;
+      padding: 5px 5px 4px;
+    }
+    .cal-h-tag {
+      display: none;
+    }
+  }
+</style>
+
+<script id="rangkai-cal-config" type="application/json">
+{
+  "todayIso": "{{ today_iso|escapejs }}",
+  "weddingDateIso": "{{ wedding_date_iso|escapejs }}",
+  "viewYear": {{ today.year }},
+  "viewMonth": {{ today.month|add:"-1" }},
+  "phases": {{ phases_json|safe }},
+  "events": {{ events_json|safe }},
+  "holidays": {{ holidays_json|safe }}
+}
+</script>
+<script>
+window.rangkaiCalendarApp = function () {
+  const cfgEl = document.getElementById('rangkai-cal-config');
+  const cfg = cfgEl ? JSON.parse(cfgEl.textContent) : {};
+  return {
+    todayIso: cfg.todayIso || '',
+    weddingDateIso: cfg.weddingDateIso || '',
+    phases: cfg.phases || [],
+    events: cfg.events || [],
+    holidays: cfg.holidays || {},
+    viewYear: cfg.viewYear || new Date().getFullYear(),
+    viewMonth: typeof cfg.viewMonth === 'number' ? cfg.viewMonth : new Date().getMonth(),
+    selectedIso: cfg.todayIso || '',
+    monthNames: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],
+    dayNamesFull: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],
+
+    toIso(y, m, d) {
+      return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    },
+    parseIso(iso) {
+      if (!iso) return null;
+      const parts = iso.split('-').map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    },
+    daysBeforeWedding(iso) {
+      if (!this.weddingDateIso || !iso) return null;
+      const w = this.parseIso(this.weddingDateIso);
+      const t = this.parseIso(iso);
+      return Math.round((w.getTime() - t.getTime()) / 86400000);
+    },
+    formatH(days) {
+      if (days === null || days === undefined) return '';
+      if (days === 0) return 'Hari-H';
+      if (days > 0) return `H-${days}`;
+      return `H+${Math.abs(days)}`;
+    },
+    phaseForDate(iso) {
+      const d = this.daysBeforeWedding(iso);
+      if (d === null) return null;
+      return this.phases.find(p => d <= p.start_day_before && d >= p.end_day_before) || null;
+    },
+    eventsForDate(iso) {
+      return this.events.filter(e => e.date === iso);
+    },
+    get monthLabel() {
+      return `${this.monthNames[this.viewMonth]} ${this.viewYear}`;
+    },
+    get cells() {
+      const first = new Date(this.viewYear, this.viewMonth, 1);
+      const startOffset = (first.getDay() + 6) % 7;
+      const gridStart = new Date(this.viewYear, this.viewMonth, 1 - startOffset);
+      const out = [];
+      for (let i = 0; i < 42; i++) {
+        const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+        const iso = this.toIso(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        const phase = this.phaseForDate(iso);
+        const dayEvents = this.eventsForDate(iso);
+        const hDays = this.daysBeforeWedding(iso);
+        const dow = dt.getDay();
+        const isWeekend = (dow === 0 || dow === 6);
+        const holidayName = this.holidays[iso] || '';
+        out.push({
+          iso,
+          day: dt.getDate(),
+          outside: dt.getMonth() !== this.viewMonth,
+          isToday: iso === this.todayIso,
+          isWedding: Boolean(this.weddingDateIso && iso === this.weddingDateIso),
+          isWeekend,
+          holidayName,
+          isHoliday: isWeekend || Boolean(holidayName),
+          phase,
+          hLabel: this.formatH(hDays),
+          events: dayEvents
+        });
+      }
+      return out;
+    },
+    get selectedInfo() {
+      const dt = this.parseIso(this.selectedIso);
+      if (!dt) return null;
+      const phase = this.phaseForDate(this.selectedIso);
+      const hDays = this.daysBeforeWedding(this.selectedIso);
+      const dayEvents = this.eventsForDate(this.selectedIso);
+      const dow = dt.getDay();
+      return {
+        iso: this.selectedIso,
+        dateText: `${this.dayNamesFull[dow]}, ${dt.getDate()} ${this.monthNames[dt.getMonth()]} ${dt.getFullYear()}`,
+        hLabel: this.formatH(hDays),
+        phase,
+        isWedding: Boolean(this.weddingDateIso && this.selectedIso === this.weddingDateIso),
+        isWeekend: (dow === 0 || dow === 6),
+        weekendLabel: dow === 6 ? 'Akhir Pekan (Sabtu)' : (dow === 0 ? 'Hari Libur (Minggu)' : ''),
+        holidayName: this.holidays[this.selectedIso] || '',
+        taskEvents: dayEvents.filter(e => e.type === 'task'),
+        paymentEvents: dayEvents.filter(e => e.type === 'payment')
+      };
+    },
+    prevMonth() {
+      if (this.viewMonth === 0) { this.viewMonth = 11; this.viewYear--; }
+      else { this.viewMonth--; }
+    },
+    nextMonth() {
+      if (this.viewMonth === 11) { this.viewMonth = 0; this.viewYear++; }
+      else { this.viewMonth++; }
+    },
+    jumpToIso(iso) {
+      const dt = this.parseIso(iso);
+      if (!dt) return;
+      this.viewYear = dt.getFullYear();
+      this.viewMonth = dt.getMonth();
+      this.selectedIso = iso;
+    },
+    formatRupiah(val) {
+      return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+    }
+  };
+};
+</script>
+
+<div class="workspace-canvas cal-scope" x-data="rangkaiCalendarApp()">
+  <!-- Active Phase Top Status Bar -->
+  <div class="cal-status-bar">
+    <div class="cal-status-main">
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted-foreground);margin-bottom:3px;">
+          Posisi Saat Ini &middot; {{ today|date:"d M Y" }}
+        </div>
+        {% if active_phase %}
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+          <span class="cal-phase-vline cal-bar-{{ active_phase.color }}" style="height:18px;align-self:center;"></span>
+          <strong style="font-size:1.02rem;letter-spacing:-0.015em;">{{ active_phase.label }}</strong>
+          <span data-slot="badge" data-variant="emerald" class="font-mono tabular-nums">{{ active_phase.range_display }}</span>
+          {% if today_h_label %}
+          <span data-slot="badge" data-variant="outline" class="font-mono tabular-nums">Hari Ini: {{ today_h_label }}</span>
+          {% endif %}
+        </div>
+        {% else %}
+        <strong>Belum ada fase aktif</strong>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="jumpToIso(todayIso)">
+        <i data-lucide="locate-fixed"></i> Hari Ini
+      </button>
+      {% if wedding_date %}
+      <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="jumpToIso(weddingDateIso)">
+        <i data-lucide="heart"></i> Hari-H ({{ wedding_date|date:"d M Y" }})
+      </button>
+      {% else %}
+      <a href="{% url 'core:settings' %}" data-slot="button" data-variant="default" data-size="sm">
+        <i data-lucide="calendar-plus"></i> Atur Tanggal Pernikahan
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not wedding_date %}
+  <div data-slot="alert" data-variant="default" style="margin-bottom:18px;">
+    <i data-lucide="info"></i>
+    <div>
+      <strong>Tanggal pernikahan belum diatur.</strong>
+      Tentukan tanggal acara di <a href="{% url 'core:settings' %}" style="color:var(--primary);font-weight:600;text-decoration:none;">Pengaturan Workspace</a> agar rentang warna tiap fase (H-360 s/d Hari-H) otomatis terpetakan ke tanggal kalender.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="cal-layout">
+    <!-- LEFT: Interactive Month Calendar Grid -->
+    <section class="cal-card" aria-label="Kalender Fase Pernikahan">
+      <div class="cal-toolbar">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" data-slot="button" data-variant="outline" data-size="icon-sm" @click="prevMonth()" aria-label="Bulan sebelumnya">
+            <i data-lucide="chevron-left"></i>
+          </button>
+          <span class="cal-month-title" x-text="monthLabel"></span>
+          <button type="button" data-slot="button" data-variant="outline" data-size="icon-sm" @click="nextMonth()" aria-label="Bulan berikutnya">
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;font-size:0.75rem;color:var(--muted-foreground);flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:center;gap:5px;">
+            <span style="width:10px;height:10px;border-radius:3px;border:2px solid var(--primary);display:inline-block;"></span>
+            Hari Ini
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:5px;">
+            <span style="width:10px;height:10px;border-radius:3px;background:var(--primary);display:inline-block;"></span>
+            Hari-H
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:5px;color:var(--destructive);">
+            <span class="cal-holiday-dot"></span>
+            Libur / Akhir Pekan
+          </span>
+        </div>
+      </div>
+
+      <div class="cal-weekdays" aria-hidden="true">
+        <div class="cal-weekday">Sen</div>
+        <div class="cal-weekday">Sel</div>
+        <div class="cal-weekday">Rab</div>
+        <div class="cal-weekday">Kam</div>
+        <div class="cal-weekday">Jum</div>
+        <div class="cal-weekday is-weekend">Sab</div>
+        <div class="cal-weekday is-weekend">Min</div>
+      </div>
+
+      <div class="cal-grid">
+        <template x-for="cell in cells" :key="cell.iso">
+          <button
+            type="button"
+            class="cal-cell"
+            :data-phase-color="cell.phase ? cell.phase.color : ''"
+            :class="{
+              'is-outside': cell.outside,
+              'is-today': cell.isToday,
+              'is-selected': selectedIso === cell.iso,
+              'is-holiday': cell.isHoliday
+            }"
+            :title="cell.holidayName || ''"
+            @click="selectedIso = cell.iso"
+          >
+            <span
+              class="cal-phase-bar"
+              x-show="cell.phase"
+              :class="cell.phase ? ('cal-bar-' + cell.phase.color) : ''"
+            ></span>
+
+            <div class="cal-cell-top">
+              <span style="display:inline-flex;align-items:center;gap:4px;">
+                <span class="cal-day-num" x-text="cell.day"></span>
+                <span class="cal-holiday-dot" x-show="cell.holidayName"></span>
+              </span>
+              <span class="cal-h-tag" x-show="cell.hLabel && (cell.day === 1 || cell.isToday || cell.isWedding)" x-text="cell.hLabel"></span>
+            </div>
+
+            <div class="cal-cell-foot">
+              <span class="cal-marker-chip cal-marker-wedding" x-show="cell.isWedding">Hari-H</span>
+              <template x-for="(ev, idx) in cell.events.slice(0, 2)" :key="idx">
+                <span
+                  class="cal-marker-chip"
+                  :class="ev.type === 'task' ? ('cal-marker-task' + (ev.status === 'done' ? ' is-done' : '') + (ev.is_overdue ? ' is-overdue' : '')) : 'cal-marker-pay'"
+                  x-text="ev.title"
+                ></span>
+              </template>
+              <span
+                x-show="cell.events.length > 2"
+                style="font-size:0.68rem;color:var(--muted-foreground);font-family:var(--font-mono);"
+                x-text="'+' + (cell.events.length - 2) + ' lagi'"
+              ></span>
+            </div>
+          </button>
+        </template>
+      </div>
+    </section>
+
+    <!-- RIGHT: Unified Single Card (Selected Date Inspector + Phase Map Legend, exact height match & scrollable) -->
+    <aside class="cal-side-slot" aria-label="Detail Tanggal dan Peta Fase">
+      <div class="cal-unified-panel">
+        <div class="cal-panel-head" x-show="selectedInfo">
+          <h2 x-text="selectedInfo ? selectedInfo.dateText : ''"></h2>
+          <span
+            data-slot="badge"
+            :data-variant="selectedInfo && selectedInfo.isWedding ? 'emerald' : 'outline'"
+            class="font-mono tabular-nums"
+            x-show="selectedInfo && selectedInfo.hLabel"
+            x-text="selectedInfo ? selectedInfo.hLabel : ''"
+          ></span>
+        </div>
+
+        <div class="cal-panel-scroll">
+          <!-- Selected Date Details -->
+          <div class="cal-panel-section" x-show="selectedInfo">
+            <template x-if="selectedInfo && (selectedInfo.holidayName || selectedInfo.isWeekend)">
+              <div style="display:flex;align-items:center;padding:7px 10px;border-radius:7px;background:color-mix(in srgb, var(--destructive) 8%, var(--card));border:1px solid color-mix(in srgb, var(--destructive) 28%, var(--border));color:var(--destructive);font-size:0.78rem;font-weight:600;">
+                <span x-text="selectedInfo.holidayName ? ('Libur Nasional: ' + selectedInfo.holidayName) : selectedInfo.weekendLabel"></span>
+              </div>
+            </template>
+
+            <template x-if="selectedInfo && selectedInfo.phase">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:stretch;gap:10px;">
+                  <span class="cal-phase-vline" :class="'cal-bar-' + selectedInfo.phase.color"></span>
+                  <div style="flex:1;min-width:0;">
+                    <strong style="font-size:0.88rem;display:block;" x-text="selectedInfo.phase.label"></strong>
+                    <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.75rem;color:var(--muted-foreground);margin-top:2px;">
+                      <span class="font-mono" x-text="selectedInfo.phase.range_display"></span>
+                      <span class="font-mono" x-text="selectedInfo.phase.done_tasks + '/' + selectedInfo.phase.total_tasks + ' selesai'"></span>
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href="{% url 'operations-checklist:checklist' %}"
+                  @click="sessionStorage.setItem('wp_selected_phase', selectedInfo.phase.key)"
+                  data-slot="button"
+                  data-variant="outline"
+                  data-size="sm"
+                  style="width:100%;justify-content:center;"
+                >
+                  <i data-lucide="check-square"></i> Buka Tugas Fase Ini
+                </a>
+              </div>
+            </template>
+
+            <template x-if="selectedInfo && !selectedInfo.phase">
+              <div style="font-size:0.82rem;color:var(--muted-foreground);">
+                Tanggal ini berada di luar rentang fase timeline yang diatur.
+              </div>
+            </template>
+
+            <template x-if="selectedInfo && selectedInfo.taskEvents.length > 0">
+              <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--muted-foreground);">Deadline Tugas</div>
+                <template x-for="(ev, idx) in selectedInfo.taskEvents" :key="idx">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;font-size:0.8rem;padding:7px 9px;border-radius:6px;background:var(--background);border:1px solid var(--border);">
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;" :style="ev.status === 'done' ? 'text-decoration:line-through;opacity:0.65;' : ''" x-text="ev.title"></div>
+                      <div style="font-size:0.75rem;color:var(--muted-foreground);" x-text="ev.phase_label + ' · ' + ev.assignee"></div>
+                    </div>
+                    <span
+                      data-slot="badge"
+                      :data-variant="ev.status === 'done' ? 'emerald' : (ev.is_overdue ? 'destructive' : 'outline')"
+                      style="flex-shrink:0;"
+                      x-text="ev.status === 'done' ? 'Selesai' : (ev.is_overdue ? 'Terlewat' : ev.status_display)"
+                    ></span>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <template x-if="selectedInfo && selectedInfo.paymentEvents.length > 0">
+              <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--muted-foreground);">Jatuh Tempo Pembayaran</div>
+                <template x-for="(ev, idx) in selectedInfo.paymentEvents" :key="idx">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:0.8rem;padding:6px 8px;border-radius:6px;background:var(--background);border:1px solid var(--border);">
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" x-text="ev.title"></div>
+                      <div style="font-size:0.75rem;color:var(--muted-foreground);" x-text="ev.category + ' · ' + ev.status_display"></div>
+                    </div>
+                    <strong class="font-mono tabular-nums" style="font-size:0.78rem;flex-shrink:0;" x-text="formatRupiah(ev.amount)"></strong>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+
+          <!-- Unified Phase Map Legend Section -->
+          <div class="cal-subhead">
+            <span>Peta Fase Timeline</span>
+            <span class="font-mono" style="font-size:0.75rem;color:var(--muted-foreground);font-weight:500;">{{ phase_cards|length }} fase</span>
+          </div>
+
+          <div class="cal-legend-list">
+            {% for p in phase_cards %}
+            <button
+              type="button"
+              class="cal-legend-item {% if p.is_current %}is-current{% endif %}"
+              @click="{% if p.start_iso %}jumpToIso('{{ p.start_iso }}'){% endif %}"
+              title="{% if p.start_iso %}Lompat ke awal {{ p.label }}{% else %}Atur tanggal pernikahan untuk melihat tanggal kalender{% endif %}"
+            >
+              <span class="cal-phase-vline cal-bar-{{ p.color }}" aria-hidden="true"></span>
+              <div class="cal-legend-content">
+                <div class="cal-legend-top">
+                  <span class="cal-legend-title">{{ p.label }}</span>
+                  {% if p.is_current %}
+                  <span data-slot="badge" data-variant="emerald">Aktif</span>
+                  {% endif %}
+                </div>
+                <div class="cal-legend-meta">
+                  <span class="font-mono tabular-nums">{{ p.range_display }}</span>
+                  <span class="font-mono tabular-nums">{{ p.done_tasks }}/{{ p.total_tasks }} ({{ p.progress }}%)</span>
+                </div>
+                {% if p.start_date and p.end_date %}
+                <div class="cal-legend-meta">
+                  <span>{{ p.start_date|date:"d M Y" }} s/d {{ p.end_date|date:"d M Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="cal-progress-track">
+                  <div class="cal-progress-fill cal-bar-{{ p.color }}" style="width: {{ p.progress }}%;"></div>
+                </div>
+              </div>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

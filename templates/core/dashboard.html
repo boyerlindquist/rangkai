@@ -118,11 +118,22 @@
         </div>
         <div data-slot="card-content">
           <div class="dash-kpi-value is-primary">
-            {% if days_remaining is not None %}{{ days_remaining }} <span class="dash-kpi-unit">Hari</span>{% else %}—{% endif %}
+            {% if days_remaining is not None %}{{ days_remaining }} <span class="dash-kpi-unit">Hari</span>{% else %}-{% endif %}
           </div>
+          {% if current_phase %}
+          <a href="{% url 'calendar' %}"
+             hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top"
+             class="dash-kpi-sub"
+             style="display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--foreground);font-weight:500;margin-top:4px;"
+             title="Lihat posisi fase di Kalender ({{ current_phase.range_display }})">
+            <span style="width:3px;height:14px;border-radius:9999px;flex-shrink:0;background:{% if current_phase.color == 'blue' %}#2563eb{% elif current_phase.color == 'violet' %}#7c3aed{% elif current_phase.color == 'amber' %}#d97706{% elif current_phase.color == 'rose' %}#e11d48{% elif current_phase.color == 'teal' %}#0d9488{% elif current_phase.color == 'slate' %}#475569{% else %}var(--primary){% endif %};"></span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ current_phase.label }}</span>
+          </a>
+          {% else %}
           <div class="dash-kpi-sub">
             {% if days_remaining is not None %}menuju hari pernikahan{% else %}Atur tanggal di Pengaturan{% endif %}
           </div>
+          {% endif %}
         </div>
       </div>
 

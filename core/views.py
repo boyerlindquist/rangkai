@@ -1247,9 +1247,16 @@ def dashboard_view(request):
         attending_pax=Sum('pax_allocation', filter=Q(rsvp_status='attending')),
     )
 
-    # KPI 4: Task progress + active tasks (single query for both!)
+    # KPI 4: Task progress + active tasks + today's exact TimelinePhase (if within any phase range)
     from operations.models import TaskMilestone
+    from operations.views import _ensure_wedding_phases
     all_wedding_tasks = list(TaskMilestone.objects.filter(wedding=wedding))
+    phase_objs = _ensure_wedding_phases(wedding, all_tasks_list=all_wedding_tasks)
+    current_phase = None
+    if wedding.wedding_date:
+        days_before_today = (wedding.wedding_date - timezone.localdate()).days
+        current_phase = next((p for p in phase_objs if p.contains_days_before(days_before_today)), None)
+
     done_count = sum(1 for t in all_wedding_tasks if t.status == 'done')
     in_progress_count = sum(1 for t in all_wedding_tasks if t.status == 'in_progress')
     task_stats = {
@@ -1263,6 +1270,7 @@ def dashboard_view(request):
 
     context = {
         'days_remaining': days_remaining,
+        'current_phase': current_phase,
         'budget_remaining': budget_remaining,
         'total_actual': total_actual,
         'total_paid': total_paid,

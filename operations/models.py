@@ -1,12 +1,44 @@
 """
 Operations models: TaskMilestone, RundownEvent, AssetCustodian, FabricEntry.
 """
+from datetime import timedelta
 from django.db import models
 from core.models import Wedding
 
 
+PHASE_COLOR_CHOICES = [
+    ('emerald', 'Emerald'),
+    ('blue', 'Biru'),
+    ('violet', 'Ungu'),
+    ('amber', 'Amber'),
+    ('rose', 'Rose'),
+    ('teal', 'Teal'),
+    ('slate', 'Slate'),
+]
+
+DEFAULT_PHASE_RANGES = {
+    'd360': (360, 181, 'emerald'),
+    'd180': (180, 91, 'blue'),
+    'd90': (90, 31, 'violet'),
+    'd30': (30, 7, 'amber'),
+    'dday': (6, -1, 'rose'),
+}
+
+
+def format_h_day(days_before):
+    """Format signed days_before integer into Indonesian H-minus / Hari-H / H-plus label."""
+    if days_before is None:
+        return '-'
+    val = int(days_before)
+    if val == 0:
+        return 'Hari-H'
+    if val > 0:
+        return f'H-{val}'
+    return f'H+{abs(val)}'
+
+
 class TimelinePhase(models.Model):
-    """Customizable timeline phase per wedding workspace."""
+    """Customizable timeline phase per wedding workspace with non-overlapping H-minus day range."""
     wedding = models.ForeignKey(
         Wedding,
         on_delete=models.CASCADE,
@@ -14,6 +46,22 @@ class TimelinePhase(models.Model):
     )
     key = models.CharField('Kode Fase', max_length=40)
     label = models.CharField('Nama Fase', max_length=120)
+    start_day_before = models.IntegerField(
+        'Mulai (H-)',
+        default=360,
+        help_text='Hari sebelum Hari-H fase dimulai (contoh: 360 untuk H-360, 0 untuk Hari-H, -1 untuk H+1).',
+    )
+    end_day_before = models.IntegerField(
+        'Selesai (H-)',
+        default=181,
+        help_text='Hari sebelum Hari-H fase berakhir (harus <= Mulai).',
+    )
+    color = models.CharField(
+        'Warna Penanda',
+        max_length=20,
+        choices=PHASE_COLOR_CHOICES,
+        default='emerald',
+    )
     sort_order = models.PositiveIntegerField(default=0)
     is_active_override = models.BooleanField('Fase Aktif Manual', default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -24,7 +72,25 @@ class TimelinePhase(models.Model):
         verbose_name = 'Timeline Phase'
 
     def __str__(self):
-        return f"{self.label} ({self.key})"
+        return f"{self.label} ({self.range_display})"
+
+    @property
+    def range_display(self):
+        return f'{format_h_day(self.start_day_before)} s/d {format_h_day(self.end_day_before)}'
+
+    def get_calendar_dates(self, wedding_date):
+        """Return (start_date, end_date) for this phase given a wedding_date, or (None, None)."""
+        if not wedding_date:
+            return None, None
+        start_dt = wedding_date - timedelta(days=self.start_day_before)
+        end_dt = wedding_date - timedelta(days=self.end_day_before)
+        return start_dt, end_dt
+
+    def contains_days_before(self, days_before):
+        """Return True if days_before (wedding_date - target_date) falls within this phase."""
+        if days_before is None:
+            return False
+        return self.end_day_before <= days_before <= self.start_day_before
 
 
 class TaskMilestone(models.Model):
@@ -100,6 +166,7 @@ class TaskMilestone(models.Model):
         help_text='Nama modul kalkulator yang terhubung.',
     )
     is_critical = models.BooleanField('Tugas Kritis', default=False)
+    due_date = models.DateField('Tenggat Waktu', null=True, blank=True)
     is_custom = models.BooleanField('Custom Task', default=False)
     sort_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

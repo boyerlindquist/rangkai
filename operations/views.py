@@ -3,16 +3,31 @@ Operations views: Checklist, Rundown, Asset Custodian, Fabric Calculator.
 """
 import json
 import uuid
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
+from django.utils import timezone
 from collections import defaultdict
 
 from core.decorators import workspace_required, owner_required
-from operations.models import TimelinePhase, TaskMilestone, RundownEvent, AssetCustodian, FabricEntry
+from operations.models import (
+    TimelinePhase,
+    TaskMilestone,
+    RundownEvent,
+    AssetCustodian,
+    FabricEntry,
+    DEFAULT_PHASE_RANGES,
+    PHASE_COLOR_CHOICES,
+    format_h_day,
+)
 from operations.forms import TaskMilestoneForm, RundownEventForm, AssetCustodianForm, FabricEntryForm
+
+
+PHASE_COLOR_PALETTE = [c[0] for c in PHASE_COLOR_CHOICES]
 
 
 # ============================================================
@@ -22,34 +37,34 @@ from operations.forms import TaskMilestoneForm, RundownEventForm, AssetCustodian
 TIMELINE_PRESETS = {
     'standard': {
         'name': 'Standar 1 Tahun (Default)',
-        'desc': '5 fase berbasis H-minus (D-360 s/d D-Day), cocok untuk persiapan 6–12 bulan.',
+        'desc': '5 fase berbasis H-minus (H-360 s/d H+1), cocok untuk persiapan 6-12 bulan.',
         'phases': [
-            ('d360', 'Fase 1: D-360 s/d D-180'),
-            ('d180', 'Fase 2: D-180 s/d D-90'),
-            ('d90', 'Fase 3: D-90 s/d D-30'),
-            ('d30', 'Fase 4: D-30 s/d D-7'),
-            ('dday', 'Fase 5: D-Day & H+1'),
+            ('d360', 'Fase 1: Persiapan Awal & Venue', 360, 181, 'emerald'),
+            ('d180', 'Fase 2: Vendor Utama & Berkas', 180, 91, 'blue'),
+            ('d90', 'Fase 3: Undangan & Finalisasi', 90, 31, 'violet'),
+            ('d30', 'Fase 4: Teknis & Pelunasan', 30, 7, 'amber'),
+            ('dday', 'Fase 5: Minggu Hari-H & Pasca', 6, -1, 'rose'),
         ],
     },
     'express': {
         'name': 'Persiapan Express (< 6 Bulan)',
-        'desc': '4 tahapan ringkas & padat untuk persiapan cepat 2–5 bulan.',
+        'desc': '4 tahapan ringkas & padat (H-180 s/d H+1) untuk persiapan cepat 2-5 bulan.',
         'phases': [
-            ('d360', 'Tahap 1: Fondasi, Budget & Venue'),
-            ('d180', 'Tahap 2: Vendor Utama, Busana & KUA'),
-            ('d30', 'Tahap 3: Undangan, RSVP & Technical Meeting'),
-            ('dday', 'Tahap 4: Minggu Terakhir & Hari-H'),
+            ('d360', 'Tahap 1: Fondasi, Budget & Venue', 180, 91, 'emerald'),
+            ('d180', 'Tahap 2: Vendor Utama, Busana & KUA', 90, 31, 'blue'),
+            ('d30', 'Tahap 3: Undangan, RSVP & Technical Meeting', 30, 7, 'amber'),
+            ('dday', 'Tahap 4: Minggu Terakhir & Hari-H', 6, -1, 'rose'),
         ],
     },
     'event_based': {
         'name': 'Berbasis Rangkaian Acara',
-        'desc': '5 tahapan berdasarkan prosesi acara (Lamaran ➔ Vendor ➔ KUA ➔ Pra-Acara ➔ Hari-H).',
+        'desc': '5 tahapan berdasarkan prosesi acara (Lamaran -> Vendor -> KUA -> Pra-Acara -> Hari-H).',
         'phases': [
-            ('d360', '1. Lamaran, Keluarga & Anggaran'),
-            ('d180', '2. Venue, Katering & Vendor Utama'),
-            ('d90', '3. Berkas KUA, Cincin & Undangan'),
-            ('d30', '4. Pengajian, Siraman & Gladi Bersih'),
-            ('dday', '5. Akad Nikah, Resepsi & Pasca-Acara'),
+            ('d360', '1. Lamaran, Keluarga & Anggaran', 360, 181, 'emerald'),
+            ('d180', '2. Venue, Katering & Vendor Utama', 180, 91, 'blue'),
+            ('d90', '3. Berkas KUA, Cincin & Undangan', 90, 31, 'violet'),
+            ('d30', '4. Pengajian, Siraman & Gladi Bersih', 30, 7, 'amber'),
+            ('dday', '5. Akad Nikah, Resepsi & Pasca-Acara', 6, -1, 'rose'),
         ],
     },
 }
@@ -164,8 +179,90 @@ TASK_GUIDE_CATALOG = [
 ]
 
 
+def _parse_phase_day(raw_value, field_label):
+    """Parse an integer day-before-wedding value (supports -30 to 1095)."""
+    text = str(raw_value if raw_value is not None else '').strip()
+    if text == '':
+        return None, f'{field_label} wajib diisi.'
+    try:
+        val = int(text)
+    except ValueError:
+        return None, f'{field_label} harus berupa angka bulat (contoh: 180 untuk H-180, 0 untuk Hari-H).'
+    if val < -30 or val > 1095:
+        return None, f'{field_label} harus berada di antara -30 (H+30) sampai 1095 (H-1095).'
+    return val, None
+
+
+def _validate_phase_ranges(phase_entries):
+    """
+    Validate a list of (label, start_day_before, end_day_before) tuples.
+    Rules:
+      1. start_day_before >= end_day_before for every phase.
+      2. No two phases may overlap: [end1, start1] and [end2, start2] overlap iff max(end1, end2) <= min(start1, start2).
+    Returns error string or None if valid.
+    """
+    for label, start_d, end_d in phase_entries:
+        if start_d < end_d:
+            return (
+                f'Rentang fase "{label}" tidak valid: hari mulai ({format_h_day(start_d)}) '
+                f'harus lebih awal atau sama dengan hari selesai ({format_h_day(end_d)}).'
+            )
+
+    n = len(phase_entries)
+    for i in range(n):
+        lbl_a, s_a, e_a = phase_entries[i]
+        for j in range(i + 1, n):
+            lbl_b, s_b, e_b = phase_entries[j]
+            if max(e_a, e_b) <= min(s_a, s_b):
+                return (
+                    f'Rentang waktu fase "{lbl_a}" ({format_h_day(s_a)} s/d {format_h_day(e_a)}) '
+                    f'bentrok (overlap) dengan "{lbl_b}" ({format_h_day(s_b)} s/d {format_h_day(e_b)}). '
+                    f'Pastikan rentang antar fase tidak saling tumpang tindih.'
+                )
+    return None
+
+
+def _resolve_active_phase(phase_objs, days_remaining, tasks_by_phase=None):
+    """
+    Determine the active phase key & index from TimelinePhase objects:
+      1. Manual override (is_active_override=True)
+      2. Exact H-minus range match against days_remaining
+      3. Nearest phase if days_remaining is outside defined ranges
+      4. Fallback to first incomplete phase or first phase
+    """
+    phase_order = [p.key for p in phase_objs]
+    if not phase_order:
+        return None, -1
+
+    override_phase = next((p for p in phase_objs if p.is_active_override), None)
+    if override_phase:
+        return override_phase.key, phase_order.index(override_phase.key)
+
+    if days_remaining is not None:
+        for idx, p in enumerate(phase_objs):
+            if p.contains_days_before(days_remaining):
+                return p.key, idx
+        # Outside explicit range: if before earliest phase, pick earliest; if past latest, pick latest
+        sorted_by_start = sorted(enumerate(phase_objs), key=lambda x: x[1].start_day_before, reverse=True)
+        if days_remaining > sorted_by_start[0][1].start_day_before:
+            return sorted_by_start[0][1].key, sorted_by_start[0][0]
+        sorted_by_end = sorted(enumerate(phase_objs), key=lambda x: x[1].end_day_before)
+        if days_remaining < sorted_by_end[0][1].end_day_before:
+            return sorted_by_end[0][1].key, sorted_by_end[0][0]
+
+    if tasks_by_phase is not None:
+        for idx, p_key in enumerate(phase_order):
+            p_list = tasks_by_phase.get(p_key, [])
+            p_total = len(p_list)
+            p_done = sum(1 for t in p_list if t.status == 'done')
+            if p_total == 0 or p_done < p_total:
+                return p_key, idx
+
+    return phase_order[0], 0
+
+
 def _ensure_wedding_phases(wedding, all_tasks_list=None):
-    """Ensure Wedding has TimelinePhase rows; seed from default 5 phases if empty."""
+    """Ensure Wedding has TimelinePhase rows; seed from default 5 phases with non-overlapping ranges if empty."""
     existing = list(TimelinePhase.objects.filter(wedding=wedding).order_by('sort_order', 'id'))
     if existing:
         existing_keys = {p.key for p in existing}
@@ -183,23 +280,30 @@ def _ensure_wedding_phases(wedding, all_tasks_list=None):
         for o_key in orphan_keys:
             if o_key:
                 max_order += 1
+                s_d, e_d, col = DEFAULT_PHASE_RANGES.get(o_key, (360, 181, PHASE_COLOR_PALETTE[max_order % len(PHASE_COLOR_PALETTE)]))
                 p = TimelinePhase.objects.create(
                     wedding=wedding,
                     key=o_key,
                     label=default_map.get(o_key, o_key),
+                    start_day_before=s_d,
+                    end_day_before=e_d,
+                    color=col,
                     sort_order=max_order,
                 )
                 existing.append(p)
         return existing
 
-    # Seed the 5 standard phases
+    # Seed the 5 standard phases with non-overlapping ranges
     seeded = []
-    for idx, (p_key, p_label) in enumerate(TaskMilestone.PHASE_CHOICES):
+    for idx, (p_key, p_label, s_d, e_d, col) in enumerate(TIMELINE_PRESETS['standard']['phases']):
         seeded.append(
             TimelinePhase.objects.create(
                 wedding=wedding,
                 key=p_key,
                 label=p_label,
+                start_day_before=s_d,
+                end_day_before=e_d,
+                color=col,
                 sort_order=idx,
             )
         )
@@ -224,44 +328,12 @@ def _build_checklist_context(wedding, assignee_filter=''):
         tasks_by_phase[t.phase].append(t)
 
     days_remaining = wedding.days_remaining
-
-    # Determine active phase:
-    # 1. Check if user manually set an active override phase
-    override_phase = next((p for p in phase_objs if p.is_active_override), None)
-    current_phase_key = None
-    current_phase_idx = -1
-
-    if override_phase:
-        current_phase_key = override_phase.key
-        current_phase_idx = phase_order.index(current_phase_key)
-    elif days_remaining is not None and phase_order:
-        if days_remaining > 180 and 'd360' in phase_order:
-            current_phase_key = 'd360'
-        elif days_remaining >= 90 and 'd180' in phase_order:
-            current_phase_key = 'd180'
-        elif days_remaining >= 30 and 'd90' in phase_order:
-            current_phase_key = 'd90'
-        elif days_remaining >= 7 and 'd30' in phase_order:
-            current_phase_key = 'd30'
-        elif 'dday' in phase_order and days_remaining < 7:
-            current_phase_key = 'dday'
-        else:
-            current_phase_key = phase_order[0]
-            for p_key in phase_order:
-                p_list = tasks_by_phase.get(p_key, [])
-                p_total = len(p_list)
-                p_done = sum(1 for t in p_list if t.status == 'done')
-                if p_total == 0 or p_done < p_total:
-                    current_phase_key = p_key
-                    break
-        current_phase_idx = phase_order.index(current_phase_key)
-    elif phase_order:
-        current_phase_key = phase_order[0]
-        current_phase_idx = 0
+    current_phase_key, current_phase_idx = _resolve_active_phase(phase_objs, days_remaining, tasks_by_phase)
 
     grouped_tasks = {}
     total_overdue_tasks = 0
     all_overdue_tasks = []
+    today = timezone.localdate()
 
     for phase_idx, p_obj in enumerate(phase_objs):
         phase_key = p_obj.key
@@ -278,7 +350,9 @@ def _build_checklist_context(wedding, assignee_filter=''):
         overdue_tasks_in_phase = []
         annotated_tasks = []
         for t in phase_tasks:
-            t_is_overdue = (is_past and t.status != 'done')
+            t_deadline_overdue = bool(t.due_date and t.due_date < today and t.status != 'done')
+            t_is_overdue = ((is_past or t_deadline_overdue) and t.status != 'done')
+            setattr(t, 'is_deadline_overdue', t_deadline_overdue)
             setattr(t, 'is_overdue', t_is_overdue)
             annotated_tasks.append(t)
             if t_is_overdue:
@@ -291,6 +365,10 @@ def _build_checklist_context(wedding, assignee_filter=''):
         grouped_tasks[phase_key] = {
             'key': phase_key,
             'label': phase_label,
+            'start_day_before': p_obj.start_day_before,
+            'end_day_before': p_obj.end_day_before,
+            'range_display': p_obj.range_display,
+            'color': p_obj.color,
             'is_active_override': p_obj.is_active_override,
             'tasks': annotated_tasks,
             'total': total,
@@ -348,14 +426,18 @@ def _build_checklist_context(wedding, assignee_filter=''):
         'all_overdue_tasks': all_overdue_tasks,
         'guide_catalog': guide_catalog,
         'timeline_presets': TIMELINE_PRESETS,
+        'phase_color_choices': PHASE_COLOR_CHOICES,
     }
 
 
 def _annotate_single_task(task, ctx):
-    """Attach is_overdue flag to a single TaskMilestone instance."""
+    """Attach is_overdue and is_deadline_overdue flags to a single TaskMilestone instance."""
     phase_data = ctx['grouped_tasks'].get(task.phase)
     is_past = phase_data['is_past'] if phase_data else False
-    setattr(task, 'is_overdue', is_past and task.status != 'done')
+    today = timezone.localdate()
+    is_deadline_overdue = bool(task.due_date and task.due_date < today and task.status != 'done')
+    setattr(task, 'is_deadline_overdue', is_deadline_overdue)
+    setattr(task, 'is_overdue', (is_past or is_deadline_overdue) and task.status != 'done')
     return task
 
 
@@ -479,23 +561,43 @@ def add_guide_task(request):
 @login_required
 @owner_required
 def add_phase(request):
-    """Add a new customizable TimelinePhase."""
+    """Add a new customizable TimelinePhase with required non-overlapping H-minus range."""
     if request.method == 'POST':
         wedding = request.wedding
         phase_objs = _ensure_wedding_phases(wedding)
         label = (request.POST.get('label') or '').strip()
-        if label:
-            new_key = f"phase_{uuid.uuid4().hex[:6]}"
-            next_order = len(phase_objs)
-            TimelinePhase.objects.create(
-                wedding=wedding,
-                key=new_key,
-                label=label,
-                sort_order=next_order,
-            )
-            messages.success(request, f'Fase "{label}" berhasil ditambahkan.')
-            response = redirect('operations-checklist:checklist')
-            return response
+        if not label:
+            messages.error(request, 'Nama fase wajib diisi.')
+            return redirect('operations-checklist:checklist')
+
+        start_d, err1 = _parse_phase_day(request.POST.get('start_day_before'), 'Mulai (H-)')
+        end_d, err2 = _parse_phase_day(request.POST.get('end_day_before'), 'Selesai (H-)')
+        if err1 or err2:
+            messages.error(request, err1 or err2)
+            return redirect('operations-checklist:checklist')
+
+        entries = [(p.label, p.start_day_before, p.end_day_before) for p in phase_objs]
+        entries.append((label, start_d, end_d))
+        overlap_err = _validate_phase_ranges(entries)
+        if overlap_err:
+            messages.error(request, overlap_err)
+            return redirect('operations-checklist:checklist')
+
+        color = (request.POST.get('color') or '').strip()
+        if color not in PHASE_COLOR_PALETTE:
+            color = PHASE_COLOR_PALETTE[len(phase_objs) % len(PHASE_COLOR_PALETTE)]
+
+        new_key = f"phase_{uuid.uuid4().hex[:6]}"
+        TimelinePhase.objects.create(
+            wedding=wedding,
+            key=new_key,
+            label=label,
+            start_day_before=start_d,
+            end_day_before=end_d,
+            color=color,
+            sort_order=len(phase_objs),
+        )
+        messages.success(request, f'Fase "{label}" ({format_h_day(start_d)} s/d {format_h_day(end_d)}) berhasil ditambahkan.')
     return redirect('operations-checklist:checklist')
 
 
@@ -578,81 +680,154 @@ def delete_phase(request, phase_key):
 @login_required
 @owner_required
 def bulk_manage_phases(request):
-    """Bulk update phase names, order, active phase, and newly added phases."""
+    """Bulk update phase names, H-minus day ranges (non-overlapping), colors, order, active phase, and newly added phases."""
     if request.method == 'POST':
         wedding = request.wedding
         phase_objs = list(_ensure_wedding_phases(wedding))
         active_key = request.POST.get('active_phase_key', '')
 
+        staged_updates = []
+        range_entries = []
+
         for idx, p in enumerate(phase_objs):
-            new_label = (request.POST.get(f'label_{p.key}') or '').strip()
+            new_label = (request.POST.get(f'label_{p.key}') or '').strip() or p.label
             new_order_raw = request.POST.get(f'order_{p.key}', str(idx))
             try:
                 new_order = int(new_order_raw)
             except ValueError:
                 new_order = idx
-            if new_label:
-                p.label = new_label
-            p.sort_order = new_order
-            p.is_active_override = (p.key == active_key)
-            p.save()
 
-        # Re-normalize sort_order sequentially
-        ordered = list(TimelinePhase.objects.filter(wedding=wedding).order_by('sort_order', 'id'))
-        for i, p in enumerate(ordered):
-            if p.sort_order != i:
-                p.sort_order = i
-                p.save(update_fields=['sort_order'])
+            start_raw = request.POST.get(f'start_{p.key}', p.start_day_before)
+            end_raw = request.POST.get(f'end_{p.key}', p.end_day_before)
+            start_d, err1 = _parse_phase_day(start_raw, f'Mulai fase "{new_label}"')
+            end_d, err2 = _parse_phase_day(end_raw, f'Selesai fase "{new_label}"')
+            if err1 or err2:
+                messages.error(request, err1 or err2)
+                return redirect('operations-checklist:checklist')
+
+            color = (request.POST.get(f'color_{p.key}') or p.color).strip()
+            if color not in PHASE_COLOR_PALETTE:
+                color = p.color
+
+            staged_updates.append((p, new_label, new_order, start_d, end_d, color))
+            range_entries.append((new_label, start_d, end_d))
 
         new_phase_label = (request.POST.get('new_phase_label') or '').strip()
+        new_phase_spec = None
         if new_phase_label:
-            TimelinePhase.objects.create(
-                wedding=wedding,
-                key=f"phase_{uuid.uuid4().hex[:6]}",
-                label=new_phase_label,
-                sort_order=len(ordered),
-            )
-        messages.success(request, 'Susunan tahapan timeline berhasil diperbarui.')
+            n_start, err1 = _parse_phase_day(request.POST.get('new_phase_start'), f'Mulai fase baru "{new_phase_label}"')
+            n_end, err2 = _parse_phase_day(request.POST.get('new_phase_end'), f'Selesai fase baru "{new_phase_label}"')
+            if err1 or err2:
+                messages.error(request, err1 or err2)
+                return redirect('operations-checklist:checklist')
+            n_color = (request.POST.get('new_phase_color') or '').strip()
+            if n_color not in PHASE_COLOR_PALETTE:
+                n_color = PHASE_COLOR_PALETTE[len(phase_objs) % len(PHASE_COLOR_PALETTE)]
+            new_phase_spec = (new_phase_label, n_start, n_end, n_color)
+            range_entries.append((new_phase_label, n_start, n_end))
+
+        overlap_err = _validate_phase_ranges(range_entries)
+        if overlap_err:
+            messages.error(request, overlap_err)
+            return redirect('operations-checklist:checklist')
+
+        with transaction.atomic():
+            for p, new_label, new_order, start_d, end_d, color in staged_updates:
+                p.label = new_label
+                p.sort_order = new_order
+                p.start_day_before = start_d
+                p.end_day_before = end_d
+                p.color = color
+                p.is_active_override = (p.key == active_key)
+                p.save()
+
+            ordered = list(TimelinePhase.objects.filter(wedding=wedding).order_by('sort_order', 'id'))
+            for i, p in enumerate(ordered):
+                if p.sort_order != i:
+                    p.sort_order = i
+                    p.save(update_fields=['sort_order'])
+
+            if new_phase_spec:
+                lbl, s_d, e_d, col = new_phase_spec
+                TimelinePhase.objects.create(
+                    wedding=wedding,
+                    key=f"phase_{uuid.uuid4().hex[:6]}",
+                    label=lbl,
+                    start_day_before=s_d,
+                    end_day_before=e_d,
+                    color=col,
+                    sort_order=len(ordered),
+                )
+
+        messages.success(request, 'Susunan tahapan & rentang waktu timeline berhasil diperbarui.')
     return redirect('operations-checklist:checklist')
 
 
 @login_required
 @owner_required
 def reset_or_apply_preset(request):
-    """Reset tasks/phases to 0 or apply a timeline preset (Standard, Express, Event-Based)."""
+    """Reset tasks/phases to 0 (with mandatory non-overlapping H-minus ranges) or apply a timeline preset."""
     if request.method == 'POST':
         wedding = request.wedding
         mode = request.POST.get('mode', '')
 
         if mode == 'clear_tasks':
-            # Keep existing phases, clear all tasks so user can build tasks from 0 with the Guide
             deleted_count, _ = TaskMilestone.objects.filter(wedding=wedding).delete()
             messages.success(request, f'{deleted_count} tugas dibersihkan. Silakan gunakan Panduan Tugas Penting atau tambah tugas sendiri dari 0!')
 
         elif mode == 'start_from_zero':
-            # Wipe all tasks and phases, start with custom starter phase(s) entered by user
-            TaskMilestone.objects.filter(wedding=wedding).delete()
-            TimelinePhase.objects.filter(wedding=wedding).delete()
-            raw_phases = request.POST.getlist('custom_phase_labels')
-            clean_labels = [lbl.strip() for lbl in raw_phases if lbl and lbl.strip()]
-            if not clean_labels:
-                clean_labels = ['Tahap 1: Persiapan Awal']
-            for idx, lbl in enumerate(clean_labels):
-                TimelinePhase.objects.create(
-                    wedding=wedding,
-                    key=f"custom_{idx + 1}_{uuid.uuid4().hex[:4]}",
-                    label=lbl,
-                    sort_order=idx,
-                    is_active_override=(idx == 0),
-                )
-            messages.success(request, 'Timeline & Tugas berhasil di-reset dari 0! Gunakan Panduan & Ide Tugas untuk mulai menyusun.')
+            raw_labels = request.POST.getlist('custom_phase_labels')
+            raw_starts = request.POST.getlist('custom_phase_starts')
+            raw_ends = request.POST.getlist('custom_phase_ends')
+
+            parsed_phases = []
+            for idx, lbl_raw in enumerate(raw_labels):
+                lbl = (lbl_raw or '').strip()
+                if not lbl:
+                    continue
+                s_raw = raw_starts[idx] if idx < len(raw_starts) else ''
+                e_raw = raw_ends[idx] if idx < len(raw_ends) else ''
+                s_d, err1 = _parse_phase_day(s_raw, f'Mulai fase "{lbl}"')
+                e_d, err2 = _parse_phase_day(e_raw, f'Selesai fase "{lbl}"')
+                if err1 or err2:
+                    messages.error(request, err1 or err2)
+                    return redirect('operations-checklist:checklist')
+                parsed_phases.append((lbl, s_d, e_d))
+
+            if not parsed_phases:
+                messages.error(request, 'Minimal harus ada 1 fase beserta rentang waktunya (H- mulai s/d H- selesai).')
+                return redirect('operations-checklist:checklist')
+
+            overlap_err = _validate_phase_ranges(parsed_phases)
+            if overlap_err:
+                messages.error(request, overlap_err)
+                return redirect('operations-checklist:checklist')
+
+            # Sort chronologically from earliest (largest H-minus) to latest
+            parsed_phases.sort(key=lambda item: item[1], reverse=True)
+
+            with transaction.atomic():
+                TaskMilestone.objects.filter(wedding=wedding).delete()
+                TimelinePhase.objects.filter(wedding=wedding).delete()
+                for idx, (lbl, s_d, e_d) in enumerate(parsed_phases):
+                    TimelinePhase.objects.create(
+                        wedding=wedding,
+                        key=f"custom_{idx + 1}_{uuid.uuid4().hex[:4]}",
+                        label=lbl,
+                        start_day_before=s_d,
+                        end_day_before=e_d,
+                        color=PHASE_COLOR_PALETTE[idx % len(PHASE_COLOR_PALETTE)],
+                        sort_order=idx,
+                        is_active_override=False,
+                    )
+            messages.success(request, 'Timeline & Tugas berhasil di-reset dari 0 dengan rentang fase baru!')
 
         elif mode == 'preset':
             preset_key = request.POST.get('preset_key', 'standard')
-            task_handling = request.POST.get('task_handling', 'remap')  # 'remap' | 'template' | 'empty'
+            task_handling = request.POST.get('task_handling', 'remap')
             preset = TIMELINE_PRESETS.get(preset_key, TIMELINE_PRESETS['standard'])
             new_phases = preset['phases']
-            new_keys = [k for k, _ in new_phases]
+            new_keys = [k for k, _, _, _, _ in new_phases]
 
             old_phases = list(_ensure_wedding_phases(wedding))
             old_keys = [p.key for p in old_phases]
@@ -677,23 +852,214 @@ def reset_or_apply_preset(request):
                         sort_order=i,
                     )
             else:
-                # Remap existing tasks proportionally so zero tasks are lost
                 for old_idx, old_k in enumerate(old_keys):
                     if old_k not in new_keys:
                         mapped_idx = min(round((old_idx / max(len(old_keys) - 1, 1)) * (len(new_keys) - 1)), len(new_keys) - 1)
                         TaskMilestone.objects.filter(wedding=wedding, phase=old_k).update(phase=new_keys[mapped_idx])
 
             TimelinePhase.objects.filter(wedding=wedding).delete()
-            for idx, (p_key, p_label) in enumerate(new_phases):
+            for idx, (p_key, p_label, s_d, e_d, col) in enumerate(new_phases):
                 TimelinePhase.objects.create(
                     wedding=wedding,
                     key=p_key,
                     label=p_label,
+                    start_day_before=s_d,
+                    end_day_before=e_d,
+                    color=col,
                     sort_order=idx,
                 )
             messages.success(request, f'Preset "{preset["name"]}" berhasil diterapkan!')
 
     return redirect('operations-checklist:checklist')
+
+
+# Official Indonesian National Holidays (2025 - 2027) for red-date calendar markers
+INDONESIA_HOLIDAYS = {
+    # 2025
+    '2025-01-01': 'Tahun Baru Masehi',
+    '2025-01-27': 'Isra Mikraj Nabi Muhammad SAW',
+    '2025-01-29': 'Tahun Baru Imlek 2576',
+    '2025-03-29': 'Hari Suci Nyepi 1947',
+    '2025-03-31': 'Hari Raya Idul Fitri 1446 H',
+    '2025-04-01': 'Hari Raya Idul Fitri 1446 H',
+    '2025-04-18': 'Wafat Yesus Kristus',
+    '2025-04-20': 'Kebangkitan Yesus Kristus (Paskah)',
+    '2025-05-01': 'Hari Buruh Internasional',
+    '2025-05-12': 'Hari Raya Waisak 2569 BE',
+    '2025-05-29': 'Kenaikan Yesus Kristus',
+    '2025-06-01': 'Hari Lahir Pancasila',
+    '2025-06-06': 'Hari Raya Idul Adha 1446 H',
+    '2025-06-27': 'Tahun Baru Islam 1447 H',
+    '2025-08-17': 'Hari Kemerdekaan RI',
+    '2025-09-05': 'Maulid Nabi Muhammad SAW',
+    '2025-12-25': 'Hari Raya Natal',
+    # 2026
+    '2026-01-01': 'Tahun Baru Masehi',
+    '2026-01-16': 'Isra Mikraj Nabi Muhammad SAW',
+    '2026-02-17': 'Tahun Baru Imlek 2577',
+    '2026-03-19': 'Hari Suci Nyepi 1948',
+    '2026-03-20': 'Hari Raya Idul Fitri 1447 H',
+    '2026-03-21': 'Hari Raya Idul Fitri 1447 H',
+    '2026-04-03': 'Wafat Yesus Kristus',
+    '2026-04-05': 'Kebangkitan Yesus Kristus (Paskah)',
+    '2026-05-01': 'Hari Buruh Internasional',
+    '2026-05-14': 'Kenaikan Yesus Kristus',
+    '2026-05-27': 'Hari Raya Idul Adha 1447 H',
+    '2026-05-31': 'Hari Raya Waisak 2570 BE',
+    '2026-06-01': 'Hari Lahir Pancasila',
+    '2026-06-16': 'Tahun Baru Islam 1448 H',
+    '2026-08-17': 'Hari Kemerdekaan RI',
+    '2026-08-25': 'Maulid Nabi Muhammad SAW',
+    '2026-12-25': 'Hari Raya Natal',
+    # 2027
+    '2027-01-01': 'Tahun Baru Masehi',
+    '2027-01-05': 'Isra Mikraj Nabi Muhammad SAW',
+    '2027-02-06': 'Tahun Baru Imlek 2578',
+    '2027-03-09': 'Hari Suci Nyepi 1949',
+    '2027-03-10': 'Hari Raya Idul Fitri 1448 H',
+    '2027-03-11': 'Hari Raya Idul Fitri 1448 H',
+    '2027-03-26': 'Wafat Yesus Kristus',
+    '2027-03-28': 'Kebangkitan Yesus Kristus (Paskah)',
+    '2027-05-01': 'Hari Buruh Internasional',
+    '2027-05-06': 'Kenaikan Yesus Kristus',
+    '2027-05-16': 'Hari Raya Idul Adha 1448 H',
+    '2027-05-20': 'Hari Raya Waisak 2571 BE',
+    '2027-06-01': 'Hari Lahir Pancasila',
+    '2027-06-06': 'Tahun Baru Islam 1449 H',
+    '2027-08-17': 'Hari Kemerdekaan RI',
+    '2027-08-15': 'Maulid Nabi Muhammad SAW',
+    '2027-12-25': 'Hari Raya Natal',
+}
+
+
+@login_required
+@workspace_required
+def calendar_view(request):
+    """
+    Visual Wedding Phase Calendar (/calendar/).
+    Highlights each TimelinePhase range with color markers, marks Sundays & Indonesian
+    National Holidays in red, displays task deadlines (TaskMilestone.due_date),
+    and surfaces payment due dates for authorized roles (preserving WO/Crew financial privacy).
+    """
+    wedding = request.wedding
+    today = timezone.localdate()
+    wedding_date = wedding.wedding_date
+
+    all_tasks = list(TaskMilestone.objects.filter(wedding=wedding))
+    phase_objs = _ensure_wedding_phases(wedding, all_tasks_list=all_tasks)
+    phase_label_map = {p.key: p.label for p in phase_objs}
+
+    tasks_by_phase = defaultdict(list)
+    for t in all_tasks:
+        tasks_by_phase[t.phase].append(t)
+
+    days_before_today = (wedding_date - today).days if wedding_date else None
+    current_phase_key, current_phase_idx = _resolve_active_phase(phase_objs, days_before_today, tasks_by_phase)
+
+    phase_cards = []
+    phases_payload = []
+    active_phase_card = None
+
+    for idx, p in enumerate(phase_objs):
+        p_tasks = tasks_by_phase.get(p.key, [])
+        total = len(p_tasks)
+        done = sum(1 for t in p_tasks if t.status == 'done')
+        pct = round((done / total) * 100) if total > 0 else 0
+        start_dt, end_dt = p.get_calendar_dates(wedding_date)
+        is_current = (p.key == current_phase_key)
+
+        card = {
+            'key': p.key,
+            'label': p.label,
+            'color': p.color,
+            'start_day_before': p.start_day_before,
+            'end_day_before': p.end_day_before,
+            'range_display': p.range_display,
+            'start_date': start_dt,
+            'end_date': end_dt,
+            'start_iso': start_dt.isoformat() if start_dt else '',
+            'end_iso': end_dt.isoformat() if end_dt else '',
+            'total_tasks': total,
+            'done_tasks': done,
+            'progress': pct,
+            'is_current': is_current,
+            'is_override': p.is_active_override,
+        }
+        phase_cards.append(card)
+        if is_current:
+            active_phase_card = card
+
+        phases_payload.append({
+            'key': p.key,
+            'label': p.label,
+            'color': p.color,
+            'start_day_before': p.start_day_before,
+            'end_day_before': p.end_day_before,
+            'range_display': p.range_display,
+            'start_iso': start_dt.isoformat() if start_dt else '',
+            'end_iso': end_dt.isoformat() if end_dt else '',
+            'total_tasks': total,
+            'done_tasks': done,
+            'progress': pct,
+            'is_current': is_current,
+        })
+
+    events_payload = []
+
+    # 1. Task Deadlines (visible to all workspace roles: Pengantin, WO, Crew)
+    for t in all_tasks:
+        if t.due_date:
+            events_payload.append({
+                'date': t.due_date.isoformat(),
+                'title': t.title,
+                'phase_key': t.phase,
+                'phase_label': phase_label_map.get(t.phase, t.phase),
+                'status': t.status,
+                'status_display': t.get_status_display(),
+                'is_critical': t.is_critical,
+                'is_overdue': bool(t.due_date < today and t.status != 'done'),
+                'assignee': t.get_assignee_display(),
+                'type': 'task',
+            })
+
+    # 2. Financial Payment Due Dates (ONLY if role can access finance!)
+    role = getattr(request, 'wedding_role', None)
+    can_access_finance = (
+        role in ('owner', 'co_owner', 'admin')
+        or (role == 'wo_manager' and wedding.allow_wo_budget_access)
+    )
+    if can_access_finance:
+        from finances.models import BudgetItem
+        due_items = (
+            BudgetItem.objects.filter(category__wedding=wedding, due_date__isnull=False)
+            .select_related('category')
+            .order_by('due_date')
+        )
+        for item in due_items:
+            events_payload.append({
+                'date': item.due_date.isoformat(),
+                'title': item.name,
+                'category': item.category.name,
+                'status': item.payment_status,
+                'status_display': item.get_payment_status_display(),
+                'amount': int(item.actual_cost or 0),
+                'type': 'payment',
+            })
+
+    return render(request, 'operations/calendar.html', {
+        'today': today,
+        'today_iso': today.isoformat(),
+        'wedding_date': wedding_date,
+        'wedding_date_iso': wedding_date.isoformat() if wedding_date else '',
+        'today_h_label': format_h_day(days_before_today) if days_before_today is not None else None,
+        'days_before_today': days_before_today,
+        'phase_cards': phase_cards,
+        'active_phase': active_phase_card,
+        'can_access_finance': can_access_finance,
+        'phases_json': json.dumps(phases_payload),
+        'events_json': json.dumps(events_payload),
+        'holidays_json': json.dumps(INDONESIA_HOLIDAYS),
+    })
 
 
 @login_required
