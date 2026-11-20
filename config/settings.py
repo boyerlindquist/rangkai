@@ -160,3 +160,36 @@ for origin in csrf_env.split(','):
         CSRF_TRUSTED_ORIGINS.append(origin)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# =============================================================================
+# Email Configuration (Password Reset & Transactional Emails)
+# Uses SMTP when EMAIL_HOST is set in .env; falls back to console backend in local dev.
+# =============================================================================
+EMAIL_HOST = os.getenv('EMAIL_HOST', '').strip()
+if EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Rangkai.click <noreply@rangkai.click>')
+PASSWORD_RESET_TIMEOUT = 60 * 60  # 1 hour
+
+# =============================================================================
+# Sumopod Managed Payment Gateway (QRIS)
+# Leave SUMOPOD_API_KEY empty in local dev to keep simulated checkout mode.
+# =============================================================================
+SUMOPOD_API_KEY = os.getenv('SUMOPOD_API_KEY', '').strip()
+SUMOPOD_BASE_URL = os.getenv(
+    'SUMOPOD_BASE_URL',
+    'https://api-pay-sandbox.sumopod.com/api/v1',
+).strip().rstrip('/')
+SUMOPOD_WEBHOOK_TOKEN = os.getenv('SUMOPOD_WEBHOOK_TOKEN', '').strip()
+SUMOPOD_WEBHOOK_SECRET = os.getenv('SUMOPOD_WEBHOOK_SECRET', '').strip()
+SUMOPOD_FORWARD_WEBHOOK_URL = os.getenv('SUMOPOD_FORWARD_WEBHOOK_URL', '').strip()
+SUMOPOD_EXPIRES_IN_HOURS = int(os.getenv('SUMOPOD_EXPIRES_IN_HOURS', '24'))
+SUMOPOD_TEST_AMOUNT = int(os.getenv('SUMOPOD_TEST_AMOUNT', '0') or '0')

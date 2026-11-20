@@ -76,7 +76,7 @@ class RegisterForm(forms.ModelForm):
         widget=forms.DateInput(attrs={
             'type': 'date',
             'class': 'wp-input',
-        }),
+        }, format='%Y-%m-%d'),
     )
     invite_code = forms.CharField(
         label='Kode Undangan (8 Karakter)',
@@ -181,7 +181,7 @@ class CheckoutForm(forms.ModelForm):
         widget=forms.DateInput(attrs={
             'type': 'date',
             'class': 'wp-input',
-        }),
+        }, format='%Y-%m-%d'),
     )
     # WO-specific field
     organization_name = forms.CharField(
@@ -233,7 +233,7 @@ class WOProjectCreateForm(forms.ModelForm):
         widgets = {
             'groom_name': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Nama Pengantin Pria'}),
             'bride_name': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Nama Pengantin Wanita'}),
-            'wedding_date': forms.DateInput(attrs={'type': 'date', 'class': 'wp-input'}),
+            'wedding_date': forms.DateInput(attrs={'type': 'date', 'class': 'wp-input'}, format='%Y-%m-%d'),
             'budget_style': forms.Select(attrs={'class': 'wp-input'}),
         }
 
@@ -265,14 +265,20 @@ class JoinWorkspaceForm(forms.Form):
 
 
 class WeddingSettingsForm(forms.ModelForm):
-    """Edit wedding workspace settings."""
+    """Edit wedding workspace settings (hides budget fields when WO lacks finance access)."""
     class Meta:
         model = Wedding
         fields = ['groom_name', 'bride_name', 'wedding_date', 'total_budget', 'budget_style']
         widgets = {
             'groom_name': forms.TextInput(attrs={'class': 'wp-input'}),
             'bride_name': forms.TextInput(attrs={'class': 'wp-input'}),
-            'wedding_date': forms.DateInput(attrs={'type': 'date', 'class': 'wp-input'}),
+            'wedding_date': forms.DateInput(attrs={'type': 'date', 'class': 'wp-input'}, format='%Y-%m-%d'),
             'total_budget': forms.NumberInput(attrs={'class': 'wp-input'}),
             'budget_style': forms.Select(attrs={'class': 'wp-input'}),
         }
+
+    def __init__(self, *args, hide_budget_fields=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hide_budget_fields:
+            self.fields.pop('total_budget', None)
+            self.fields.pop('budget_style', None)

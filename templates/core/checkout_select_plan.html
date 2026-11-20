@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Pilih Paket Aktivasi | Rangkai.click{% endblock %}
+
+{% block extra_css %}
+<style>
+  .sp-page {
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    padding-bottom: 64px;
+  }
+
+  .sp-nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .sp-nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .sp-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 0;
+  }
+
+  .sp-head {
+    margin-bottom: 22px;
+  }
+
+  .sp-head h1 {
+    margin: 0;
+    font-size: clamp(1.45rem, 2.5vw, 1.85rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .sp-head p {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+  }
+
+  .sp-resume-banner {
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sp-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .sp-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .sp-plan-card {
+    text-align: left;
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 140ms ease, background 140ms ease;
+  }
+
+  .sp-plan-card.is-active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+  }
+
+  .sp-plan-price {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sp-plan-feats {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .sp-plan-feats li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.4;
+  }
+
+  .sp-plan-feats li svg {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .sp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .sp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .sp-field.is-full { grid-column: 1 / -1; }
+
+  .sp-field label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .sp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 760px) {
+    .sp-plan-grid, .sp-form-grid { grid-template-columns: 1fr; }
+    .sp-wrap { padding: 20px 16px 0; }
+    .sp-card { padding: 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="sp-page" x-data="{
+  plan: '{{ selected_plan|escapejs }}',
+  isSubmitting: false
+}">
+  <header class="sp-nav">
+    <div class="sp-nav-inner">
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
+        </span>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span data-slot="badge" data-variant="outline" class="font-mono">@{{ unpaid_user.username }}</span>
+        <a href="{% url 'core:login' %}" data-slot="button" data-variant="ghost" data-size="sm">Ganti Akun</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="sp-wrap">
+    <div class="sp-head">
+      <h1>Aktifkan Paket Akun Anda</h1>
+      <p>
+        Akun <strong>{{ unpaid_user.username }}</strong> ({{ unpaid_user.email }}) sudah terdaftar tetapi belum aktif.
+        Pilih paket di bawah untuk menyelesaikan pembayaran QRIS dan langsung masuk ke workspace.
+      </p>
+    </div>
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div data-slot="alert" data-variant="{% if msg.tags == 'error' %}destructive{% else %}default{% endif %}" style="margin-bottom:18px;">
+      <i data-lucide="{% if msg.tags == 'error' %}alert-circle{% else %}info{% endif %}"></i>
+      <div>{{ msg }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if error_msg %}
+    <div data-slot="alert" data-variant="destructive" style="margin-bottom:18px;">
+      <i data-lucide="alert-circle"></i>
+      <div>{{ error_msg }}</div>
+    </div>
+    {% endif %}
+
+    {% if active_pending_order %}
+    <div class="sp-resume-banner">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span data-slot="badge" data-variant="amber">Tagihan QRIS Aktif</span>
+          <strong class="font-mono" style="font-size:0.86rem;">{{ active_pending_order.order_code }}</strong>
+        </div>
+        <div style="font-size:0.84rem;color:var(--muted-foreground);">
+          {{ active_pending_order.get_plan_type_display }} sebesar
+          <strong class="font-mono" style="color:var(--foreground);">Rp {{ active_pending_order.amount|floatformat:0|intcomma }}</strong>
+          masih menunggu pembayaran.
+        </div>
+      </div>
+      <a href="{% url 'core:checkout_pay' active_pending_order.order_code %}" data-slot="button" data-variant="default" data-size="default">
+        <i data-lucide="qr-code"></i> Lanjutkan Pembayaran QRIS
+      </a>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'core:checkout_select_plan' %}" class="sp-card" @submit="isSubmitting = true">
+      {% csrf_token %}
+      <input type="hidden" name="plan_type" :value="plan" />
+
+      <div style="font-size:0.86rem;font-weight:650;margin-bottom:12px;">
+        {% if active_pending_order %}Atau pilih paket lain &amp; buat tagihan QRIS baru:{% else %}1. Pilih Paket{% endif %}
+      </div>
+
+      <div class="sp-plan-grid">
+        <button type="button" class="sp-plan-card" :class="{ 'is-active': plan === 'wedding_owner' }" @click="plan = 'wedding_owner'">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <strong style="font-size:0.98rem;">Paket Wedding Owner</strong>
+            <span data-slot="badge" data-variant="emerald">Pengantin</span>
+          </div>
+          <div class="sp-plan-price">{{ plans.wedding_owner.price_display }}</div>
+          <div style="font-size:0.78rem;color:var(--muted-foreground);">Sekali bayar sampai hari-H</div>
+          <ul class="sp-plan-feats">
+            <li><i data-lucide="check"></i> 1 Workspace Pernikahan penuh</li>
+            <li><i data-lucide="check"></i> Undang 1 Co-Owner &amp; Crew tanpa batas</li>
+            <li><i data-lucide="check"></i> Tabungan Pribadi terkunci khusus pengantin</li>
+          </ul>
+        </button>
+
+        <button type="button" class="sp-plan-card" :class="{ 'is-active': plan === 'wo_manager' }" @click="plan = 'wo_manager'">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <strong style="font-size:0.98rem;">Paket WO Manager</strong>
+            <span data-slot="badge" data-variant="outline">Wedding Organizer</span>
+          </div>
+          <div class="sp-plan-price">{{ plans.wo_manager.price_display }}</div>
+          <div style="font-size:0.78rem;color:var(--muted-foreground);">Per bulan (hingga 10 project aktif)</div>
+          <ul class="sp-plan-feats">
+            <li><i data-lucide="check"></i> Portal WO + Workspace Switcher</li>
+            <li><i data-lucide="check"></i> Hingga 10 project klien aktif bersamaan</li>
+            <li><i data-lucide="check"></i> Link undangan Pengantin privat per klien</li>
+          </ul>
+        </button>
+      </div>
+
+      <div style="font-size:0.86rem;font-weight:650;margin-bottom:12px;">2. Detail Workspace</div>
+      <div class="sp-form-grid">
+        <template x-if="plan === 'wedding_owner'">
+          <div class="sp-field">
+            <label for="sp_groom">Nama Pengantin Pria</label>
+            <input id="sp_groom" type="text" name="groom_name" class="wp-input" value="{{ form_data.groom_name }}" placeholder="Contoh: Dimas" required />
+          </div>
+        </template>
+        <template x-if="plan === 'wedding_owner'">
+          <div class="sp-field">
+            <label for="sp_bride">Nama Pengantin Wanita</label>
+            <input id="sp_bride" type="text" name="bride_name" class="wp-input" value="{{ form_data.bride_name }}" placeholder="Contoh: Nadya" required />
+          </div>
+        </template>
+        <template x-if="plan === 'wedding_owner'">
+          <div class="sp-field is-full">
+            <label for="sp_date">Perkiraan Tanggal Pernikahan (Opsional)</label>
+            <input id="sp_date" type="date" name="wedding_date" class="wp-input" value="{{ form_data.wedding_date }}" />
+          </div>
+        </template>
+        <template x-if="plan === 'wo_manager'">
+          <div class="sp-field is-full">
+            <label for="sp_org">Nama Wedding Organizer / Brand</label>
+            <input id="sp_org" type="text" name="organization_name" class="wp-input" value="{{ form_data.organization_name }}" placeholder="Contoh: Surya Wedding Organizer" required />
+          </div>
+        </template>
+      </div>
+
+      <div class="sp-footer">
+        <div style="font-size:0.82rem;color:var(--muted-foreground);">
+          Metode pembayaran: <strong style="color:var(--foreground);">QRIS (Instan)</strong>
+        </div>
+        <button type="submit" data-slot="button" data-variant="default" data-size="lg" :disabled="isSubmitting">
+          <i data-lucide="qr-code"></i>
+          <span x-text="isSubmitting ? 'Menyiapkan QRIS...' : 'Bayar dengan QRIS'"></span>
+        </button>
+      </div>
+    </form>
+  </main>
+</div>
+{% endblock %}

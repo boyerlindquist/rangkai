@@ -19,10 +19,12 @@
   <div data-slot="dropdown-menu-content" x-show="open" x-transition.opacity.duration.120ms x-cloak
        hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
     <div data-slot="dropdown-menu-label">Akses Cepat Modul</div>
-    {% if not is_crew %}
+    {% if can_access_finance %}
     <a href="{% url 'finances:dashboard' %}" data-slot="dropdown-menu-item" @click="open = false">
       <i data-lucide="wallet"></i> Anggaran &amp; Kas
     </a>
+    {% endif %}
+    {% if can_access_savings %}
     <a href="{% url 'finances:savings_tracker' %}" data-slot="dropdown-menu-item" @click="open = false">
       <i data-lucide="piggy-bank"></i> Tabungan Bersama
     </a>
@@ -30,9 +32,11 @@
     <a href="{% url 'guests:list' %}" data-slot="dropdown-menu-item" @click="open = false">
       <i data-lucide="users"></i> Tamu &amp; Katering
     </a>
+    {% if can_access_vendors %}
     <a href="{% url 'vendors:compare' %}" data-slot="dropdown-menu-item" @click="open = false">
       <i data-lucide="store"></i> Direktori Vendor
     </a>
+    {% endif %}
     <a href="{% url 'operations-checklist:checklist' %}" data-slot="dropdown-menu-item" @click="open = false">
       <i data-lucide="check-square"></i> Timeline &amp; Tugas
     </a>
@@ -50,13 +54,19 @@
     <div class="dash-page-head" id="guide-overview">
       <div>
         <h1 class="dash-page-title">Ringkasan Persiapan</h1>
-        <p class="dash-page-subtitle">Pantau langkah prioritas, keseimbangan anggaran, dan kesiapan hari bahagia Anda dengan tenang.</p>
+        <p class="dash-page-subtitle">
+          {% if is_couple %}
+          Pantau langkah prioritas, keseimbangan anggaran, dan kesiapan hari bahagia Anda dengan tenang.
+          {% else %}
+          Pantau progres persiapan, daftar tamu, dan koordinasi operasional pernikahan <strong>{{ wedding }}</strong>.
+          {% endif %}
+        </p>
       </div>
       <div class="dash-head-actions" id="guide-quick-actions" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
         <a href="{% url 'operations-checklist:checklist' %}" data-slot="button" data-variant="outline" data-size="sm">
           <i data-lucide="check-square"></i> Timeline &amp; Tugas
         </a>
-        {% if not is_crew %}
+        {% if can_access_finance %}
         <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="default" data-size="sm">
           <i data-lucide="wallet"></i> Kelola Anggaran
         </a>
@@ -64,8 +74,40 @@
       </div>
     </div>
 
+    {% if is_couple and wedding.total_budget == 0 and task_stats.done == 0 %}
+    <!-- First-Run Quick-Start Guide for Brand-New Couples -->
+    <div data-slot="card" style="padding: 16px 20px; border-color: var(--primary-border); background: color-mix(in srgb, var(--primary) 5%, var(--card));"
+         x-data="{ dismissed: sessionStorage.getItem('wp_quickstart_dismissed') === '1' }"
+         x-show="!dismissed" x-transition>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+        <div>
+          <strong style="font-size:0.9rem;color:var(--foreground);">Baru mulai? 3 langkah cepat menyiapkan workspace Anda</strong>
+          <div style="font-size:0.8rem;color:var(--muted-foreground);margin-top:2px;">Lakukan urutan ini agar anggaran, tabungan, dan kolaborasi langsung sinkron.</div>
+        </div>
+        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm"
+                @click="dismissed = true; sessionStorage.setItem('wp_quickstart_dismissed', '1')" aria-label="Tutup panduan cepat">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
+        <a href="{% url 'finances:savings_tracker' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
+          <span data-slot="badge" data-variant="emerald">1</span>
+          <span>Atur Target Tabungan &amp; Budget</span>
+        </a>
+        <a href="{% url 'core:settings' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
+          <span data-slot="badge" data-variant="emerald">2</span>
+          <span>Undang Pasangan (Co-Owner)</span>
+        </a>
+        <a href="{% url 'operations-checklist:checklist' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
+          <span data-slot="badge" data-variant="emerald">3</span>
+          <span>Centang Tugas Fase Aktif</span>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- KPI Metric Grid -->
-    <div class="dash-kpi-grid {% if is_crew %}is-crew{% endif %}" id="guide-dday">
+    <div class="dash-kpi-grid {% if not can_access_finance %}is-crew{% endif %}" id="guide-dday">
       <!-- Hitung Mundur -->
       <div data-slot="card" data-size="sm">
         <div data-slot="card-header">
@@ -84,8 +126,8 @@
         </div>
       </div>
 
-      <!-- Sisa Ruang Anggaran (Couple only) -->
-      {% if not is_crew %}
+      <!-- Sisa Ruang Anggaran (Finance-permitted roles only) -->
+      {% if can_access_finance %}
       <div data-slot="card" data-size="sm" id="guide-budget-rem">
         <div data-slot="card-header">
           <div data-slot="card-title">Sisa Ruang Anggaran</div>
@@ -133,8 +175,8 @@
     </div>
 
     <!-- Actionable Split Grid: Pembayaran & Fokus Tugas -->
-    <div class="dash-split-grid {% if is_crew %}is-single{% endif %}">
-      {% if not is_crew %}
+    <div class="dash-split-grid {% if not can_access_finance %}is-single{% endif %}">
+      {% if can_access_finance %}
       <section data-slot="card" data-flush="true" id="guide-attention">
         <div data-slot="card-header" class="has-border">
           <div>
@@ -257,7 +299,7 @@
     </div>
 
     <!-- Summary Split Grid: Vendor Terpilih & Visualisasi Alur Budget -->
-    <div class="dash-split-grid {% if is_crew %}is-single{% endif %}">
+    <div class="dash-split-grid {% if not can_access_finance %}is-single{% endif %}">
       <section data-slot="card" data-flush="true" id="guide-vendors">
         <div data-slot="card-header" class="has-border">
           <div>
@@ -296,7 +338,7 @@
         </div>
       </section>
 
-      {% if not is_crew %}
+      {% if can_access_finance %}
       <section data-slot="card" data-flush="true" id="guide-sankey">
         <div data-slot="card-header" class="has-border">
           <div>
@@ -326,25 +368,19 @@
     </div>
 
     {% if wedding and not is_crew %}
-    <!-- Compact Workspace Invite Strip -->
-    <div class="dash-invite-bar" x-data="{ copied: false }">
+    <!-- Role-Bound Collaboration Shortcut Strip -->
+    <div class="dash-invite-bar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
       <div class="dash-invite-info">
-        <span class="dash-invite-icon"><i data-lucide="link"></i></span>
+        <span class="dash-invite-icon"><i data-lucide="user-plus"></i></span>
         <div style="min-width: 0;">
-          <div style="font-size: 0.875rem; font-weight: 600; color: var(--foreground);">Kode Undangan Workspace</div>
-          <div style="font-size: 0.78rem; color: var(--muted-foreground);">Bagikan kode ini ke pasangan atau panitia untuk bergabung ke workspace bersama.</div>
+          <div style="font-size: 0.875rem; font-weight: 600; color: var(--foreground);">Undang Pasangan, WO, atau Crew Operasional</div>
+          <div style="font-size: 0.78rem; color: var(--muted-foreground);">Buat link undangan sesuai peran (Co-Owner, WO Manager, atau Crew) agar batas akses tetap aman dan privat.</div>
         </div>
       </div>
       <div class="dash-invite-actions">
-        <span data-slot="kbd">{{ wedding.invite_code }}</span>
-        <button type="button"
-                data-slot="button"
-                data-variant="outline"
-                data-size="sm"
-                @click="navigator.clipboard.writeText('{{ wedding.invite_code }}'); copied = true; setTimeout(() => copied = false, 2000);">
-          <i :data-lucide="copied ? 'check' : 'copy'"></i>
-          <span x-text="copied ? 'Tersalin' : 'Salin Kode'">Salin Kode</span>
-        </button>
+        <a href="{% url 'core:settings' %}" data-slot="button" data-variant="outline" data-size="sm">
+          <i data-lucide="link"></i> Kelola Undangan di Pengaturan
+        </a>
       </div>
     </div>
     {% endif %}

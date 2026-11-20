@@ -5,13 +5,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from core.decorators import finance_access_required
+from core.decorators import owner_required
 from vendors.models import VendorCandidate
 from vendors.forms import VendorCandidateForm
 
 
 @login_required
-@finance_access_required
+@owner_required
 def vendor_compare(request):
     """Vendor Comparator & Scoring hub."""
     wedding = request.wedding
@@ -61,7 +61,7 @@ def vendor_compare(request):
 
 
 @login_required
-@finance_access_required
+@owner_required
 def update_vendor_weights(request):
     """Update scoring weights across all vendor candidates in this workspace."""
     if request.method == 'POST':
@@ -82,21 +82,27 @@ def update_vendor_weights(request):
 
 
 @login_required
-@finance_access_required
+@owner_required
 def add_vendor(request):
-    """HTMX endpoint: Add vendor candidate."""
+    """HTMX endpoint: Add vendor candidate with clear error feedback."""
     if request.method == 'POST':
         form = VendorCandidateForm(request.POST)
         if form.is_valid():
             vendor = form.save(commit=False)
             vendor.wedding = request.wedding
             vendor.save()
+            messages.success(request, f'Kandidat vendor "{vendor.name}" berhasil ditambahkan.')
             return redirect('vendors:compare')
+        err_msgs = []
+        for field, errs in form.errors.items():
+            label = form.fields[field].label if field in form.fields else field
+            err_msgs.append(f'{label}: {", ".join(errs)}')
+        messages.error(request, 'Gagal menambah vendor. ' + ' | '.join(err_msgs))
     return redirect('vendors:compare')
 
 
 @login_required
-@finance_access_required
+@owner_required
 def update_vendor(request, pk):
     """HTMX endpoint: Update vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
@@ -118,7 +124,7 @@ def update_vendor(request, pk):
 
 
 @login_required
-@finance_access_required
+@owner_required
 def delete_vendor(request, pk):
     """HTMX endpoint: Delete vendor candidate."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
@@ -127,7 +133,7 @@ def delete_vendor(request, pk):
 
 
 @login_required
-@finance_access_required
+@owner_required
 def update_vendor_status(request, pk):
     """HTMX endpoint: Select or cycle vendor status."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)

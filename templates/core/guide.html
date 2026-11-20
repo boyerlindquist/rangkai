@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Panduan Penggunaan | Rangkai{% endblock %}
+{% block title %}Panduan Penggunaan | Rangkai.click{% endblock %}
 {% block breadcrumb %}Panduan{% endblock %}
 
 {% block header_actions %}
@@ -10,13 +10,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="workspace-canvas guide-page" x-data="{ roleTab: '{% if is_crew %}wo{% else %}owner{% endif %}' }">
+<div class="workspace-canvas guide-page" x-data="{ roleTab: '{% if is_wo_manager or is_wo_account %}wo_manager{% elif is_crew %}crew{% else %}owner{% endif %}' }">
   <!-- Page Header -->
   <div class="page-header">
     <div>
-      <h1>Panduan Lengkap Rangkai</h1>
+      <h1>Panduan Lengkap Rangkai.click</h1>
       <p class="page-subtitle">
-        Panduan praktis menguasai setiap modul, alur kolaborasi, dan batas hak akses antara Pengantin (Owner/Co-Owner) dan WO / Tim Acara.
+        Panduan praktis menguasai setiap modul, alur kolaborasi berbasis peran, dan kontrol privasi antara Pengantin, WO Manager, serta Crew Operasional.
       </p>
     </div>
   </div>
@@ -32,21 +32,25 @@
     <a href="#section-guests">6. Tamu &amp; Katering</a>
     <a href="#section-docs">7. Berkas &amp; Seserahan</a>
     <a href="#section-ops">8. Logistik Hari-H</a>
+    <a href="#section-settings">9. Pengaturan &amp; Privasi</a>
   </nav>
 
-  <!-- PANDUAN KHUSUS PERAN (OWNER/PENGANTIN vs WO/TIM ACARA) -->
+  <!-- PANDUAN KHUSUS PERAN (PENGANTIN vs WO MANAGER vs CREW + MATRIKS 4 PERAN) -->
   <section id="panduan-peran" data-slot="card" data-flush="true">
     <div data-slot="card-header" class="has-border" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div>
         <div data-slot="card-title">Panduan Berdasarkan Peran &amp; Matriks Hak Akses</div>
-        <div data-slot="card-description">Pilih peranmu untuk melihat alur kerja harian dan batas akses modul di Rangkai.</div>
+        <div data-slot="card-description">Pilih peranmu untuk memahami alur kerja harian, cara mengundang tim, dan batas privasi data di Rangkai.click.</div>
       </div>
       <div class="filter-segmented" role="tablist" aria-label="Pilih panduan peran">
         <button type="button" role="tab" :class="{ 'active': roleTab === 'owner' }" @click="roleTab = 'owner'">
-          Panduan Pengantin (Owner / Co-Owner)
+          Pengantin (Owner / Co-Owner)
         </button>
-        <button type="button" role="tab" :class="{ 'active': roleTab === 'wo' }" @click="roleTab = 'wo'">
-          Panduan WO &amp; Tim Acara (Crew)
+        <button type="button" role="tab" :class="{ 'active': roleTab === 'wo_manager' }" @click="roleTab = 'wo_manager'">
+          WO Manager
+        </button>
+        <button type="button" role="tab" :class="{ 'active': roleTab === 'crew' }" @click="roleTab = 'crew'">
+          Crew Operasional
         </button>
         <button type="button" role="tab" :class="{ 'active': roleTab === 'matrix' }" @click="roleTab = 'matrix'">
           Matriks Hak Akses
@@ -58,137 +62,200 @@
     <div x-show="roleTab === 'owner'" style="padding: 18px;">
       <div class="guide-grid-2">
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="heart-handshake"></i> Alur Mulai untuk Pengantin</h4>
+          <h4 class="guide-subbox-title"><i data-lucide="heart-handshake"></i> Alur Mulai Cepat untuk Pengantin</h4>
           <ol class="guide-steps" style="margin-top: 6px;">
             <li>
               <span class="guide-step-num">1</span>
-              <span><strong>Lengkapi Data Pernikahan:</strong> Buka menu <em>Pengaturan</em> untuk mengisi nama pasangan, tanggal hari-H, dan Target Total Anggaran.</span>
+              <span><strong>Atur Target Tabungan &amp; Anggaran:</strong> Buka <em>Tabungan Bersama</em> untuk mengisi target dana serta komitmen bulanan (otomatis tersinkron ke <em>Anggaran &amp; Kas</em>), atau atur langsung di menu <em>Pengaturan</em>.</span>
             </li>
             <li>
               <span class="guide-step-num">2</span>
-              <span><strong>Undang Pasangan &amp; WO:</strong> Salin <strong>Kode Undangan 8 Karakter</strong> di Pengaturan. Pasangan/WO tinggal buka halaman Daftar → pilih tab <strong>Gabung Pakai Kode</strong>.</span>
+              <span><strong>Undang Pasangan (Co-Owner) &amp; Tim:</strong> Buka <em>Pengaturan → Undangan Berbasis Peran</em>. Pilih peran (<strong>Co-Owner</strong> untuk pasangan, <strong>WO Manager</strong> untuk PIC WO, atau <strong>Crew</strong> untuk tim lapangan), lalu klik <strong>Salin Link</strong> dan kirim ke WhatsApp.</span>
             </li>
             <li>
               <span class="guide-step-num">3</span>
-              <span><strong>Atur Peran Anggota:</strong> Anggota baru otomatis masuk sebagai <em>Co-Owner</em>. Khusus <em>Owner</em> utama dapat mengubah peran tim eksternal menjadi <strong>Crew / WO</strong> agar data keuangan tetap privat.</span>
+              <span><strong>Atur Privasi WO (Jika Pakai WO):</strong> Ruang <em>Tabungan Bersama</em> selalu terkunci privat khusus Pengantin. Untuk <em>Anggaran &amp; Kas</em>, secara default juga terkunci dari WO dan dapat kamu buka kapan saja lewat tombol privasi di <em>Pengaturan</em>.</span>
             </li>
             <li>
               <span class="guide-step-num">4</span>
-              <span><strong>Susun Pagu &amp; Tabungan:</strong> Atur porsi kategori di <em>Anggaran &amp; Kas</em> lalu catat setoran bulanan di <em>Tabungan Bersama</em> agar kesiapan kas selalu terpantau otomatis.</span>
+              <span><strong>Pantau Progres Harian:</strong> Gunakan <em>Ringkasan</em> dan <em>Timeline &amp; Tugas</em> untuk mencentang persiapan fase aktif, membandingkan kandidat vendor, serta mengelola daftar tamu.</span>
             </li>
           </ol>
         </div>
 
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="shield-check"></i> Kewenangan Owner &amp; Co-Owner</h4>
-          <p style="margin-top: 2px;">Kedua peran pengantin memiliki kendali penuh atas perencanaan dan keuangan workspace:</p>
+          <h4 class="guide-subbox-title"><i data-lucide="shield-check"></i> Kewenangan &amp; Batasan Pengantin</h4>
+          <p style="margin-top: 2px;">Setiap akun Pengantin (Owner &amp; Co-Owner) difokuskan khusus untuk <strong>1 workspace pernikahan</strong> agar antarmuka tetap tenang dan bebas distraksi:</p>
           <ul class="guide-steps" style="margin-top: 6px;">
             <li>
               <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
-              <span><strong>Keuangan Privat:</strong> Akses penuh ke Anggaran &amp; Kas, Sankey distribusi dana, pelunasan termin vendor, dan Tabungan Bersama.</span>
+              <span><strong>Tabungan Bersama 100% Privat:</strong> Hanya dapat dilihat dan diisi oleh Owner &amp; Co-Owner. Tidak pernah tampil di akun WO Manager maupun Crew.</span>
             </li>
             <li>
               <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
-              <span><strong>Keputusan Vendor &amp; Tamu:</strong> Mengubah bobot penilaian vendor, mengunci status <em>Booked</em>, serta import/export daftar tamu Excel.</span>
+              <span><strong>Kendali Penuh Keputusan:</strong> Mengelola pagu anggaran, pelunasan termin, bobot evaluasi vendor, status <em>Booked</em>, hingga import/export daftar tamu Excel.</span>
             </li>
             <li>
               <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
-              <span><strong>Kontrol Keamanan (Khusus Owner):</strong> Membuat ulang kode undangan (kode lama otomatis hangus), mengubah peran anggota, atau mengeluarkan anggota dari workspace.</span>
+              <span><strong>Keamanan Anggota (Owner Utama):</strong> Membuat atau menonaktifkan kode undangan berdasarkan peran, mengubah peran anggota, dan mengeluarkan anggota jika diperlukan.</span>
             </li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- Tab 2: Panduan WO & Tim Acara (Crew) -->
-    <div x-show="roleTab === 'wo'" x-cloak style="padding: 18px;">
+    <!-- Tab 2: Panduan WO Manager -->
+    <div x-show="roleTab === 'wo_manager'" x-cloak style="padding: 18px;">
       <div class="guide-grid-2">
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="briefcase"></i> Cara Gabung &amp; Alur Kerja WO</h4>
+          <h4 class="guide-subbox-title"><i data-lucide="briefcase"></i> Alur Kerja WO Manager (Multi-Project)</h4>
           <ol class="guide-steps" style="margin-top: 6px;">
             <li>
               <span class="guide-step-num">1</span>
-              <span><strong>Gabung 1 Langkah:</strong> Minta kode undangan 8 karakter dari pengantin. Buka halaman Daftar → pilih tab <strong>Gabung Pakai Kode</strong> → buat akun dan masukkan kodenya.</span>
+              <span><strong>Buat Project Klien di Portal WO:</strong> Buka menu <em>Portal WO</em> di kiri atas sidebar lalu klik <strong>+ Buat Project Klien</strong>. Sistem langsung menyiapkan 55+ tugas bawaan, kategori anggaran, dan 2 link undangan otomatis.</span>
             </li>
             <li>
               <span class="guide-step-num">2</span>
-              <span><strong>Pantau Fokus Tugas:</strong> Gunakan menu <em>Timeline &amp; Tugas</em> dan filter berdasarkan PJ (termasuk <em>Keluarga / WO</em>) untuk menandai progres kerja 1-klik.</span>
+              <span><strong>Bagikan Link Pengantin (Maks. 2 Orang):</strong> Klik tombol <strong>Link Pengantin</strong> di kartu klien untuk menyalin tautan. Pengantin pertama yang mendaftar otomatis menjadi <em>Wedding Owner</em>, pasangannya otomatis menjadi <em>Co-Owner</em>, lalu link terkunci otomatis agar tidak bocor.</span>
             </li>
             <li>
               <span class="guide-step-num">3</span>
-              <span><strong>Kelola Tamu &amp; Check-In:</strong> Cek kuota tamu, pantau RSVP, dan lakukan check-in cepat di lokasi acara langsung lewat HP menggunakan navigasi bawah.</span>
+              <span><strong>Pindah Project Instan:</strong> Gunakan <strong>Workspace Switcher</strong> di bagian atas sidebar (atau tombol <em>Buka Workspace</em> di Portal WO) untuk berpindah antar pernikahan klien tanpa perlu logout.</span>
             </li>
             <li>
               <span class="guide-step-num">4</span>
-              <span><strong>Eksekusi Hari-H:</strong> Kelola menit-ke-menit <em>Rundown</em>, awasi PIC pemegang <em>Aset Kritis</em> (cincin, mahar, buku nikah), dan cek <em>Berkas &amp; Seserahan</em>.</span>
+              <span><strong>Undang Crew Lapangan:</strong> Bagikan <strong>Link Crew</strong> ke tim lapangan agar mereka bisa mengakses tugas, check-in tamu, dan rundown hari-H langsung dari HP.</span>
             </li>
           </ol>
         </div>
 
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="lock"></i> Batas Akses Peran Crew / WO</h4>
-          <p style="margin-top: 2px;">Demi menjaga privasi finansial pengantin, peran <strong>Crew / WO</strong> difokuskan pada operasional:</p>
+          <h4 class="guide-subbox-title"><i data-lucide="lock"></i> Akses &amp; Privasi pada Project Klien</h4>
+          <p style="margin-top: 2px;">Rangkai.click menjaga kepercayaan klien dengan memisahkan data operasional WO dari keuangan pribadi pengantin:</p>
           <ul class="guide-steps" style="margin-top: 6px;">
             <li>
               <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
-              <span><strong>Dapat Diakses Penuh:</strong> Ringkasan (versi non-keuangan), Timeline &amp; Tugas, Direktori Vendor (lihat &amp; pantau), Tamu &amp; Katering (cek/check-in), Berkas &amp; Seserahan, dan Logistik Hari-H.</span>
+              <span><strong>Terbuka Penuh untuk WO:</strong> Direktori Vendor (tambah, nilai, ubah status), Timeline &amp; Tugas, Tamu &amp; Katering (termasuk import Excel), Berkas &amp; Seserahan, dan Logistik Hari-H.</span>
+            </li>
+            <li>
+              <span class="guide-step-num"><i data-lucide="lock" style="width:12px;height:12px;"></i></span>
+              <span><strong>Anggaran &amp; Kas (Terkunci Secara Default):</strong> Menu tampil dengan ikon gembok di sidebar. Jika klien ingin dibantu kelola anggaran, minta pengantin menyalakan izin di <em>Pengaturan → Privasi Data terhadap WO Manager</em>.</span>
             </li>
             <li>
               <span class="guide-step-num"><i data-lucide="x" style="width:12px;height:12px;"></i></span>
-              <span><strong>Terkunci Otomatis:</strong> Modul <em>Anggaran &amp; Kas</em>, <em>Tabungan Bersama</em>, <em>Pengaturan Workspace</em>, serta aksi sensitif seperti impor massal tamu atau ubah bobot/status keputusan vendor.</span>
+              <span><strong>Tabungan Bersama (Permanen Privat):</strong> Saldo dan riwayat setoran tabungan pengantin tidak pernah ditampilkan ke akun WO Manager.</span>
             </li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- Tab 3: Matriks Hak Akses -->
+    <!-- Tab 3: Panduan Crew Operasional -->
+    <div x-show="roleTab === 'crew'" x-cloak style="padding: 18px;">
+      <div class="guide-grid-2">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="hard-hat"></i> Alur Kerja Crew / Tim Lapangan</h4>
+          <ol class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num">1</span>
+              <span><strong>Gabung Pakai Link/Kode Crew:</strong> Buka link undangan dari Pengantin atau WO (otomatis menampilkan nama pasangan &amp; peran <em>Crew / Operasional</em>), lalu buat akun.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">2</span>
+              <span><strong>Bisa Menangani Banyak Acara:</strong> Jika kamu kru tetap WO dan diundang ke lebih dari 1 project, menu <strong>Workspace Switcher</strong> otomatis muncul di sidebar untuk berpindah acara.</span>
+            </li>
+            <li>
+              <span class="guide-step-num">3</span>
+              <span><strong>Eksekusi Cepat dari HP:</strong> Gunakan navigasi bawah (<em>Ringkasan, Logistik, Tugas, Tamu</em>) untuk mencentang progres checklist, memantau rundown menit-ke-menit, dan check-in tamu di meja registrasi.</span>
+            </li>
+          </ol>
+        </div>
+
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="shield"></i> Batas Akses Peran Crew</h4>
+          <p style="margin-top: 2px;">Peran <strong>Crew</strong> dirancang aman dari risiko salah hapus data penting maupun kebocoran angka keuangan:</p>
+          <ul class="guide-steps" style="margin-top: 6px;">
+            <li>
+              <span class="guide-step-num"><i data-lucide="check" style="width:12px;height:12px;"></i></span>
+              <span><strong>Bisa Dilakukan:</strong> Melihat Ringkasan non-keuangan, mencentang status tugas, cek &amp; check-in kehadiran tamu, serta memantau Berkas, Seserahan, Rundown, dan PIC Aset Kritis.</span>
+            </li>
+            <li>
+              <span class="guide-step-num"><i data-lucide="x" style="width:12px;height:12px;"></i></span>
+              <span><strong>Terkunci Otomatis:</strong> Modul <em>Anggaran &amp; Kas</em>, <em>Tabungan Bersama</em>, <em>Direktori Vendor</em>, <em>Pengaturan</em>, serta aksi impor/hapus data master.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Matriks Hak Akses Lengkap (4 Peran Workspace) -->
     <div x-show="roleTab === 'matrix'" x-cloak>
       <div data-slot="table-container">
         <table data-slot="table">
           <thead>
             <tr data-slot="table-row">
               <th data-slot="table-head" style="padding-left: 18px;">Modul / Fitur</th>
-              <th data-slot="table-head">Owner (Pengantin Utama)</th>
-              <th data-slot="table-head">Co-Owner (Pasangan)</th>
-              <th data-slot="table-head" style="padding-right: 18px;">Crew / WO &amp; Tim Acara</th>
+              <th data-slot="table-head">Wedding Owner</th>
+              <th data-slot="table-head">Co-Owner</th>
+              <th data-slot="table-head">WO Manager</th>
+              <th data-slot="table-head" style="padding-right: 18px;">Crew Operasional</th>
             </tr>
           </thead>
           <tbody>
             <tr data-slot="table-row">
-              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Ringkasan (Dashboard)</td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk Kas)</span></td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk Kas)</span></td>
-              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Operasional (tanpa Kas)</span></td>
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Jumlah Workspace &amp; Switcher</td>
+              <td data-slot="table-cell">Maks. 1 workspace</td>
+              <td data-slot="table-cell">Maks. 1 workspace</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Multi-Project + Portal WO</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;">1 atau multi-project</td>
             </tr>
             <tr data-slot="table-row">
-              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Anggaran &amp; Kas + Tabungan Bersama</td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Ringkasan (Dashboard)</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Operasional (Budget jika diizinkan)</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Operasional (tanpa Budget)</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Tabungan Bersama</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (Privat)</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (Privat)</span></td>
+              <td data-slot="table-cell"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci (Privat)</span></td>
               <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci (Privat)</span></td>
+            </tr>
+            <tr data-slot="table-row">
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Anggaran &amp; Kas</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span style="color: var(--warning); font-weight: 500; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci (Bisa dibuka Pengantin)</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci</span></td>
             </tr>
             <tr data-slot="table-row">
               <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Direktori &amp; Evaluasi Vendor</td>
               <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola &amp; Putuskan</span></td>
               <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola &amp; Putuskan</span></td>
-              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="eye" style="width:14px;height:14px;"></i> Lihat Direktori &amp; Kontak</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola &amp; Evaluasi</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci</span></td>
             </tr>
             <tr data-slot="table-row">
               <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Tamu &amp; Katering</td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola, Import/Export &amp; Check-In</span></td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Kelola, Import/Export &amp; Check-In</span></td>
-              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Cek Tamu, Simulator &amp; Check-In</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh + Excel</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh + Excel</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh + Excel</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Lihat, RSVP &amp; Check-In</span></td>
             </tr>
             <tr data-slot="table-row">
-              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Timeline &amp; Tugas, Berkas, Logistik Hari-H</td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh</span></td>
-              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Akses Penuh Operasional</span></td>
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Timeline, Berkas &amp; Logistik Hari-H</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh</span></td>
+              <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Centang &amp; Pantau Lapangan</span></td>
             </tr>
             <tr data-slot="table-row">
-              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Pengaturan, Kode Undangan &amp; Peran Anggota</td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (termasuk kelola peran)</span></td>
-              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Edit Data &amp; Salin Kode</span></td>
+              <td data-slot="table-cell" style="padding-left: 18px; font-weight: 500;">Pengaturan, Undangan &amp; Privasi WO</td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Penuh (Semua Peran &amp; Toggle WO)</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Edit Info, Undang Crew &amp; Toggle WO</span></td>
+              <td data-slot="table-cell"><span class="guide-access-yes"><i data-lucide="check" style="width:14px;height:14px;"></i> Info Acara, Undang Klien &amp; Crew</span></td>
               <td data-slot="table-cell" style="padding-right: 18px;"><span class="guide-access-no"><i data-lucide="lock" style="width:13px;height:13px;"></i> Terkunci</span></td>
             </tr>
           </tbody>
@@ -214,8 +281,8 @@
     <div data-slot="card-content">
       <div class="guide-grid-3">
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="calendar-heart"></i> 4 KPI Utama &amp; Hitung Mundur</h4>
-          <p>Menampilkan sisa hari menuju akad/resepsi, sisa ruang anggaran, jumlah konfirmasi tamu (RSVP), serta bar progres kesiapan tugas.</p>
+          <h4 class="guide-subbox-title"><i data-lucide="calendar-heart"></i> KPI Utama &amp; Hitung Mundur</h4>
+          <p>Menampilkan sisa hari menuju akad/resepsi, sisa ruang anggaran (khusus peran berizin), jumlah konfirmasi tamu (RSVP), serta bar progres kesiapan tugas.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="check-square"></i> Aksi Cepat 1-Klik</h4>
@@ -247,11 +314,11 @@
       <div class="guide-grid-3">
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="layers"></i> Tahapan Timeline Fleksibel</h4>
-          <p>Tersedia 5 fase bawaan. Kamu bisa menambah, mengubah nama, atau menghapus fase lewat tombol <strong>Atur Fase</strong>. Di HP, tahapan dapat digeser horizontal.</p>
+          <p>Tersedia 5 fase bawaan yang otomatis menyorot fase aktif sesuai tanggal hari-H. Kamu bisa menambah, mengubah nama, atau menghapus fase lewat tombol <strong>Atur Fase</strong>.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="flame"></i> Ikon Ringkas + Tooltip</h4>
-          <p>Status prioritas (api), PJ (♂ Pria, ♀ Wanita, Berdua, WO), kategori, dan tool terkait diringkas jadi ikon hemat ruang. Hover atau tap ikon untuk melihat keterangannya.</p>
+          <p>Status prioritas (api), PJ (♂ Pria, ♀ Wanita, Berdua, Keluarga/WO), kategori, dan tool terkait diringkas jadi ikon hemat ruang. Hover atau tap ikon untuk melihat keterangannya.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="lightbulb"></i> Ide Tugas &amp; Filter PJ</h4>
@@ -267,11 +334,11 @@
       <div style="display: flex; align-items: center; gap: 10px;">
         <span class="guide-mod-icon"><i data-lucide="wallet"></i></span>
         <div>
-          <div data-slot="card-title">3. Anggaran &amp; Arus Kas <span data-slot="badge" data-variant="secondary" style="margin-left: 4px;">Khusus Pengantin</span></div>
+          <div data-slot="card-title">3. Anggaran &amp; Arus Kas <span data-slot="badge" data-variant="amber" style="margin-left: 4px;">Pengantin / Izin WO</span></div>
           <div data-slot="card-description">Perencanaan pagu kategori (Rp / %), pemakaian kas tabungan, dan visualisasi Sankey interaktif.</div>
         </div>
       </div>
-      {% if not is_crew %}
+      {% if can_access_finance %}
       <div data-slot="card-action">
         <a href="{% url 'finances:dashboard' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Anggaran <i data-lucide="arrow-up-right"></i></a>
       </div>
@@ -288,8 +355,8 @@
           <p>Klik kategori atau item langsung di diagram Sankey untuk melihat detail, mengedit nominal DP/pelunasan, atau mengalokasikan sisa <em>Unused Budget</em>.</p>
         </div>
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="receipt"></i> Kesiapan Kas &amp; Over-Allocation</h4>
-          <p>Buka <strong>Rincian Kas</strong> untuk melihat kategori mana yang sudah ter-cover oleh Tabungan Bersama. Jika total pagu melebihi target, peringatan rekonsiliasi muncul otomatis.</p>
+          <h4 class="guide-subbox-title"><i data-lucide="receipt"></i> Kesiapan Kas &amp; Privasi WO</h4>
+          <p>Buka <strong>Rincian Kas</strong> untuk melihat kategori mana yang sudah ter-cover oleh Tabungan Bersama. Untuk akun WO Manager, modul ini terkunci secara default sampai Pengantin memberi izin di Pengaturan.</p>
         </div>
       </div>
     </div>
@@ -301,11 +368,11 @@
       <div style="display: flex; align-items: center; gap: 10px;">
         <span class="guide-mod-icon"><i data-lucide="piggy-bank"></i></span>
         <div>
-          <div data-slot="card-title">4. Tabungan Bersama <span data-slot="badge" data-variant="secondary" style="margin-left: 4px;">Khusus Pengantin</span></div>
-          <div data-slot="card-description">Pelacakan setoran bulanan berdua yang langsung tersinkronisasi dengan Sisa Kas di modul Anggaran.</div>
+          <div data-slot="card-title">4. Tabungan Bersama <span data-slot="badge" data-variant="emerald" style="margin-left: 4px;">Privat Pengantin</span></div>
+          <div data-slot="card-description">Pelacakan setoran bulanan berdua yang bersifat privat dan langsung tersinkronisasi dengan Sisa Kas di Anggaran.</div>
         </div>
       </div>
-      {% if not is_crew %}
+      {% if can_access_savings %}
       <div data-slot="card-action">
         <a href="{% url 'finances:savings_tracker' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Tabungan <i data-lucide="arrow-up-right"></i></a>
       </div>
@@ -315,7 +382,7 @@
       <div class="guide-grid-3">
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="target"></i> Target &amp; Komitmen Bulanan</h4>
-          <p>Klik <strong>Atur Target</strong> untuk menentukan target dana dan kesanggupan nabung per bulan. Estimasi bulan selesai dihitung otomatis.</p>
+          <p>Klik <strong>Atur Target</strong> untuk menentukan target dana dan kesanggupan nabung per bulan. Estimasi bulan selesai dihitung otomatis dan ikut menyinkronkan target budget.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="trending-up"></i> Grafik Akumulasi vs Target</h4>
@@ -323,7 +390,7 @@
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="plus-circle"></i> Catat &amp; Edit Setoran Cepat</h4>
-          <p>Tambahkan riwayat setoran lewat tombol <strong>+ Setoran</strong>, dan edit langsung di baris tabel kapan pun ada penyesuaian.</p>
+          <p>Tambahkan riwayat setoran lewat tombol <strong>+ Setoran</strong>, dan edit langsung di baris tabel kapan pun ada penyesuaian. Data ini terkunci permanen dari WO maupun Crew.</p>
         </div>
       </div>
     </div>
@@ -335,23 +402,25 @@
       <div style="display: flex; align-items: center; gap: 10px;">
         <span class="guide-mod-icon"><i data-lucide="store"></i></span>
         <div>
-          <div data-slot="card-title">5. Direktori &amp; Evaluasi Vendor</div>
-          <div data-slot="card-description">Bandingkan kandidat vendor secara objektif berdasarkan bobot prioritas pernikahan kalian.</div>
+          <div data-slot="card-title">5. Direktori &amp; Evaluasi Vendor <span data-slot="badge" data-variant="secondary" style="margin-left: 4px;">Pengantin &amp; WO Manager</span></div>
+          <div data-slot="card-description">Bandingkan kandidat vendor secara objektif menggunakan skor skala 1 sampai 5 dan bobot prioritas dinamis.</div>
         </div>
       </div>
+      {% if can_access_vendors %}
       <div data-slot="card-action">
         <a href="{% url 'vendors:compare' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Vendor <i data-lucide="arrow-up-right"></i></a>
       </div>
+      {% endif %}
     </div>
     <div data-slot="card-content">
       <div class="guide-grid-3">
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="sliders"></i> Bobot Kriteria Dinamis</h4>
-          <p>Atur bobot <strong>Harga, Kualitas, Fasilitas, dan Reputasi</strong> (total 100%) atau pakai preset cepat seperti <em>Seimbang</em>, <em>Hemat Biaya</em>, dan <em>Prioritas Kualitas</em>.</p>
+          <p>Klik <strong>Atur Bobot</strong> untuk mengatur porsi <strong>Harga, Kualitas, Fasilitas, dan Reputasi</strong> (total 100%) atau pakai preset <em>Seimbang</em>, <em>Hemat Biaya</em>, dan <em>Prioritas Kualitas</em>.</p>
         </div>
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="award"></i> Skor &amp; Ranking Otomatis</h4>
-          <p>Vendor otomatis diurutkan dari skor tertinggi di tiap kategori (Venue, Catering, MUA, Dekorasi, Foto/Video, dll.) sehingga keputusan lebih objektif.</p>
+          <h4 class="guide-subbox-title"><i data-lucide="award"></i> Skor 1-5 &amp; Ranking Otomatis</h4>
+          <p>Saat menambah kandidat vendor, pilih kategori lalu beri skor <strong>1 sampai 5</strong> di tiap kriteria. Sistem otomatis mengurutkan kandidat dari skor tertinggi di tiap kategori.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="phone"></i> Status Keputusan &amp; WhatsApp</h4>
@@ -379,15 +448,15 @@
       <div class="guide-grid-3">
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="table"></i> Input Cepat &amp; Import Excel</h4>
-          <p>Tambah tamu satu per satu, ketik massal lewat <strong>Input Cepat</strong> (bergaya spreadsheet), atau unduh template Excel lalu import sekaligus.</p>
+          <p>Pengantin &amp; WO Manager dapat menambah tamu satu per satu, mengetik massal lewat <strong>Input Cepat</strong>, atau mengunduh <strong>Template Excel</strong> lalu import sekaligus.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="utensils"></i> Simulator Porsi Katering</h4>
           <p>Klik <strong>Katering</strong> untuk mensimulasikan estimasi kehadiran, cadangan VIP, jumlah porsi prasmanan (buffet), dan total porsi gubukan.</p>
         </div>
         <div class="guide-subbox">
-          <h4 class="guide-subbox-title"><i data-lucide="scale"></i> Kuota 4-Arah &amp; Check-In</h4>
-          <p>Pantau porsi undangan Keluarga Pria, Keluarga Wanita, Teman Pria, dan Teman Wanita, serta tandai kehadiran tamu (check-in) saat acara.</p>
+          <h4 class="guide-subbox-title"><i data-lucide="scale"></i> Kuota 4-Arah &amp; Check-In Hari-H</h4>
+          <p>Pantau porsi Keluarga Pria, Keluarga Wanita, Teman Pria, dan Teman Wanita, serta tandai kehadiran tamu (check-in) 1-klik dari HP oleh tim lapangan/Crew.</p>
         </div>
       </div>
     </div>
@@ -428,7 +497,7 @@
         <span class="guide-mod-icon"><i data-lucide="settings-2"></i></span>
         <div>
           <div data-slot="card-title">8. Logistik &amp; Operasional Hari-H</div>
-          <div data-slot="card-description">Kendali penuh koordinasi lapangan untuk pengantin dan tim WO di hari acara.</div>
+          <div data-slot="card-description">Kendali penuh koordinasi lapangan untuk pengantin, WO Manager, dan Crew di hari acara.</div>
         </div>
       </div>
       <div data-slot="card-action">
@@ -439,7 +508,7 @@
       <div class="guide-grid-3">
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="clock"></i> Rundown &amp; Deteksi Bentrok</h4>
-          <p>Susun jadwal sesi acara menit-ke-menit. Sistem otomatis memberi peringatan jika ada waktu agenda yang bertabrakan.</p>
+          <p>Susun jadwal sesi acara menit-ke-menit. Sistem otomatis memberi peringatan jika durasi MUA/foto terlalu singkat atau jeda Akad ke Resepsi terlalu mepet.</p>
         </div>
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="shield-alert"></i> Aset Kritis &amp; Perlengkapan</h4>
@@ -448,6 +517,40 @@
         <div class="guide-subbox">
           <h4 class="guide-subbox-title"><i data-lucide="scissors"></i> Kalkulator Kain Seragam</h4>
           <p>Hitung otomatis total kebutuhan meter kain seragam keluarga dan bridesmaid berdasarkan daftar penerima.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. PENGATURAN, UNDANGAN & PRIVASI -->
+  <section id="section-settings" data-slot="card">
+    <div data-slot="card-header" class="has-border">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="guide-mod-icon"><i data-lucide="settings"></i></span>
+        <div>
+          <div data-slot="card-title">9. Pengaturan, Undangan Berbasis Peran &amp; Privasi</div>
+          <div data-slot="card-description">Pusat konfigurasi data acara, link undangan terikat peran, dan sakelar privasi untuk WO Manager.</div>
+        </div>
+      </div>
+      {% if not is_crew %}
+      <div data-slot="card-action">
+        <a href="{% url 'core:settings' %}" data-slot="button" data-variant="outline" data-size="sm">Buka Pengaturan <i data-lucide="arrow-up-right"></i></a>
+      </div>
+      {% endif %}
+    </div>
+    <div data-slot="card-content">
+      <div class="guide-grid-3">
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="link"></i> Link Undangan Sesuai Peran</h4>
+          <p>Setiap kode undangan langsung terikat ke peran tertentu (<em>Co-Owner</em>, <em>WO Manager</em>, atau <em>Crew</em>). Saat penerima membuka link, mereka langsung melihat nama pasangan &amp; perannya sebelum mendaftar.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="shield-check"></i> Sakelar Privasi Anggaran WO</h4>
+          <p>Khusus Pengantin (Owner &amp; Co-Owner) pada project yang memiliki WO Manager, tersedia tombol 1-klik untuk membuka atau mengunci kembali akses <em>Anggaran &amp; Kas</em> bagi WO.</p>
+        </div>
+        <div class="guide-subbox">
+          <h4 class="guide-subbox-title"><i data-lucide="users"></i> Kelola Anggota &amp; Keamanan</h4>
+          <p>Owner utama dapat menonaktifkan kode undangan lama kapan saja, mengubah peran anggota yang sudah bergabung, atau mengeluarkan anggota dari workspace.</p>
         </div>
       </div>
     </div>

@@ -17,10 +17,12 @@ def workspace_context(request):
     is_crew = role == 'crew'
 
     can_access_savings = role in ('owner', 'co_owner', 'admin')
+    can_access_vendors = role in ('owner', 'co_owner', 'wo_manager', 'admin')
     can_access_finance = (
         role in ('owner', 'co_owner', 'admin')
         or (role == 'wo_manager' and bool(wedding and wedding.allow_wo_budget_access))
     )
+    is_finance_locked_for_wo = (role == 'wo_manager' and not can_access_finance)
 
     user_weddings = []
     show_workspace_switcher = False
@@ -57,7 +59,9 @@ def workspace_context(request):
         'is_owner': role == 'owner',
         'is_couple': is_couple,
         'can_access_savings': can_access_savings,
+        'can_access_vendors': can_access_vendors,
         'can_access_finance': can_access_finance,
+        'is_finance_locked_for_wo': is_finance_locked_for_wo,
         'user_weddings': user_weddings,
         'show_workspace_switcher': show_workspace_switcher,
     }

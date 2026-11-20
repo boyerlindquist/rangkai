@@ -167,8 +167,8 @@ class Wedding(models.Model):
         verbose_name='Dikelola oleh WO',
     )
     allow_wo_budget_access = models.BooleanField(
-        'Izinkan WO Akses Budget & Vendor',
-        default=True,
+        'Izinkan WO Akses Anggaran & Kas',
+        default=False,
     )
     status = models.CharField(
         'Status Workspace',
@@ -341,7 +341,7 @@ class WorkspaceInvitation(models.Model):
 
 class Order(models.Model):
     """
-    Checkout order record (supports simulated payment now, ready for Midtrans/Xendit later).
+    Checkout order record (supports Sumopod Managed Payment QRIS and local dev simulation).
     """
     PLAN_CHOICES = [
         ('wedding_owner', 'Paket Wedding Owner'),
@@ -357,6 +357,8 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Menunggu Pembayaran'),
         ('paid', 'Lunas'),
+        ('expired', 'Kedaluwarsa'),
+        ('failed', 'Gagal'),
         ('cancelled', 'Dibatalkan'),
     ]
 
@@ -376,6 +378,8 @@ class Order(models.Model):
     customer_email = models.EmailField('Email Pembeli', blank=True)
     plan_type = models.CharField('Paket', max_length=20, choices=PLAN_CHOICES)
     amount = models.DecimalField('Total (Rp)', max_digits=12, decimal_places=0)
+    gateway_fee = models.DecimalField('Biaya Gateway (Rp)', max_digits=12, decimal_places=0, default=0)
+    net_amount = models.DecimalField('Nominal Bersih (Rp)', max_digits=12, decimal_places=0, default=0)
     payment_method = models.CharField(
         'Metode Pembayaran',
         max_length=20,
@@ -389,6 +393,9 @@ class Order(models.Model):
         default='pending',
     )
     gateway_ref = models.CharField('Referensi Gateway', max_length=100, blank=True)
+    payment_link_url = models.URLField('URL Pembayaran', max_length=500, blank=True)
+    expires_at = models.DateTimeField('Kedaluwarsa', null=True, blank=True)
+    metadata = models.JSONField('Data Onboarding', default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 

@@ -37,15 +37,19 @@
       </div>
 
       <div class="form-group">
-        <label for="id_password">Password</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+          <label for="id_password" style="margin:0;">Password</label>
+          <a href="{% url 'core:password_reset' %}" style="font-size:0.78rem;color:var(--primary);text-decoration:none;font-weight:500;">Lupa password?</a>
+        </div>
         {{ form.password }}
       </div>
 
       <button type="submit" class="btn btn-primary">Login</button>
     </form>
 
-    <div class="auth-links">
-      Belum punya akun? <a href="{% url 'core:register' %}">Daftar Sekarang</a>
+    <div class="auth-links" style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+      <div>Belum punya akun? <a href="{% url 'core:checkout' %}">Pilih Paket &amp; Daftar</a></div>
+      <div style="font-size:0.8rem;color:var(--muted-foreground);">Punya kode undangan? <a href="{% url 'core:register' %}?mode=join">Gabung Workspace</a></div>
     </div>
   </div>
 </div>

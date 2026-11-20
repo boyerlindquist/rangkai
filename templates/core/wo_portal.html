@@ -118,16 +118,18 @@
 
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">
           {% if p.couple_invite %}
-          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.couple_invite.code }}')" title="Salin link undangan khusus Pengantin (maks. 2 orang)">
+          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.couple_invite.code }}')" title="Klik untuk salin link undangan khusus Pengantin (maks. 2 orang: Owner & Co-Owner)">
             <i data-lucide="heart" style="width:13px;height:13px;color:var(--primary);"></i>
             <span>Link Pengantin: <strong class="font-mono">{{ p.couple_invite.code }}</strong></span>
+            <i data-lucide="copy" style="width:12px;height:12px;opacity:0.6;" x-show="copiedCode !== '{{ p.couple_invite.code }}'"></i>
             <span x-show="copiedCode === '{{ p.couple_invite.code }}'" style="color:var(--primary);font-weight:600;" x-cloak>Tersalin!</span>
           </button>
           {% endif %}
           {% if p.crew_invite %}
-          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.crew_invite.code }}')" title="Salin link undangan Crew Operasional">
+          <button type="button" class="portal-code-pill" @click="copyInvite('{{ p.crew_invite.code }}')" title="Klik untuk salin link undangan Crew Operasional">
             <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
             <span>Link Crew: <strong class="font-mono">{{ p.crew_invite.code }}</strong></span>
+            <i data-lucide="copy" style="width:12px;height:12px;opacity:0.6;" x-show="copiedCode !== '{{ p.crew_invite.code }}'"></i>
             <span x-show="copiedCode === '{{ p.crew_invite.code }}'" style="color:var(--primary);font-weight:600;" x-cloak>Tersalin!</span>
           </button>
           {% endif %}

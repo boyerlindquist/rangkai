@@ -37,9 +37,14 @@
           {% endif %}
 
           {% for field in form %}
-          <div class="form-group">
+          <div class="form-group" {% if field.name == 'total_budget' %}x-data="{ val: '{{ field.value|default:'0' }}' }"{% endif %}>
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == 'total_budget' %}
+            <input type="number" name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="wp-input font-mono" x-model="val" value="{{ field.value|default:'0' }}" min="0" />
+            <div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px; font-family: var(--font-mono);" x-show="Number(val) > 0" x-text="'Terbaca: Rp ' + Number(val).toLocaleString('id-ID')"></div>
+            {% else %}
             {{ field }}
+            {% endif %}
             {% if field.errors %}
             <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 4px; font-weight: 500;">
               {% for err in field.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
@@ -73,13 +78,13 @@
         </div>
         <div class="surface-panel-body" style="padding: 18px 22px;">
           <p class="text-secondary" style="font-size: 0.84rem; margin: 0 0 12px; line-height: 1.55;">
-            Ruang <strong>Tabungan Pribadi</strong> selalu terkunci dan hanya dapat dilihat oleh Pengantin (Owner &amp; Co-Owner). Anda juga dapat mengatur apakah WO Manager boleh mengakses modul <strong>Budget &amp; Vendor</strong>:
+            Ruang <strong>Tabungan Pribadi</strong> selalu terkunci untuk Pengantin (Owner &amp; Co-Owner), sedangkan <strong>Direktori Vendor</strong> tetap terbuka untuk WO Manager. Secara default, <strong>Anggaran &amp; Kas</strong> terkunci dan dapat Anda buka di sini jika diperlukan:
           </p>
           <form method="post" action="{% url 'core:toggle_wo_privacy' %}" style="margin: 0;" hx-boost="false">
             {% csrf_token %}
             <button type="submit" data-slot="button" data-variant="{% if wedding.allow_wo_budget_access %}outline{% else %}default{% endif %}" data-size="sm">
               <i data-lucide="{% if wedding.allow_wo_budget_access %}lock{% else %}unlock{% endif %}"></i>
-              {% if wedding.allow_wo_budget_access %}Kunci Budget &amp; Vendor dari WO{% else %}Izinkan WO Akses Budget &amp; Vendor{% endif %}
+              {% if wedding.allow_wo_budget_access %}Kunci Anggaran &amp; Kas dari WO{% else %}Izinkan WO Akses Anggaran &amp; Kas{% endif %}
             </button>
           </form>
         </div>

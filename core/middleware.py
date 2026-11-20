@@ -15,6 +15,9 @@ EXEMPT_URLS = [
     '/join/',
     '/landing/',
     '/checkout/',
+    '/webhooks/',
+    '/password-reset/',
+    '/account/',
     '/wo/',
     '/platform-admin/',
     '/switch-workspace/',
@@ -28,6 +31,8 @@ FULL_PAGE_REDIRECT_URLS = [
     '/register/',
     '/join/',
     '/checkout/',
+    '/webhooks/',
+    '/password-reset/',
     '/admin/',
 ]
 
@@ -104,6 +109,17 @@ class WorkspaceMiddleware:
                     return redirect(reverse('core:join_workspace'))
 
         response = self.get_response(request)
+
+        # Prevent browser Back-Forward Cache (bfcache) on authenticated pages
+        # so pressing Back after logout cannot display stale private workspace screens.
+        if (
+            request.user.is_authenticated
+            and not request.path.startswith('/static/')
+            and not request.path.startswith('/media/')
+        ):
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
 
         # If an HTMX request gets redirected to an auth/full-page route, use HX-Redirect
         if request.headers.get('HX-Request') == 'true':

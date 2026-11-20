@@ -775,8 +775,8 @@
             Masuk ke Dashboard <i data-lucide="arrow-right"></i>
           </a>
           {% else %}
-          <a href="{% url 'core:register' %}" data-slot="button" data-variant="default" data-size="lg">
-            Buat Workspace Gratis <i data-lucide="arrow-right"></i>
+          <a href="#harga" data-slot="button" data-variant="default" data-size="lg">
+            Lihat Paket &amp; Harga <i data-lucide="arrow-right"></i>
           </a>
           <a href="{% url 'core:register' %}?mode=join" data-slot="button" data-variant="outline" data-size="lg">
             <i data-lucide="link-2"></i> Gabung Pakai Kode Undangan
@@ -927,8 +927,8 @@
             <h2>Semua modul persiapan dalam satu workspace</h2>
             <p>Langsung pakai tanpa perlu merakit rumus spreadsheet atau menyusun template Notion dari nol. Setiap modul saling terhubung otomatis.</p>
           </div>
-          <a href="{% url 'core:register' %}" data-slot="button" data-variant="outline" data-size="sm">
-            Coba Semua Modul Gratis <i data-lucide="arrow-up-right"></i>
+          <a href="#harga" data-slot="button" data-variant="outline" data-size="sm">
+            Lihat Paket Tersedia <i data-lucide="arrow-up-right"></i>
           </a>
         </div>
 
@@ -1142,7 +1142,7 @@
       </div>
 
       <p style="margin:20px 0 0;font-size:0.84rem;color:var(--muted-foreground);">
-        Sudah mendapat kode undangan 8 karakter dari pasangan atau WO? <a href="{% url 'core:register' %}?mode=join" style="color:var(--primary);font-weight:600;text-decoration:none;">Gabung workspace gratis di sini</a>.
+        Sudah mendapat kode undangan 8 karakter dari pasangan atau WO? <a href="{% url 'core:register' %}?mode=join" style="color:var(--primary);font-weight:600;text-decoration:none;">Gabung workspace di sini</a>.
       </p>
     </div>
   </section>
@@ -1152,10 +1152,10 @@
     <div class="lp-wrap">
       <div class="lp-cta-inner">
         <h2>Siap merangkai hari bahagiamu dengan lebih tenang?</h2>
-        <p>Buat workspace pernikahan baru dalam hitungan detik, atau langsung gabung ke workspace pasanganmu memakai kode undangan 8 karakter.</p>
+        <p>Pilih paket untuk pernikahanmu atau layanan WO-mu dan aktifkan workspace seketika, atau langsung gabung memakai kode undangan 8 karakter.</p>
         <div class="lp-hero-cta">
-          <a href="{% url 'core:register' %}" data-slot="button" data-variant="default" data-size="lg" style="background: #22a076; color: #051b14;">
-            Buat Workspace Sekarang <i data-lucide="arrow-right"></i>
+          <a href="#harga" data-slot="button" data-variant="default" data-size="lg" style="background: #22a076; color: #051b14;">
+            Pilih Paket Sekarang <i data-lucide="arrow-right"></i>
           </a>
           <a href="{% url 'core:register' %}?mode=join" data-slot="button" data-variant="outline" data-size="lg" style="background: transparent; color: #ffffff; border-color: rgba(255,255,255,0.24);">
             Gabung Pakai Kode
@@ -1179,8 +1179,8 @@
         <span>· Workspace Perencanaan Pernikahan Indonesia</span>
       </div>
       <div style="display:inline-flex;align-items:center;gap:16px;">
+        <a href="#harga" style="color:inherit;text-decoration:none;">Paket &amp; Harga</a>
         <a href="{% url 'core:login' %}" style="color:inherit;text-decoration:none;">Masuk</a>
-        <a href="{% url 'core:register' %}" style="color:inherit;text-decoration:none;">Daftar</a>
         <a href="{% url 'core:register' %}?mode=join" style="color:inherit;text-decoration:none;">Gabung Workspace</a>
       </div>
     </div>

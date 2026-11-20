@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Platform Admin Console | Rangkai{% endblock %}
+{% load humanize %}
+{% block title %}Platform Admin Console | Rangkai.click{% endblock %}
 {% block breadcrumb %}Admin Console{% endblock %}
 
 {% block header_actions %}
@@ -33,7 +34,7 @@
     </div>
     <div class="portal-kpi-card">
       <span class="portal-kpi-label">Total Order Lunas</span>
-      <span class="portal-kpi-val">Rp {{ total_revenue|floatformat:0 }}</span>
+      <span class="portal-kpi-val">Rp {{ total_revenue|floatformat:0|intcomma }}</span>
     </div>
   </div>
 
@@ -184,8 +185,8 @@
               <strong>{{ u.username }}</strong>
               <div style="font-size:0.75rem;color:var(--muted-foreground);">{{ u.email|default:"-" }}</div>
             </td>
-            <td colspan="4" style="padding:8px 14px;">
-              <form method="post" action="{% url 'core:admin_console' %}" style="display:grid;grid-template-columns:160px 1fr 90px auto;gap:8px;align-items:center;">
+            <td colspan="4" style="padding:8px 14px;" x-data="{ showReset: false }">
+              <form method="post" action="{% url 'core:admin_console' %}" style="display:grid;grid-template-columns:150px 1fr 80px auto auto;gap:8px;align-items:center;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="update_profile" />
                 <input type="hidden" name="user_id" value="{{ u.pk }}" />
@@ -197,6 +198,17 @@
                 <input type="text" name="organization_name" class="wp-input" style="height:34px;font-size:0.8rem;" value="{{ u.profile.organization_name }}" placeholder="Nama WO (opsional)" />
                 <input type="number" name="project_quota" class="wp-input font-mono" style="height:34px;font-size:0.8rem;" value="{{ u.profile.project_quota }}" min="0" />
                 <button type="submit" data-slot="button" data-variant="outline" data-size="sm">Update</button>
+                <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="showReset = !showReset" title="Reset Password {{ u.username }}" aria-label="Reset Password">
+                  <i data-lucide="key-round"></i>
+                </button>
+              </form>
+              <form method="post" action="{% url 'core:admin_console' %}" x-show="showReset" x-cloak style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_password" />
+                <input type="hidden" name="user_id" value="{{ u.pk }}" />
+                <input type="password" name="new_password" class="wp-input" style="height:32px;font-size:0.8rem;max-width:260px;" required minlength="8" placeholder="Password baru (min. 8 karakter)" />
+                <button type="submit" data-slot="button" data-variant="default" data-size="sm">Simpan Password</button>
+                <button type="button" data-slot="button" data-variant="ghost" data-size="sm" @click="showReset = false">Batal</button>
               </form>
             </td>
           </tr>
@@ -219,6 +231,7 @@
             <th>Nominal</th>
             <th>Status</th>
             <th>Waktu</th>
+            <th style="text-align:right;">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -228,7 +241,7 @@
             <td>{% if o.user %}{{ o.user.username }}{% else %}{{ o.customer_email }}{% endif %}</td>
             <td>{{ o.get_plan_type_display }}</td>
             <td>{{ o.get_payment_method_display }}</td>
-            <td class="font-mono">Rp {{ o.amount|floatformat:0 }}</td>
+            <td class="font-mono">Rp {{ o.amount|floatformat:0|intcomma }}</td>
             <td>
               {% if o.status == 'paid' %}
               <span data-slot="badge" data-variant="emerald">Lunas</span>
@@ -237,10 +250,24 @@
               {% endif %}
             </td>
             <td style="font-size:0.78rem;color:var(--muted-foreground);">{{ o.created_at|date:"d M Y H:i" }}</td>
+            <td style="text-align:right;">
+              {% if o.status != 'paid' %}
+              <form method="post" action="{% url 'core:admin_console' %}" style="display:inline;" onsubmit="return confirm('Tandai order {{ o.order_code }} sebagai Lunas dan aktifkan akunnya?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_order_paid" />
+                <input type="hidden" name="order_id" value="{{ o.pk }}" />
+                <button type="submit" data-slot="button" data-variant="outline" data-size="sm">
+                  <i data-lucide="check-circle-2"></i> Tandai Lunas
+                </button>
+              </form>
+              {% else %}
+              <span style="font-size:0.76rem;color:var(--muted-foreground);">Aktif</span>
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" style="text-align:center;color:var(--muted-foreground);padding:24px;">Belum ada transaksi order.</td>
+            <td colspan="8" style="text-align:center;color:var(--muted-foreground);padding:24px;">Belum ada transaksi order.</td>
           </tr>
           {% endfor %}
         </tbody>

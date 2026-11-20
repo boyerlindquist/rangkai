@@ -171,9 +171,9 @@
     rel="stylesheet">
 
   <!-- Design System (shadcn/ui radix-nova + Imperial Emerald) -->
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=70">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=70">
-  <link rel="stylesheet" href="{% static 'css/shadcn-ui.css' %}?v=70">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v=75">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=75">
+  <link rel="stylesheet" href="{% static 'css/shadcn-ui.css' %}?v=75">
   <!-- Driver.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
 
@@ -352,7 +352,7 @@
               class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
               <i data-lucide="check-square"></i><span class="ui-nav-label">Timeline &amp; Tugas</span>
             </a>
-            {% if can_access_finance %}
+            {% if can_access_vendors %}
             <a href="{% url 'vendors:compare' %}" data-slot="sidebar-menu-button" title="Direktori Vendor" aria-label="Direktori Vendor"
               class="{% if '/vendors/' in request.path %}active{% endif %}">
               <i data-lucide="store"></i><span class="ui-nav-label">Direktori Vendor</span>
@@ -361,14 +361,20 @@
           </div>
         </div>
 
-        {% if can_access_finance or can_access_savings %}
+        {% if can_access_finance or can_access_savings or is_finance_locked_for_wo %}
         <div data-slot="sidebar-group">
           <div data-slot="sidebar-group-label">Keuangan</div>
           <div data-slot="sidebar-menu">
-            {% if can_access_finance %}
-            <a href="{% url 'finances:dashboard' %}" data-slot="sidebar-menu-button" title="Anggaran & Kas" aria-label="Anggaran & Kas"
-              class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}">
-              <i data-lucide="wallet"></i><span class="ui-nav-label">Anggaran &amp; Kas</span>
+            {% if can_access_finance or is_finance_locked_for_wo %}
+            <a href="{% url 'finances:dashboard' %}" data-slot="sidebar-menu-button"
+              title="{% if is_finance_locked_for_wo %}Anggaran &amp; Kas (Perlu izin Pengantin){% else %}Anggaran &amp; Kas{% endif %}"
+              aria-label="Anggaran &amp; Kas"
+              class="{% if '/budgets/' in request.path and '/savings/' not in request.path %}active{% endif %}{% if is_finance_locked_for_wo %} is-locked{% endif %}">
+              <i data-lucide="wallet"></i>
+              <span class="ui-nav-label" style="flex:1;">Anggaran &amp; Kas</span>
+              {% if is_finance_locked_for_wo %}
+              <i data-lucide="lock" class="ui-nav-lock" x-show="!rail" aria-hidden="true"></i>
+              {% endif %}
             </a>
             {% endif %}
             {% if can_access_savings %}
@@ -447,9 +453,14 @@
               </div>
             </div>
           </div>
-          <a href="{% url 'core:logout' %}" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Keluar" aria-label="Keluar">
-            <i data-lucide="log-out"></i>
-          </a>
+          <div style="display:inline-flex;align-items:center;gap:2px;flex-shrink:0;">
+            <a href="{% url 'core:change_password' %}" x-show="!rail" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Ganti Password" aria-label="Ganti Password">
+              <i data-lucide="key-round"></i>
+            </a>
+            <a href="{% url 'core:logout' %}" data-slot="button" data-variant="ghost" data-size="icon-sm" title="Keluar" aria-label="Keluar">
+              <i data-lucide="log-out"></i>
+            </a>
+          </div>
         </div>
         {% endif %}
       </div>
@@ -457,95 +468,8 @@
 
     <!-- Main Inset Area -->
     <div id="wp-sidebar-inset" data-slot="sidebar-inset" :class="{ 'collapsed': rail }">
-      <!-- Instant Page-Transition Skeleton (Shown immediately on HTMX sidebar/bottom-nav click) -->
-      <div id="wp-page-skeleton" class="wp-page-skeleton" aria-hidden="true">
-        <div class="wp-skel-header">
-          <div class="wp-skel-crumb">
-            <span>Rangkai.click</span>
-            <span style="opacity:0.45;">/</span>
-            <strong id="wp-skel-breadcrumb">Memuat...</strong>
-          </div>
-          <div class="wp-skel-bar" style="width:92px;height:28px;border-radius:var(--radius-md);"></div>
-        </div>
-        <div class="wp-skel-canvas">
-          <div class="wp-skel-head">
-            <div style="flex:1;min-width:220px;">
-              <div id="wp-skel-title" class="wp-skel-title-text">Memuat halaman...</div>
-              <div class="wp-skel-bar" style="width:min(340px, 82%);height:14px;"></div>
-            </div>
-            <div class="wp-skel-bar" style="width:136px;height:36px;border-radius:var(--radius-md);"></div>
-          </div>
-
-          <div class="wp-skel-kpi-grid">
-            <div class="wp-skel-card">
-              <div class="wp-skel-bar" style="width:52%;height:12px;"></div>
-              <div class="wp-skel-bar" style="width:74%;height:26px;"></div>
-              <div class="wp-skel-bar" style="width:42%;height:11px;"></div>
-            </div>
-            <div class="wp-skel-card">
-              <div class="wp-skel-bar" style="width:48%;height:12px;"></div>
-              <div class="wp-skel-bar" style="width:68%;height:26px;"></div>
-              <div class="wp-skel-bar" style="width:55%;height:11px;"></div>
-            </div>
-            <div class="wp-skel-card">
-              <div class="wp-skel-bar" style="width:58%;height:12px;"></div>
-              <div class="wp-skel-bar" style="width:62%;height:26px;"></div>
-              <div class="wp-skel-bar" style="width:46%;height:11px;"></div>
-            </div>
-            <div class="wp-skel-card">
-              <div class="wp-skel-bar" style="width:45%;height:12px;"></div>
-              <div class="wp-skel-bar" style="width:70%;height:26px;"></div>
-              <div class="wp-skel-bar" style="width:50%;height:11px;"></div>
-            </div>
-          </div>
-
-          <div class="wp-skel-bento">
-            <div class="wp-skel-card" style="min-height:290px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                <div class="wp-skel-bar" style="width:180px;height:16px;"></div>
-                <div class="wp-skel-bar" style="width:84px;height:24px;border-radius:999px;"></div>
-              </div>
-              <div class="wp-skel-bar" style="width:100%;height:185px;border-radius:var(--radius-md);"></div>
-              <div style="display:flex;gap:10px;">
-                <div class="wp-skel-bar" style="width:28%;height:12px;"></div>
-                <div class="wp-skel-bar" style="width:24%;height:12px;"></div>
-                <div class="wp-skel-bar" style="width:32%;height:12px;"></div>
-              </div>
-            </div>
-            <div class="wp-skel-card" style="min-height:290px;">
-              <div class="wp-skel-bar" style="width:150px;height:16px;margin-bottom:4px;"></div>
-              <div class="wp-skel-row">
-                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
-                  <div class="wp-skel-bar" style="width:78%;height:13px;"></div>
-                  <div class="wp-skel-bar" style="width:46%;height:11px;"></div>
-                </div>
-                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
-              </div>
-              <div class="wp-skel-row">
-                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
-                  <div class="wp-skel-bar" style="width:66%;height:13px;"></div>
-                  <div class="wp-skel-bar" style="width:40%;height:11px;"></div>
-                </div>
-                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
-              </div>
-              <div class="wp-skel-row">
-                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
-                  <div class="wp-skel-bar" style="width:84%;height:13px;"></div>
-                  <div class="wp-skel-bar" style="width:52%;height:11px;"></div>
-                </div>
-                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
-              </div>
-              <div class="wp-skel-row">
-                <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
-                  <div class="wp-skel-bar" style="width:72%;height:13px;"></div>
-                  <div class="wp-skel-bar" style="width:44%;height:11px;"></div>
-                </div>
-                <div class="wp-skel-bar" style="width:64px;height:22px;border-radius:999px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Route-Specific Page Skeletons (Mirroring exact card layout per destination) -->
+      {% include "partials/page_skeletons.html" %}
 
       <main class="main-content" data-slot="main-content">
         <!-- Sticky 52px Site Header (Updates seamlessly on HTMX navigation) -->
@@ -726,12 +650,31 @@
       function getLoader() { return document.getElementById('htmx-global-loader'); }
       function getInset() { return document.getElementById('wp-sidebar-inset'); }
 
-      function showNavSkeleton(triggerEl) {
+      function resolveSkeletonKey(urlPath) {
+        var p = String(urlPath || '').split('?')[0].split('#')[0];
+        if (p.indexOf('/savings/') !== -1) return { key: 'savings', crumb: 'Tabungan Bersama' };
+        if (p.indexOf('/budgets/') !== -1) return { key: 'budgets', crumb: 'Anggaran & Kas' };
+        if (p.indexOf('/vendors/') !== -1) return { key: 'vendors', crumb: 'Direktori Vendor' };
+        if (p.indexOf('/details/') !== -1) return { key: 'details', crumb: 'Berkas & Seserahan' };
+        if (p.indexOf('/checklist/') !== -1) return { key: 'checklist', crumb: 'Timeline & Tugas' };
+        if (p.indexOf('/guests/') !== -1) return { key: 'guests', crumb: 'Tamu & Katering' };
+        if (p.indexOf('/operations/') !== -1) return { key: 'operations', crumb: 'Logistik Hari-H' };
+        if (p.indexOf('/settings/') !== -1) return { key: 'settings', crumb: 'Pengaturan' };
+        if (p.indexOf('/guide/') !== -1) return { key: 'guide', crumb: 'Panduan' };
+        if (p.indexOf('/wo/') !== -1) return { key: 'portal', crumb: 'Portal WO', portalTitle: 'Portal WO Manager' };
+        if (p.indexOf('/platform-admin/') !== -1) return { key: 'portal', crumb: 'Admin Console', portalTitle: 'Platform Admin Console' };
+        return { key: 'dashboard', crumb: 'Ringkasan' };
+      }
+
+      function showNavSkeleton(triggerEl, requestPath) {
         var inset = getInset();
-        if (!inset) return;
-        var label = '';
+        var skelRoot = document.getElementById('wp-page-skeleton');
+        if (!inset || !skelRoot) return;
+
+        var targetHref = requestPath || (triggerEl && (triggerEl.getAttribute('href') || triggerEl.getAttribute('hx-get'))) || '/';
+        var meta = resolveSkeletonKey(targetHref);
+
         if (triggerEl) {
-          label = (triggerEl.getAttribute('title') || triggerEl.getAttribute('aria-label') || triggerEl.textContent || '').trim();
           // Optimistically highlight clicked nav link right away
           var navContainer = triggerEl.closest('.sidebar-nav, .bottom-nav');
           if (navContainer) {
@@ -739,10 +682,18 @@
             triggerEl.classList.add('active');
           }
         }
+
+        // Switch visible skeleton template to exact page match
+        skelRoot.querySelectorAll('.wp-skel-view').forEach(function (v) {
+          v.classList.toggle('is-visible', v.getAttribute('data-skel-view') === meta.key);
+        });
+
         var crumbEl = document.getElementById('wp-skel-breadcrumb');
-        var titleEl = document.getElementById('wp-skel-title');
-        if (crumbEl) crumbEl.textContent = label || 'Memuat...';
-        if (titleEl) titleEl.textContent = label || 'Memuat halaman...';
+        if (crumbEl) crumbEl.textContent = meta.crumb;
+        if (meta.portalTitle) {
+          var pTitle = document.getElementById('wp-skel-portal-title');
+          if (pTitle) pTitle.textContent = meta.portalTitle;
+        }
 
         inset.classList.add('is-nav-loading');
         try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
@@ -783,7 +734,8 @@
         if (isMainNavRequest(evt)) {
           if (evt.detail && evt.detail.xhr) evt.detail.xhr.__isNavReq = true;
           activeNavRequests++;
-          showNavSkeleton(evt.detail.elt);
+          var reqPath = (evt.detail && evt.detail.pathInfo && evt.detail.pathInfo.requestPath) || '';
+          showNavSkeleton(evt.detail.elt, reqPath);
         }
         var el = getLoader();
         if (!el) return;
@@ -1226,6 +1178,15 @@
       }
       evt.detail.headers['X-CSRFToken'] = token || '{{ csrf_token }}';
     });
+
+    {% if user.is_authenticated %}
+    // Prevent stale authenticated pages from appearing via browser Back button after logout
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+    {% endif %}
 
     // Enhance all native selects on load and scope MutationObserver to added subtrees
     document.addEventListener('DOMContentLoaded', function () {

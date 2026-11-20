@@ -69,10 +69,12 @@ def couple_only_required(view_func):
 
 def finance_access_required(view_func):
     """
-    Access for Budget & Vendor modules:
+    Access for Budget & Cash-Flow module:
     - Always allowed: owner, co_owner, admin
     - Conditionally allowed: wo_manager (only if wedding.allow_wo_budget_access is True)
-    - Always blocked: crew
+      * On GET when locked: renders friendly 'module_locked.html' explanation page
+      * On POST/mutating requests when locked: returns 403 Forbidden
+    - Always blocked: crew (403 Forbidden)
     """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -81,10 +83,21 @@ def finance_access_required(view_func):
         role = request.wedding_role
         if role in ('owner', 'co_owner', 'admin'):
             return view_func(request, *args, **kwargs)
-        if role == 'wo_manager' and getattr(request.wedding, 'allow_wo_budget_access', False):
-            return view_func(request, *args, **kwargs)
+        if role == 'wo_manager':
+            if getattr(request.wedding, 'allow_wo_budget_access', False):
+                return view_func(request, *args, **kwargs)
+            if request.method == 'GET':
+                from django.shortcuts import render
+                return render(request, 'core/module_locked.html', {
+                    'module_name': 'Anggaran & Kas',
+                    'module_desc': (
+                        'Secara default, data anggaran dan arus kas bersifat privat untuk Pengantin '
+                        '(Owner & Co-Owner). Jika Anda perlu membantu mengelola anggaran, minta pengantin '
+                        'membuka akses melalui menu Pengaturan > Privasi Data terhadap WO Manager.'
+                    ),
+                })
         return HttpResponseForbidden(
-            'Akses ke modul Budget & Vendor dinonaktifkan untuk peran Anda pada workspace ini.'
+            'Akses ke modul Anggaran & Kas dinonaktifkan untuk peran Anda pada workspace ini.'
         )
     return _wrapped_view
 

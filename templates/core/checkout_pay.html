@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Pembayaran QRIS {{ order.order_code }} | Rangkai.click{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pay-page {
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    padding-bottom: 64px;
+  }
+
+  .pay-nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .pay-nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .pay-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 24px 0;
+  }
+
+  .pay-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .pay-head h1 {
+    margin: 0;
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .pay-head p {
+    margin: 6px 0 0;
+    font-size: 0.88rem;
+    color: var(--muted-foreground);
+  }
+
+  .pay-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .pay-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .pay-iframe-wrap {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+    min-height: 560px;
+    position: relative;
+  }
+
+  .pay-iframe {
+    width: 100%;
+    height: 580px;
+    border: 0;
+    display: block;
+    background: #ffffff;
+  }
+
+  .pay-fallback-bar {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+  }
+
+  .pay-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pay-row:last-of-type {
+    border-bottom: 0;
+  }
+
+  .pay-row span:first-child {
+    color: var(--muted-foreground);
+  }
+
+  .pay-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0 18px;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--background);
+    border: 1px solid var(--border);
+  }
+
+  .pay-total strong {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pay-poll-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--primary) 7%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+    font-size: 0.78rem;
+    color: var(--foreground);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pay-steps {
+    margin: 16px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--border);
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .pay-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.45;
+  }
+
+  .pay-step-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  @media (max-width: 860px) {
+    .pay-grid { grid-template-columns: 1fr; }
+    .pay-wrap { padding: 20px 16px 0; }
+    .pay-card { padding: 16px; }
+    .pay-iframe { height: 520px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="pay-page" x-data="{
+  status: '{{ order.status|escapejs }}',
+  statusDisplay: '{{ order.get_status_display|escapejs }}',
+  checking: false,
+  lastChecked: '',
+  errorMsg: '{{ sync_error|default:''|escapejs }}',
+  expiresIso: '{{ expires_at_iso|escapejs }}',
+  remainingText: '',
+  pollTimer: null,
+  clockTimer: null,
+  init() {
+    this.updateCountdown();
+    this.clockTimer = setInterval(() => this.updateCountdown(), 1000);
+    if (this.status === 'pending') {
+      this.pollTimer = setInterval(() => this.checkStatus(true), 3000);
+    }
+  },
+  updateCountdown() {
+    if (!this.expiresIso) { this.remainingText = ''; return; }
+    const diff = Math.floor((new Date(this.expiresIso).getTime() - Date.now()) / 1000);
+    if (diff <= 0) {
+      this.remainingText = 'Kedaluwarsa';
+      return;
+    }
+    const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+    const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+    const s = (diff % 60).toString().padStart(2, '0');
+    this.remainingText = `${h}:${m}:${s}`;
+  },
+  async checkStatus(isAuto = false) {
+    if (this.checking || this.status !== 'pending') return;
+    this.checking = true;
+    if (!isAuto) this.errorMsg = '';
+    try {
+      const resp = await fetch('{{ status_check_url|escapejs }}', {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) throw new Error('Gagal memeriksa status pembayaran.');
+      const data = await resp.json();
+      this.status = data.status;
+      this.statusDisplay = data.status_display;
+      const now = new Date();
+      this.lastChecked = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      if (data.paid && data.redirect_url) {
+        if (this.pollTimer) clearInterval(this.pollTimer);
+        (window.top || window).location.href = data.redirect_url;
+        return;
+      }
+      if (data.status !== 'pending' && this.pollTimer) {
+        clearInterval(this.pollTimer);
+      }
+      if (!isAuto && data.error) {
+        this.errorMsg = data.error;
+      }
+    } catch (err) {
+      if (!isAuto) this.errorMsg = err.message || 'Gagal menghubungi server.';
+    } finally {
+      this.checking = false;
+    }
+  }
+}">
+  <header class="pay-nav">
+    <div class="pay-nav-inner">
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
+        </span>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span data-slot="badge" data-variant="outline" class="font-mono">{{ order.order_code }}</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="pay-wrap">
+    <div class="pay-head">
+      <div>
+        <h1>Selesaikan Pembayaran QRIS</h1>
+        <p>Pindai kode QRIS di bawah menggunakan aplikasi mobile banking atau e-wallet Anda.</p>
+      </div>
+      <div>
+        <span data-slot="badge"
+              :data-variant="status === 'paid' ? 'emerald' : (status === 'pending' ? 'amber' : 'destructive')"
+              x-text="statusDisplay">
+          {{ order.get_status_display }}
+        </span>
+      </div>
+    </div>
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div data-slot="alert" data-variant="{% if msg.tags == 'error' %}destructive{% else %}default{% endif %}" style="margin-bottom:18px;">
+      <i data-lucide="{% if msg.tags == 'error' %}alert-circle{% else %}info{% endif %}"></i>
+      <div>{{ msg }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if cancelled %}
+    <div data-slot="alert" data-variant="destructive" style="margin-bottom:18px;">
+      <i data-lucide="alert-circle"></i>
+      <div>Pembayaran sebelumnya belum diselesaikan. Anda masih dapat memindai QRIS selama batas waktu belum berakhir.</div>
+    </div>
+    {% endif %}
+
+    <template x-if="errorMsg">
+      <div data-slot="alert" data-variant="destructive" style="margin-bottom:18px;">
+        <i data-lucide="alert-circle"></i>
+        <div x-text="errorMsg"></div>
+      </div>
+    </template>
+
+    <div class="pay-grid">
+      <!-- Left: Embedded QRIS Frame inside Rangkai -->
+      <section class="pay-card">
+        <template x-if="status === 'pending'">
+          <div>
+            {% if order.payment_link_url %}
+            <div class="pay-iframe-wrap">
+              <iframe
+                src="{{ order.payment_link_url }}"
+                class="pay-iframe"
+                title="Pembayaran QRIS Rangkai.click"
+                allow="payment"
+              ></iframe>
+            </div>
+            <div class="pay-fallback-bar">
+              <span>QRIS tidak muncul di kotak atas atau ingin membuka layar penuh?</span>
+              <a href="{{ order.payment_link_url }}" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="outline" data-size="sm">
+                <i data-lucide="external-link"></i> Buka Halaman QRIS
+              </a>
+            </div>
+            {% else %}
+            <div style="padding:36px 20px;text-align:center;color:var(--muted-foreground);">
+              <p style="margin:0;">Tautan pembayaran belum tersedia untuk transaksi ini.</p>
+            </div>
+            {% endif %}
+          </div>
+        </template>
+
+        <template x-if="status === 'expired' || status === 'failed' || status === 'cancelled'">
+          <div style="padding:40px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <i data-lucide="clock" style="width:36px;height:36px;color:var(--destructive);"></i>
+            <strong style="font-size:1.05rem;">Tagihan QRIS Tidak Lagi Aktif</strong>
+            <p style="margin:0;max-width:400px;font-size:0.86rem;color:var(--muted-foreground);">
+              Batas waktu pembayaran telah berakhir atau transaksi gagal diproses. Silakan buat transaksi baru untuk mengaktifkan paket Anda.
+            </p>
+            <a href="{% url 'core:checkout' %}?plan={{ order.plan_type }}" data-slot="button" data-variant="default" style="margin-top:6px;">
+              Buat Transaksi Baru
+            </a>
+          </div>
+        </template>
+      </section>
+
+      <!-- Right: Order Summary & Auto-Verification -->
+      <aside class="pay-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">
+          <strong style="font-size:1rem;">Ringkasan Transaksi</strong>
+          <span data-slot="badge" data-variant="emerald">QRIS Instan</span>
+        </div>
+
+        <div class="pay-row">
+          <span>Kode Order</span>
+          <strong class="font-mono">{{ order.order_code }}</strong>
+        </div>
+        <div class="pay-row">
+          <span>Paket</span>
+          <strong>{{ plan_info.name }}</strong>
+        </div>
+        <div class="pay-row">
+          <span>Email Akun</span>
+          <span>{{ order.customer_email }}</span>
+        </div>
+        <template x-if="remainingText && status === 'pending'">
+          <div class="pay-row">
+            <span>Batas Waktu</span>
+            <strong class="font-mono" x-text="remainingText"></strong>
+          </div>
+        </template>
+
+        <div class="pay-total">
+          <span style="font-size:0.86rem;font-weight:600;">Total Tagihan</span>
+          <strong>Rp {{ order.amount|intcomma }}</strong>
+        </div>
+
+        <template x-if="status === 'pending'">
+          <div>
+            <button type="button"
+                    data-slot="button"
+                    data-variant="default"
+                    data-size="lg"
+                    style="width:100%;justify-content:center;"
+                    :disabled="checking"
+                    @click="checkStatus(false)">
+              <i data-lucide="refresh-cw"></i>
+              <span x-text="checking ? 'Memeriksa Status...' : 'Cek Status Pembayaran'"></span>
+            </button>
+
+            <div class="pay-poll-note">
+              <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--primary);flex-shrink:0;"></i>
+              <span>
+                Verifikasi otomatis aktif setiap 3 detik.
+                <template x-if="lastChecked">
+                  <span class="font-mono" x-text="'(Terakhir: ' + lastChecked + ')'"></span>
+                </template>
+              </span>
+            </div>
+          </div>
+        </template>
+
+        <ul class="pay-steps">
+          <li>
+            <span class="pay-step-num">1</span>
+            <span>Buka aplikasi m-banking (BCA, Mandiri, BRI, BNI, dll.) atau e-wallet (GoPay, OVO, DANA, ShopeePay).</span>
+          </li>
+          <li>
+            <span class="pay-step-num">2</span>
+            <span>Pilih menu <strong>Scan QRIS</strong> lalu arahkan kamera ke kode QR di sebelah kiri.</span>
+          </li>
+          <li>
+            <span class="pay-step-num">3</span>
+            <span>Setelah bayar berhasil, halaman ini otomatis mengaktifkan akun dan membawa Anda masuk ke workspace.</span>
+          </li>
+        </ul>
+      </aside>
+    </div>
+  </main>
+</div>
+{% endblock %}

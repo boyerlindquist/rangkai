@@ -1,0 +1,574 @@
+<!-- Route-Specific Page Skeletons (Mirroring exact card geometry per page) -->
+<div id="wp-page-skeleton" class="wp-page-skeleton" aria-hidden="true">
+  <!-- Shared Sticky 52px Site Header Mirror -->
+  <div class="wp-skel-header">
+    <div class="wp-skel-crumb">
+      <span>Rangkai.click</span>
+      <span style="opacity:0.45;">/</span>
+      <strong id="wp-skel-breadcrumb">Memuat...</strong>
+    </div>
+    <div class="wp-skel-bar" style="width:110px;height:26px;border-radius:var(--radius-md);"></div>
+  </div>
+
+  <!-- 1. DASHBOARD (Ringkasan: 4 KPI cards + 2-col Sankey & Tasks + Booked Vendors) -->
+  <div class="wp-skel-view" data-skel-view="dashboard">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Ringkasan Persiapan</div>
+          <div class="wp-skel-bar" style="width:min(380px, 85%);height:13px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="wp-skel-bar" style="width:128px;height:34px;border-radius:var(--radius-md);"></div>
+          <div class="wp-skel-bar" style="width:136px;height:34px;border-radius:var(--radius-md);"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-kpi-grid">
+        {% for _ in "1234" %}
+        <div class="wp-skel-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="wp-skel-bar" style="width:52%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:26px;height:26px;border-radius:6px;"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:72%;height:26px;"></div>
+          <div class="wp-skel-bar" style="width:60%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-bento">
+        <div class="wp-skel-card" style="min-height:300px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="wp-skel-bar" style="width:190px;height:15px;"></div>
+            <div class="wp-skel-bar" style="width:86px;height:24px;border-radius:var(--radius-sm);"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:100%;height:210px;border-radius:var(--radius-md);"></div>
+        </div>
+        <div class="wp-skel-card" style="min-height:300px;">
+          <div class="wp-skel-bar" style="width:165px;height:15px;"></div>
+          {% for _ in "12345" %}
+          <div class="wp-skel-row">
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+              <div class="wp-skel-bar" style="width:78%;height:13px;"></div>
+              <div class="wp-skel-bar" style="width:45%;height:10px;"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:58px;height:22px;border-radius:var(--radius-sm);"></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. BUDGETS (Anggaran & Kas: Wide canvas + 4 Metric Strip + Sankey + Category Master-Detail) -->
+  <div class="wp-skel-view" data-skel-view="budgets">
+    <div class="wp-skel-canvas is-wide">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Anggaran &amp; Arus Kas</div>
+          <div class="wp-skel-bar" style="width:min(440px, 88%);height:13px;"></div>
+        </div>
+      </div>
+
+      <!-- 4-item Metric Strip -->
+      <div class="wp-skel-metric-strip">
+        {% for _ in "1234" %}
+        <div class="wp-skel-metric-cell">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="wp-skel-bar" style="width:55%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:46px;height:18px;border-radius:var(--radius-sm);"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:78%;height:24px;"></div>
+          <div class="wp-skel-bar" style="width:66%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Sankey Card -->
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div class="wp-skel-bar" style="width:220px;height:16px;"></div>
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:96px;height:28px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:112px;height:28px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+        <div class="wp-skel-bar" style="width:100%;height:230px;border-radius:var(--radius-md);"></div>
+      </div>
+
+      <!-- Category Master-Detail Split -->
+      <div class="wp-skel-master-detail">
+        <div class="wp-skel-card">
+          <div class="wp-skel-bar" style="width:130px;height:14px;margin-bottom:4px;"></div>
+          {% for _ in "123456" %}
+          <div class="wp-skel-row">
+            <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+              <div class="wp-skel-bar" style="width:72%;height:13px;"></div>
+              <div class="wp-skel-bar" style="width:54%;height:10px;"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:44px;height:18px;border-radius:var(--radius-sm);"></div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="wp-skel-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="wp-skel-bar" style="width:180px;height:16px;"></div>
+              <div class="wp-skel-bar" style="width:250px;height:11px;"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:110px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+          {% for _ in "12345" %}
+          <div class="wp-skel-row">
+            <div class="wp-skel-bar" style="width:32%;height:13px;"></div>
+            <div class="wp-skel-bar" style="width:18%;height:13px;"></div>
+            <div class="wp-skel-bar" style="width:18%;height:13px;"></div>
+            <div class="wp-skel-bar" style="width:70px;height:22px;border-radius:var(--radius-sm);"></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. SAVINGS (Tabungan Bersama: 4 KPI cards + Unified Chart & Deposit Table Card) -->
+  <div class="wp-skel-view" data-skel-view="savings">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Tabungan Bersama</div>
+          <div class="wp-skel-bar" style="width:min(360px, 82%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-kpi-grid">
+        {% for _ in "1234" %}
+        <div class="wp-skel-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="wp-skel-bar" style="width:50%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:26px;height:26px;border-radius:6px;"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:76%;height:26px;"></div>
+          <div class="wp-skel-bar" style="width:58%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="wp-skel-bar" style="width:200px;height:16px;"></div>
+            <div class="wp-skel-bar" style="width:76px;height:22px;border-radius:var(--radius-sm);"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:94px;height:30px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:118px;height:30px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+        <div class="wp-skel-bar" style="width:100%;height:210px;border-radius:var(--radius-md);"></div>
+        {% for _ in "1234" %}
+        <div class="wp-skel-row">
+          <div class="wp-skel-bar" style="width:18%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:24%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:28%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:16%;height:14px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. VENDORS (Direktori Vendor: NO KPI strip -> Filter Toolbar + 3-Col Vendor Score Cards) -->
+  <div class="wp-skel-view" data-skel-view="vendors">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Direktori &amp; Evaluasi Vendor</div>
+          <div class="wp-skel-bar" style="width:min(420px, 86%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div class="wp-skel-bar" style="width:68px;height:28px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:78px;height:28px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:74px;height:28px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:82px;height:28px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:72px;height:28px;border-radius:var(--radius-md);"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:94px;height:30px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:88px;height:30px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+
+        <div class="wp-skel-bar" style="width:140px;height:14px;margin-top:4px;"></div>
+        <div class="wp-skel-vendor-grid">
+          {% for _ in "123456" %}
+          <div class="wp-skel-subcard">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="wp-skel-bar" style="width:74%;height:15px;"></div>
+                <div class="wp-skel-bar" style="width:46%;height:11px;"></div>
+              </div>
+              <div class="wp-skel-bar" style="width:46px;height:28px;border-radius:var(--radius-md);"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:55%;height:20px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="wp-skel-bar" style="width:100%;height:8px;"></div>
+              <div class="wp-skel-bar" style="width:100%;height:8px;"></div>
+              <div class="wp-skel-bar" style="width:100%;height:8px;"></div>
+              <div class="wp-skel-bar" style="width:100%;height:8px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);">
+              <div class="wp-skel-bar" style="width:72px;height:22px;border-radius:var(--radius-sm);"></div>
+              <div style="display:flex;gap:6px;">
+                <div class="wp-skel-bar" style="width:26px;height:26px;border-radius:6px;"></div>
+                <div class="wp-skel-bar" style="width:26px;height:26px;border-radius:6px;"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. CHECKLIST (Timeline & Tugas: 4 Metric Strip + 5-Step Phase Rail + Task Rows) -->
+  <div class="wp-skel-view" data-skel-view="checklist">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Checklist &amp; Roadmap</div>
+          <div class="wp-skel-bar" style="width:min(380px, 84%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-metric-strip">
+        {% for _ in "1234" %}
+        <div class="wp-skel-metric-cell">
+          <div class="wp-skel-bar" style="width:55%;height:12px;"></div>
+          <div class="wp-skel-bar" style="width:62%;height:24px;"></div>
+          <div class="wp-skel-bar" style="width:72%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- 5-Step Horizontal Phase Rail -->
+      <div class="wp-skel-phase-rail">
+        {% for _ in "12345" %}
+        <div class="wp-skel-subcard" style="padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="wp-skel-bar" style="width:24px;height:24px;border-radius:999px;"></div>
+            <div class="wp-skel-bar" style="width:38px;height:14px;"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:82%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:100%;height:5px;border-radius:999px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Task List Panel -->
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+          <div class="wp-skel-bar" style="width:210px;height:16px;"></div>
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:150px;height:30px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:104px;height:30px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+        {% for _ in "123456" %}
+        <div class="wp-skel-row">
+          <div style="display:flex;align-items:center;gap:12px;flex:1;">
+            <div class="wp-skel-bar" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;"></div>
+            <div class="wp-skel-bar" style="width:62%;height:14px;"></div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <div class="wp-skel-bar" style="width:24px;height:24px;border-radius:6px;"></div>
+            <div class="wp-skel-bar" style="width:24px;height:24px;border-radius:6px;"></div>
+            <div class="wp-skel-bar" style="width:24px;height:24px;border-radius:6px;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. GUESTS (Tamu & Katering: 4 Metric Strip + Search Toolbar + Guest Spreadsheet Table) -->
+  <div class="wp-skel-view" data-skel-view="guests">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Daftar Tamu &amp; Katering</div>
+          <div class="wp-skel-bar" style="width:min(400px, 85%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-metric-strip">
+        {% for _ in "1234" %}
+        <div class="wp-skel-metric-cell">
+          <div class="wp-skel-bar" style="width:52%;height:12px;"></div>
+          <div class="wp-skel-bar" style="width:58%;height:24px;"></div>
+          <div class="wp-skel-bar" style="width:68%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;flex:1;min-width:200px;">
+            <div class="wp-skel-bar" style="width:min(240px, 60%);height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:120px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:100px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:108px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+        {% for _ in "1234567" %}
+        <div class="wp-skel-row">
+          <div class="wp-skel-bar" style="width:26%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:16%;height:20px;border-radius:var(--radius-sm);"></div>
+          <div class="wp-skel-bar" style="width:8%;height:13px;"></div>
+          <div class="wp-skel-bar" style="width:14%;height:22px;border-radius:var(--radius-sm);"></div>
+          <div class="wp-skel-bar" style="width:54px;height:24px;border-radius:6px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. DETAILS (Berkas & Seserahan: 4 Metric Strip + 2-Tab Unified Card) -->
+  <div class="wp-skel-view" data-skel-view="details">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Detail Kelengkapan &amp; Logistik</div>
+          <div class="wp-skel-bar" style="width:min(410px, 85%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-metric-strip">
+        {% for _ in "1234" %}
+        <div class="wp-skel-metric-cell">
+          <div class="wp-skel-bar" style="width:56%;height:12px;"></div>
+          <div class="wp-skel-bar" style="width:66%;height:24px;"></div>
+          <div class="wp-skel-bar" style="width:60%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:136px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:146px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:120px;height:32px;border-radius:var(--radius-md);"></div>
+        </div>
+        {% for _ in "123456" %}
+        <div class="wp-skel-row">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;">
+            <div class="wp-skel-bar" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;"></div>
+            <div class="wp-skel-bar" style="width:54%;height:13px;"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:92px;height:22px;border-radius:var(--radius-sm);"></div>
+          <div class="wp-skel-bar" style="width:76px;height:13px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. OPERATIONS (Logistik Hari-H: 4 Metric Strip + 3-Tab Rundown/Assets/Fabric Card) -->
+  <div class="wp-skel-view" data-skel-view="operations">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Logistik &amp; Operasional Hari-H</div>
+          <div class="wp-skel-bar" style="width:min(420px, 85%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-metric-strip">
+        {% for _ in "1234" %}
+        <div class="wp-skel-metric-cell">
+          <div class="wp-skel-bar" style="width:54%;height:12px;"></div>
+          <div class="wp-skel-bar" style="width:56%;height:24px;"></div>
+          <div class="wp-skel-bar" style="width:70%;height:11px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;">
+            <div class="wp-skel-bar" style="width:108px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:118px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:114px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:124px;height:32px;border-radius:var(--radius-md);"></div>
+        </div>
+        {% for _ in "123456" %}
+        <div class="wp-skel-row">
+          <div class="wp-skel-bar" style="width:94px;height:24px;border-radius:6px;flex-shrink:0;"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+            <div class="wp-skel-bar" style="width:58%;height:14px;"></div>
+            <div class="wp-skel-bar" style="width:36%;height:10px;"></div>
+          </div>
+          <div class="wp-skel-bar" style="width:78px;height:22px;border-radius:var(--radius-sm);"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. SETTINGS (Pengaturan: 2-Column Bento -> Left Form Card + Right Invitations & Members) -->
+  <div class="wp-skel-view" data-skel-view="settings">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Pengaturan Workspace</div>
+          <div class="wp-skel-bar" style="width:min(380px, 84%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div class="wp-skel-two-col">
+        <div class="wp-skel-card">
+          <div class="wp-skel-bar" style="width:150px;height:16px;margin-bottom:6px;"></div>
+          {% for _ in "12345" %}
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="wp-skel-bar" style="width:38%;height:11px;"></div>
+            <div class="wp-skel-bar" style="width:100%;height:36px;border-radius:var(--radius-md);"></div>
+          </div>
+          {% endfor %}
+          <div class="wp-skel-bar" style="width:154px;height:36px;border-radius:var(--radius-md);margin-top:6px;"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div class="wp-skel-card">
+            <div class="wp-skel-bar" style="width:185px;height:16px;"></div>
+            <div style="display:flex;gap:8px;">
+              <div class="wp-skel-bar" style="flex:1;height:36px;border-radius:var(--radius-md);"></div>
+              <div class="wp-skel-bar" style="width:96px;height:36px;border-radius:var(--radius-md);"></div>
+            </div>
+            {% for _ in "12" %}
+            <div class="wp-skel-row">
+              <div class="wp-skel-bar" style="width:45%;height:20px;"></div>
+              <div class="wp-skel-bar" style="width:88px;height:28px;border-radius:var(--radius-md);"></div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="wp-skel-card">
+            <div class="wp-skel-bar" style="width:160px;height:16px;"></div>
+            {% for _ in "123" %}
+            <div class="wp-skel-row">
+              <div style="display:flex;align-items:center;gap:10px;flex:1;">
+                <div class="wp-skel-bar" style="width:32px;height:32px;border-radius:999px;flex-shrink:0;"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                  <div class="wp-skel-bar" style="width:42%;height:13px;"></div>
+                  <div class="wp-skel-bar" style="width:30%;height:10px;"></div>
+                </div>
+              </div>
+              <div class="wp-skel-bar" style="width:84px;height:24px;border-radius:var(--radius-sm);"></div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. GUIDE (Panduan: Quick Jump Pills + Role Tabs Card + 2-Col Subboxes) -->
+  <div class="wp-skel-view" data-skel-view="guide">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div class="wp-skel-title-text">Panduan Lengkap</div>
+          <div class="wp-skel-bar" style="width:min(420px, 86%);height:13px;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        {% for _ in "1234567" %}
+        <div class="wp-skel-bar" style="width:106px;height:30px;border-radius:var(--radius-sm);"></div>
+        {% endfor %}
+      </div>
+
+      <div class="wp-skel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="wp-skel-bar" style="width:240px;height:16px;"></div>
+            <div class="wp-skel-bar" style="width:300px;height:12px;"></div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <div class="wp-skel-bar" style="width:128px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:118px;height:32px;border-radius:var(--radius-md);"></div>
+            <div class="wp-skel-bar" style="width:108px;height:32px;border-radius:var(--radius-md);"></div>
+          </div>
+        </div>
+        <div class="wp-skel-two-col">
+          <div class="wp-skel-subcard" style="min-height:190px;">
+            <div class="wp-skel-bar" style="width:62%;height:15px;"></div>
+            <div class="wp-skel-bar" style="width:94%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:88%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:90%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:76%;height:12px;"></div>
+          </div>
+          <div class="wp-skel-subcard" style="min-height:190px;">
+            <div class="wp-skel-bar" style="width:58%;height:15px;"></div>
+            <div class="wp-skel-bar" style="width:92%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:84%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:88%;height:12px;"></div>
+            <div class="wp-skel-bar" style="width:70%;height:12px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. WO PORTAL & ADMIN CONSOLE (3-4 KPI Cards + Project Rows / Table) -->
+  <div class="wp-skel-view" data-skel-view="portal">
+    <div class="wp-skel-canvas">
+      <div class="wp-skel-head">
+        <div style="flex:1;min-width:220px;">
+          <div id="wp-skel-portal-title" class="wp-skel-title-text">Portal Workspace</div>
+          <div class="wp-skel-bar" style="width:min(380px, 84%);height:13px;"></div>
+        </div>
+        <div class="wp-skel-bar" style="width:152px;height:36px;border-radius:var(--radius-md);"></div>
+      </div>
+
+      <div class="wp-skel-kpi-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+        {% for _ in "123" %}
+        <div class="wp-skel-card">
+          <div class="wp-skel-bar" style="width:50%;height:12px;"></div>
+          <div class="wp-skel-bar" style="width:44%;height:28px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for _ in "123" %}
+        <div class="wp-skel-card" style="flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div class="wp-skel-bar" style="width:180px;height:16px;"></div>
+              <div class="wp-skel-bar" style="width:56px;height:20px;border-radius:var(--radius-sm);"></div>
+              <div class="wp-skel-bar" style="width:110px;height:20px;border-radius:var(--radius-sm);"></div>
+            </div>
+            <div class="wp-skel-bar" style="width:280px;height:11px;"></div>
+            <div style="display:flex;gap:8px;">
+              <div class="wp-skel-bar" style="width:156px;height:26px;border-radius:var(--radius-md);"></div>
+              <div class="wp-skel-bar" style="width:136px;height:26px;border-radius:var(--radius-md);"></div>
+            </div>
+          </div>
+          <div class="wp-skel-bar" style="width:128px;height:34px;border-radius:var(--radius-md);"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>

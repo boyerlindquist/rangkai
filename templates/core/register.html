@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Daftar | Rangkai.click{% endblock %}
+{% block title %}Gabung Workspace | Rangkai.click{% endblock %}
 
 {% block body %}
 <div class="auth-page">
-  <div class="auth-card" style="max-width: 460px;" x-data="{ mode: '{{ active_mode|default:'create' }}' }">
+  <div class="auth-card" style="max-width: 460px;">
     <div class="auth-brand">
       <div style="display: flex; justify-content: center; margin-bottom: 14px;">
         <a href="{% url 'core:landing' %}" class="brand-lockup is-lg" aria-label="Kembali ke beranda Rangkai.click">
@@ -15,23 +15,13 @@
           </span>
         </a>
       </div>
-      <h1 x-text="mode === 'join' ? 'Gabung ke Workspace' : 'Buat Akun Rangkai.click'">Buat Akun Rangkai.click</h1>
-      <p x-text="mode === 'join' ? 'Daftar akunmu lalu masukkan kode undangan 8 karakter dari pasangan atau owner.' : 'Buat akun &amp; mulai rencanakan pernikahanmu dalam satu workspace terpadu.'"></p>
-    </div>
-
-    <!-- 2-Mode Switcher (shadcn TabsList) -->
-    <div class="filter-segmented" style="display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 18px;" role="tablist" aria-label="Pilih mode pendaftaran">
-      <button type="button" role="tab" :aria-selected="(mode === 'create').toString()" :class="{ 'active': mode === 'create' }" @click="mode = 'create'">
-        Buat Workspace Baru
-      </button>
-      <button type="button" role="tab" :aria-selected="(mode === 'join').toString()" :class="{ 'active': mode === 'join' }" @click="mode = 'join'">
-        Gabung Pakai Kode
-      </button>
+      <h1>Gabung ke Workspace</h1>
+      <p>Daftar akun Anda lalu masukkan kode undangan 8 karakter dari pengantin atau WO untuk bergabung tanpa biaya tambahan.</p>
     </div>
 
     <form method="post" novalidate>
       {% csrf_token %}
-      <input type="hidden" name="mode" :value="mode">
+      <input type="hidden" name="mode" value="join">
 
       {% if form.errors %}
       <div class="alert alert-danger">
@@ -45,6 +35,32 @@
         </div>
       </div>
       {% endif %}
+
+      {% if invite_preview %}
+        {% if invite_preview.error %}
+        <div data-slot="alert" data-variant="destructive" style="margin-bottom: 14px; font-size: 0.82rem;">
+          <i data-lucide="alert-circle"></i>
+          <div>{{ invite_preview.error }}</div>
+        </div>
+        {% elif invite_preview.wedding %}
+        <div style="margin-bottom: 14px; padding: 11px 13px; border-radius: var(--radius-md); background: var(--success-soft); border: 1px solid var(--success-border); color: var(--success); font-size: 0.82rem; display: flex; align-items: flex-start; gap: 9px; line-height: 1.45;">
+          <i data-lucide="check-circle-2" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;"></i>
+          <div>
+            Anda diundang bergabung ke workspace <strong>{{ invite_preview.wedding }}</strong> sebagai <strong>{{ invite_preview.role_label }}</strong>.
+          </div>
+        </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="form-group">
+        <label for="id_invite_code">Kode Undangan Workspace (8 Karakter)</label>
+        {{ form.invite_code }}
+        <p style="margin: 6px 0 0; font-size: 0.77rem; color: var(--muted-foreground); line-height: 1.45;">
+          Minta kode 8 karakter atau link undangan dari pengantin / WO melalui menu <strong>Pengaturan &rarr; Undangan Berbasis Peran</strong>.
+        </p>
+      </div>
+
+      <hr class="section-divider">
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div class="form-group">
@@ -68,45 +84,14 @@
         </div>
       </div>
 
-      <hr class="section-divider">
-
-      <!-- Mode 1: Buat Workspace Baru -->
-      <div x-show="mode === 'create'">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div class="form-group">
-            <label for="id_groom_name">Nama Pengantin Pria</label>
-            {{ form.groom_name }}
-          </div>
-          <div class="form-group">
-            <label for="id_bride_name">Nama Pengantin Wanita</label>
-            {{ form.bride_name }}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="id_wedding_date">Tanggal Pernikahan (Opsional)</label>
-          {{ form.wedding_date }}
-        </div>
-      </div>
-
-      <!-- Mode 2: Gabung Pakai Kode Undangan -->
-      <div x-show="mode === 'join'" x-cloak>
-        <div class="form-group">
-          <label for="id_invite_code">Kode Undangan Workspace (8 Karakter)</label>
-          {{ form.invite_code }}
-          <p style="margin: 6px 0 0; font-size: 0.77rem; color: var(--muted-foreground); line-height: 1.45;">
-            Minta kode 8 karakter dari pasangan/owner di menu <strong>Pengaturan → Kode Undangan Kolaborasi</strong>.
-          </p>
-        </div>
-      </div>
-
-      <button type="submit" class="btn btn-primary" x-text="mode === 'join' ? 'Daftar &amp; Gabung Workspace' : 'Daftar &amp; Buat Workspace'">
-        Daftar &amp; Buat Workspace
+      <button type="submit" class="btn btn-primary">
+        Daftar &amp; Gabung Workspace
       </button>
     </form>
 
-    <div class="auth-links">
-      Sudah punya akun? <a href="{% url 'core:login' %}">Masuk di sini</a>
+    <div class="auth-links" style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+      <div>Sudah punya akun? <a href="{% url 'core:login' %}">Masuk di sini</a></div>
+      <div style="font-size:0.8rem;color:var(--muted-foreground);">Ingin membuat workspace baru? <a href="{% url 'core:checkout' %}">Pilih Paket &amp; Daftar</a></div>
     </div>
   </div>
 </div>

@@ -197,7 +197,7 @@ def bulk_add_guests(request):
 
 
 @login_required
-@workspace_required
+@owner_required
 def download_guest_template(request):
     """Download ready-to-fill Excel template for guest list."""
     wb = openpyxl.Workbook()

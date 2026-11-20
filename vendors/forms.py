@@ -16,6 +16,20 @@ class VendorCandidateForm(forms.ModelForm):
             'weight_price', 'weight_quality', 'weight_facility', 'weight_reputation',
             'notes',
         ]
+        labels = {
+            'name': 'Nama Vendor *',
+            'category': 'Kategori *',
+            'contact_pic': 'PIC / Kontak',
+            'phone': 'No. HP / WhatsApp',
+            'price_estimate': 'Estimasi Harga (Rp)',
+            'offer_link': 'Link Penawaran',
+            'status': 'Status Keputusan',
+            'score_price': 'Skor Harga (1-5)',
+            'score_quality': 'Skor Kualitas (1-5)',
+            'score_facility': 'Skor Fasilitas (1-5)',
+            'score_reputation': 'Skor Reputasi (1-5)',
+            'notes': 'Catatan',
+        }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'wp-input', 'placeholder': 'Nama vendor'}),
             'category': forms.Select(attrs={'class': 'wp-input'}),
@@ -24,15 +38,15 @@ class VendorCandidateForm(forms.ModelForm):
             'price_estimate': forms.NumberInput(attrs={'class': 'wp-input', 'placeholder': '0'}),
             'offer_link': forms.URLInput(attrs={'class': 'wp-input', 'placeholder': 'https://...'}),
             'status': forms.Select(attrs={'class': 'wp-input'}),
-            'score_price': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5'}),
-            'score_quality': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5'}),
-            'score_facility': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5'}),
-            'score_reputation': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5'}),
-            'weight_price': forms.NumberInput(attrs={'class': 'wp-input', 'min': '0', 'max': '100'}),
-            'weight_quality': forms.NumberInput(attrs={'class': 'wp-input', 'min': '0', 'max': '100'}),
-            'weight_facility': forms.NumberInput(attrs={'class': 'wp-input', 'min': '0', 'max': '100'}),
-            'weight_reputation': forms.NumberInput(attrs={'class': 'wp-input', 'min': '0', 'max': '100'}),
-            'notes': forms.Textarea(attrs={'class': 'wp-input', 'rows': 2}),
+            'score_price': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5', 'placeholder': '1-5'}),
+            'score_quality': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5', 'placeholder': '1-5'}),
+            'score_facility': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5', 'placeholder': '1-5'}),
+            'score_reputation': forms.NumberInput(attrs={'class': 'wp-input', 'min': '1', 'max': '5', 'placeholder': '1-5'}),
+            'weight_price': forms.HiddenInput(),
+            'weight_quality': forms.HiddenInput(),
+            'weight_facility': forms.HiddenInput(),
+            'weight_reputation': forms.HiddenInput(),
+            'notes': forms.Textarea(attrs={'class': 'wp-input', 'rows': 2, 'placeholder': 'Catatan hasil survei / bonus paket (opsional)'}),
         }
 
     def __init__(self, *args, **kwargs):

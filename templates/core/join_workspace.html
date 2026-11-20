@@ -16,7 +16,7 @@
         </a>
       </div>
       <h1>Gabung Workspace</h1>
-      <p>Masukkan kode undangan dari pasanganmu untuk bergabung ke workspace pernikahan bersama</p>
+      <p>Masukkan kode undangan dari pasangan atau WO Anda untuk bergabung ke workspace tanpa biaya tambahan.</p>
     </div>
 
     <form method="post">
@@ -43,8 +43,9 @@
       <button type="submit" class="btn btn-gold">Gabung Workspace</button>
     </form>
 
-    <div class="auth-links">
-      <a href="{% url 'core:register' %}">Buat workspace baru</a>
+    <div class="auth-links" style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+      <a href="{% url 'core:landing' %}#harga">Lihat Paket</a>
+      <a href="{% url 'core:logout' %}">Logout &amp; Ganti Akun</a>
     </div>
   </div>
 </div>
