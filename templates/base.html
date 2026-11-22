@@ -12,7 +12,7 @@
   <meta property="og:site_name" content="Rangkai.click">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Rangkai.click | Workspace Perencanaan Pernikahan Terpadu">
-  <meta property="og:description" content="Rangkai persiapan nikahmu tanpa drama spreadsheet. Mulai Rp 149rb sekali bayar, undang pasangan & tim gratis, privasi data terjaga.">
+  <meta property="og:description" content="Rangkai persiapan nikahmu tanpa drama spreadsheet. Mulai Rp 99rb sekali bayar (Early Bird), undang pasangan & tim gratis, privasi data terjaga.">
   <meta name="twitter:card" content="summary_large_image">
   {% endblock %}
   <title>{% block title %}Rangkai{% endblock %}</title>
@@ -349,32 +349,35 @@
 
         {% if wedding %}
         <div data-slot="sidebar-group">
-          <div data-slot="sidebar-group-label">Perencanaan</div>
           <div data-slot="sidebar-menu">
             <a href="{% url 'core:dashboard' %}" data-slot="sidebar-menu-button" title="Ringkasan" aria-label="Ringkasan"
               class="{% if request.path == '/' or request.path == '/dashboard/' %}active{% endif %}">
               <i data-lucide="layout-dashboard"></i><span class="ui-nav-label">Ringkasan</span>
             </a>
-            <a href="{% url 'operations-checklist:checklist' %}" data-slot="sidebar-menu-button" title="Timeline & Tugas" aria-label="Timeline & Tugas"
-              class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
-              <i data-lucide="check-square"></i><span class="ui-nav-label">Timeline &amp; Tugas</span>
-            </a>
-            <a href="{% url 'calendar' %}" data-slot="sidebar-menu-button" title="Kalender Fase" aria-label="Kalender Fase"
-              class="{% if '/calendar/' in request.path %}active{% endif %}">
-              <i data-lucide="calendar-days"></i><span class="ui-nav-label">Kalender Fase</span>
-            </a>
-            {% if can_access_vendors %}
-            <a href="{% url 'vendors:compare' %}" data-slot="sidebar-menu-button" title="Direktori Vendor" aria-label="Direktori Vendor"
-              class="{% if '/vendors/' in request.path %}active{% endif %}">
-              <i data-lucide="store"></i><span class="ui-nav-label">Direktori Vendor</span>
-            </a>
-            {% endif %}
           </div>
         </div>
 
-        {% if can_access_finance or can_access_savings or is_finance_locked_for_wo %}
         <div data-slot="sidebar-group">
-          <div data-slot="sidebar-group-label">Keuangan</div>
+          <div data-slot="sidebar-group-label">Perencanaan</div>
+          <div data-slot="sidebar-menu">
+            <a href="{% url 'operations-checklist:checklist' %}" data-slot="sidebar-menu-button" title="Daftar Tugas" aria-label="Daftar Tugas"
+              class="{% if '/checklist/' in request.path and '/details/' not in request.path %}active{% endif %}">
+              <i data-lucide="check-square"></i><span class="ui-nav-label">Daftar Tugas</span>
+            </a>
+            <a href="{% url 'calendar' %}" data-slot="sidebar-menu-button" title="Kalender" aria-label="Kalender"
+              class="{% if '/calendar/' in request.path %}active{% endif %}">
+              <i data-lucide="calendar-days"></i><span class="ui-nav-label">Kalender</span>
+            </a>
+            <a href="{% url 'notes' %}" data-slot="sidebar-menu-button" title="Catatan" aria-label="Catatan"
+              class="{% if '/notes/' in request.path %}active{% endif %}">
+              <i data-lucide="notebook-pen"></i><span class="ui-nav-label">Catatan</span>
+            </a>
+          </div>
+        </div>
+
+        {% if can_access_finance or can_access_savings or is_finance_locked_for_wo or can_access_vendors %}
+        <div data-slot="sidebar-group">
+          <div data-slot="sidebar-group-label">Keuangan &amp; Vendor</div>
           <div data-slot="sidebar-menu">
             {% if can_access_finance or is_finance_locked_for_wo %}
             <a href="{% url 'finances:dashboard' %}" data-slot="sidebar-menu-button"
@@ -394,12 +397,18 @@
               <i data-lucide="piggy-bank"></i><span class="ui-nav-label">Tabungan Bersama</span>
             </a>
             {% endif %}
+            {% if can_access_vendors %}
+            <a href="{% url 'vendors:compare' %}" data-slot="sidebar-menu-button" title="Vendor" aria-label="Vendor"
+              class="{% if '/vendors/' in request.path %}active{% endif %}">
+              <i data-lucide="store"></i><span class="ui-nav-label">Vendor</span>
+            </a>
+            {% endif %}
           </div>
         </div>
         {% endif %}
 
         <div data-slot="sidebar-group">
-          <div data-slot="sidebar-group-label">Hari-H &amp; Tamu</div>
+          <div data-slot="sidebar-group-label">Acara &amp; Hari-H</div>
           <div data-slot="sidebar-menu">
             <a href="{% url 'guests:list' %}" data-slot="sidebar-menu-button" title="Tamu & Katering" aria-label="Tamu & Katering"
               class="{% if '/guests/' in request.path %}active{% endif %}">
@@ -409,9 +418,9 @@
               class="{% if '/details/' in request.path %}active{% endif %}">
               <i data-lucide="file-check-2"></i><span class="ui-nav-label">Berkas &amp; Seserahan</span>
             </a>
-            <a href="{% url 'operations-hub:operations_hub' %}" data-slot="sidebar-menu-button" title="Logistik Hari-H" aria-label="Logistik Hari-H"
+            <a href="{% url 'operations-hub:operations_hub' %}" data-slot="sidebar-menu-button" title="Rundown & Hari-H" aria-label="Rundown & Hari-H"
               class="{% if '/operations/' in request.path %}active{% endif %}">
-              <i data-lucide="settings-2"></i><span class="ui-nav-label">Logistik Hari-H</span>
+              <i data-lucide="clock"></i><span class="ui-nav-label">Rundown &amp; Hari-H</span>
             </a>
           </div>
         </div>

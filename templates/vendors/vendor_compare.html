@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
-{% block title %}Direktori & Evaluasi Vendor — Rangkai{% endblock %}
-{% block breadcrumb %}Direktori Vendor{% endblock %}
+{% block title %}Vendor | Rangkai.click{% endblock %}
+{% block breadcrumb %}Vendor{% endblock %}
 
 {% block header_actions %}
 <span data-slot="badge" data-variant="secondary" class="tabular-nums">
@@ -11,7 +11,614 @@
 {% endblock %}
 
 {% block content %}
-<div class="workspace-canvas" x-data="{ showForm: false, showWeights: false }">
+<script>
+  window.vendorSheetForm = function(cfg) {
+    return {
+      status: cfg.status || 'shortlist',
+      price: cfg.price !== undefined && cfg.price !== null ? String(cfg.price) : '',
+      scores: {
+        price: Number(cfg.scores?.price) || 3,
+        quality: Number(cfg.scores?.quality) || 3,
+        facility: Number(cfg.scores?.facility) || 3,
+        reputation: Number(cfg.scores?.reputation) || 3
+      },
+      weights: {
+        price: Number(cfg.weights?.price) || 30,
+        quality: Number(cfg.weights?.quality) || 30,
+        facility: Number(cfg.weights?.facility) || 20,
+        reputation: Number(cfg.weights?.reputation) || 20
+      },
+      criteria: [
+        { key: 'price', label: 'Harga & Value' },
+        { key: 'quality', label: 'Kualitas & Portofolio' },
+        { key: 'facility', label: 'Fasilitas & Bonus' },
+        { key: 'reputation', label: 'Reputasi & Respons' }
+      ],
+      scoreLabel(n) {
+        return { 1: 'Kurang', 2: 'Cukup', 3: 'Baik', 4: 'Sangat Baik', 5: 'Istimewa' }[n] || 'Baik';
+      },
+      get liveScore() {
+        const tw = this.weights.price + this.weights.quality + this.weights.facility + this.weights.reputation;
+        if (!tw) return 0;
+        const raw = (
+          (this.scores.price / 5 * this.weights.price) +
+          (this.scores.quality / 5 * this.weights.quality) +
+          (this.scores.facility / 5 * this.weights.facility) +
+          (this.scores.reputation / 5 * this.weights.reputation)
+        );
+        return Math.round((raw / tw) * 100);
+      },
+      get scoreTier() {
+        const s = this.liveScore;
+        if (s >= 85) return 'Sangat Direkomendasikan';
+        if (s >= 70) return 'Cukup Kompetitif';
+        if (s >= 50) return 'Perlu Pertimbangan';
+        return 'Kurang Sesuai';
+      },
+      get formattedPrice() {
+        const num = parseInt(String(this.price).replace(/[^\d]/g, ''), 10);
+        if (!num || isNaN(num)) return 'Kosongkan jika belum ada estimasi harga';
+        return 'Terbaca: Rp ' + new Intl.NumberFormat('id-ID').format(num);
+      }
+    };
+  };
+</script>
+
+<style>
+  .vendor-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+  }
+  @media (max-width: 1200px) {
+    .vendor-cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 900px) {
+    .vendor-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 580px) {
+    .vendor-cards-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Right Slide-Over Vendor Sheet (Operate Mode) ── */
+  .vs-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    background: rgba(9, 9, 11, 0.42);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .vs-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 960;
+    width: min(512px, 100vw);
+    background: var(--card);
+    color: var(--card-foreground);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg, -12px 0 36px rgba(9, 9, 11, 0.14));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .vs-enter { transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease; }
+  .vs-enter-start { transform: translateX(100%); opacity: 0.4; }
+  .vs-enter-end { transform: translateX(0); opacity: 1; }
+  .vs-leave { transition: transform 190ms cubic-bezier(0.4, 0, 1, 1), opacity 160ms ease; }
+  .vs-leave-start { transform: translateX(0); opacity: 1; }
+  .vs-leave-end { transform: translateX(100%); opacity: 0; }
+  .vs-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .vs-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .vs-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    flex-shrink: 0;
+  }
+  .vs-header-text {
+    min-width: 0;
+  }
+  .vs-title {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+    line-height: 1.3;
+  }
+  .vs-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+    line-height: 1.45;
+  }
+  .vs-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+  .vs-close-btn:hover {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+  .vs-close-btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  .vs-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .vs-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .vs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .vs-section-last {
+    padding-bottom: 4px;
+    border-bottom: none;
+  }
+  .vs-section-head h3 {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+  .vs-section-head p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    line-height: 1.45;
+  }
+
+  .vs-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .vs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .vs-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--foreground);
+    line-height: 1.3;
+  }
+  .vs-req {
+    color: var(--destructive);
+  }
+  .vs-input {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--input);
+    background: var(--card);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 0.86rem;
+    line-height: 1.4;
+    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  }
+  .vs-input::placeholder,
+  .vs-input-bare::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.78;
+  }
+  .vs-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--ring-soft);
+  }
+  .vs-input.is-invalid,
+  .vs-input-group.is-invalid {
+    border-color: var(--destructive);
+  }
+  .vs-textarea {
+    min-height: 82px;
+    resize: vertical;
+  }
+  .vs-select-wrap {
+    position: relative;
+  }
+  .vs-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 34px;
+    cursor: pointer;
+  }
+  .vs-select-chevron {
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--muted-foreground);
+  }
+
+  .vs-input-group {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--input);
+    background: var(--card);
+    overflow: hidden;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+  .vs-input-group:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--ring-soft);
+  }
+  .vs-input-prefix {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px 0 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    align-self: stretch;
+    border-right: 1px solid var(--border);
+  }
+  .vs-input-icon {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px 0 12px;
+    color: var(--muted-foreground);
+  }
+  .vs-input-bare {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--foreground);
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    outline: none;
+  }
+  .vs-hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .vs-error {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--destructive);
+    font-weight: 500;
+  }
+  .vs-alert-error {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--destructive-border);
+    background: var(--destructive-soft);
+    color: var(--destructive);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* Status Segmented Control */
+  .vs-status-seg {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .vs-status-opt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  }
+  .vs-status-opt:hover {
+    color: var(--foreground);
+  }
+  .vs-status-opt.is-active {
+    background: var(--card);
+    color: var(--foreground);
+    border-color: var(--border);
+    box-shadow: var(--shadow-xs, 0 1px 2px rgba(9, 9, 11, 0.06));
+  }
+  .vs-status-opt.is-booked {
+    color: var(--primary);
+    border-color: var(--primary-border);
+  }
+  .vs-status-opt.is-rejected {
+    color: var(--destructive);
+    border-color: var(--destructive-border);
+  }
+  .vs-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .vs-dot-warning { background: var(--warning); }
+  .vs-dot-success { background: var(--primary); }
+  .vs-dot-danger  { background: var(--destructive); }
+
+  /* Live Score Preview Banner */
+  .vs-score-banner {
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--primary-border);
+    background: var(--primary-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .vs-score-banner-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .vs-score-banner-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .vs-score-banner-tier {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-top: 2px;
+  }
+  .vs-score-banner-num {
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--primary);
+  }
+  .vs-score-banner-num small {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    margin-left: 2px;
+  }
+  .vs-score-bar-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .vs-score-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--primary);
+    transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Interactive 1-5 Criteria Picker */
+  .vs-criteria-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .vs-criterion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--background);
+  }
+  .vs-criterion-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .vs-criterion-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .vs-criterion-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .vs-weight-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted-foreground);
+  }
+  .vs-criterion-word {
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .vs-score-picker {
+    display: inline-grid;
+    grid-template-columns: repeat(5, 34px);
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .vs-score-btn {
+    height: 34px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 100ms ease;
+  }
+  .vs-score-btn:hover {
+    border-color: var(--primary-border);
+    color: var(--foreground);
+  }
+  .vs-score-btn.is-selected {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .vs-score-btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  /* Sticky Footer */
+  .vs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    flex-shrink: 0;
+  }
+  .vs-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+  }
+  .vs-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+    padding: 40px 24px;
+    color: var(--muted-foreground);
+    font-size: 0.84rem;
+  }
+  .vs-spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 9999px;
+    animation: vs-spin 0.7s linear infinite;
+  }
+  @keyframes vs-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 640px) {
+    .vs-header { padding: 16px 18px 14px; }
+    .vs-body { padding: 16px 18px 20px; }
+    .vs-footer { padding: 12px 18px; }
+    .vs-grid-2 { grid-template-columns: 1fr; }
+    .vs-criterion {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .vs-score-picker {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .vs-score-btn {
+      height: 38px;
+    }
+  }
+</style>
+
+<div class="workspace-canvas"
+     x-data="{
+       sheetOpen: false,
+       sheetMode: 'add',
+       sheetLoading: false,
+       showWeights: false,
+       init() {
+         document.body.style.overflow = '';
+         this.$watch('sheetOpen', (val) => {
+           document.body.style.overflow = val ? 'hidden' : '';
+         });
+       },
+       openAdd() {
+         this.showWeights = false;
+         this.sheetMode = 'add';
+         this.sheetLoading = false;
+         this.sheetOpen = true;
+         this.$nextTick(() => document.querySelector('#vendor-sheet-add input[name=\'name\']')?.focus());
+       },
+       openEdit() {
+         this.showWeights = false;
+         this.sheetMode = 'edit';
+         this.sheetLoading = true;
+         this.sheetOpen = true;
+       },
+       closeSheet() {
+         this.sheetOpen = false;
+       }
+     }"
+     @vendor-sheet:open-edit.window="openEdit()"
+     @vendor-sheet:close.window="closeSheet()"
+     @keydown.escape.window="if(sheetOpen) closeSheet()">
 
   <!-- Clean Page Header -->
   <div class="page-header fade-in" id="guide-vendors">
@@ -37,7 +644,7 @@
         <button type="button"
                 class="btn btn-sm"
                 :class="showWeights ? 'btn-gold' : 'btn-secondary'"
-                @click="showWeights = !showWeights; if(showWeights) showForm = false"
+                @click="showWeights = !showWeights; if(showWeights) closeSheet()"
                 title="Atur Bobot Kriteria Penilaian (%)"
                 style="padding: 4px 10px;">
           <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
@@ -45,7 +652,7 @@
         </button>
         <button type="button"
                 class="btn btn-gold btn-sm"
-                @click="showForm = !showForm; if(showForm) { showWeights = false; $nextTick(() => document.getElementById('vendor-form-panel')?.querySelector('input[name=\'name\']')?.focus()); }"
+                @click="openAdd()"
                 title="Tambah Kandidat Vendor Baru"
                 style="padding: 4px 10px;">
           <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
@@ -109,64 +716,8 @@
       </form>
     </div>
 
-    <!-- 3. Inline Collapsible Drawer: Add Vendor Form (Inside the same card) -->
-    <div x-show="showForm" x-transition x-cloak id="vendor-form-panel"
-         style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-        <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="plus-circle" style="width: 14px; height: 14px; color: var(--wp-sage-main);"></i> Tambah Kandidat Vendor Baru
-        </strong>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showForm = false" aria-label="Tutup form tambah vendor" title="Tutup">
-          <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-        </button>
-      </div>
-      <form method="post" action="{% url 'vendors:add' %}"
-            hx-post="{% url 'vendors:add' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML"
-            @htmx:after-request="if($event.detail.successful) { $el.reset(); showForm = false; }">
-        {% csrf_token %}
-        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-        <div class="form-row">
-          {% for field in form.visible_fields %}
-          <div class="form-group" style="margin-bottom: 0;">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div style="color: var(--wp-terracotta-main); font-size: 0.78rem; margin-top: 3px;">
-              {% for err in field.errors %}{{ err }}{% endfor %}
-            </div>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px;">
-          <button type="button" class="btn btn-ghost btn-sm" @click="showForm = false">Batal</button>
-          <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Simpan</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- 4. Unified Vendor List Body (No nested accordion cards per category) -->
+    <!-- 3. Unified Vendor List Body -->
     <div class="surface-panel-body" style="display: flex; flex-direction: column; gap: 22px;">
-      <style>
-        .vendor-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 14px;
-          align-items: stretch;
-        }
-        @media (max-width: 1200px) {
-          .vendor-cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        }
-        @media (max-width: 900px) {
-          .vendor-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 580px) {
-          .vendor-cards-grid { grid-template-columns: 1fr; }
-        }
-      </style>
       {% for cat_name, cat_vendors in vendor_groups.items %}
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--wp-hairline);">
@@ -190,6 +741,49 @@
       {% endfor %}
     </div>
   </div>
+
+  {% if not is_crew %}
+  <!-- Unified Right Slide-Over Sheet for Add & Edit Vendor -->
+  <div class="vs-backdrop"
+       x-show="sheetOpen"
+       x-transition.opacity.duration.200ms
+       x-cloak
+       @click="closeSheet()"
+       aria-hidden="true"></div>
+
+  <aside class="vs-drawer"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Form Kandidat Vendor"
+         x-show="sheetOpen"
+         x-transition:enter="vs-enter"
+         x-transition:enter-start="vs-enter-start"
+         x-transition:enter-end="vs-enter-end"
+         x-transition:leave="vs-leave"
+         x-transition:leave-start="vs-leave-start"
+         x-transition:leave-end="vs-leave-end"
+         x-cloak>
+    <!-- Add Mode Pane (Pre-rendered for 0ms open) -->
+    <div id="vendor-sheet-add" class="vs-pane" x-show="sheetMode === 'add'">
+      {% with is_edit=False %}
+      {% include "vendors/partials/vendor_form.html" %}
+      {% endwith %}
+    </div>
+
+    <!-- Edit Mode Pane (Populated via HTMX) -->
+    <div class="vs-pane" x-show="sheetMode === 'edit'">
+      <div class="vs-loading" x-show="sheetLoading">
+        <div class="vs-spinner"></div>
+        <span>Memuat detail vendor...</span>
+      </div>
+      <div id="vendor-sheet-edit"
+           class="vs-pane"
+           x-show="!sheetLoading"
+           @htmx:after-swap="sheetLoading = false; $nextTick(() => $el.querySelector('input[name=\'name\']')?.focus())">
+      </div>
+    </div>
+  </aside>
+  {% endif %}
 
 </div>
 {% endblock %}

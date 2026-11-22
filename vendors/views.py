@@ -44,15 +44,19 @@ def vendor_compare(request):
         'reputation': first_vendor.weight_reputation if first_vendor else 20,
     }
 
+    initial_data = {
+        'weight_price': weights['price'],
+        'weight_quality': weights['quality'],
+        'weight_facility': weights['facility'],
+        'weight_reputation': weights['reputation'],
+    }
+    if category_filter:
+        initial_data['category'] = category_filter
+
     context = {
         'vendors': vendors_list,
         'vendor_groups': vendor_groups,
-        'form': VendorCandidateForm(initial={
-            'weight_price': weights['price'],
-            'weight_quality': weights['quality'],
-            'weight_facility': weights['facility'],
-            'weight_reputation': weights['reputation'],
-        }),
+        'form': VendorCandidateForm(initial=initial_data),
         'weights': weights,
         'category_filter': category_filter,
         'categories': VendorCandidate.CATEGORY_CHOICES,
@@ -84,7 +88,7 @@ def update_vendor_weights(request):
 @login_required
 @owner_required
 def add_vendor(request):
-    """HTMX endpoint: Add vendor candidate with clear error feedback."""
+    """HTMX endpoint: Add vendor candidate with inline drawer validation feedback."""
     if request.method == 'POST':
         form = VendorCandidateForm(request.POST)
         if form.is_valid():
@@ -93,6 +97,21 @@ def add_vendor(request):
             vendor.save()
             messages.success(request, f'Kandidat vendor "{vendor.name}" berhasil ditambahkan.')
             return redirect('vendors:compare')
+        if request.htmx:
+            weights = {
+                'price': int(request.POST.get('weight_price') or 30),
+                'quality': int(request.POST.get('weight_quality') or 30),
+                'facility': int(request.POST.get('weight_facility') or 20),
+                'reputation': int(request.POST.get('weight_reputation') or 20),
+            }
+            response = render(request, 'vendors/partials/vendor_form.html', {
+                'form': form,
+                'is_edit': False,
+                'weights': weights,
+            })
+            response['HX-Retarget'] = '#vendor-sheet-add'
+            response['HX-Reswap'] = 'innerHTML'
+            return response
         err_msgs = []
         for field, errs in form.errors.items():
             label = form.fields[field].label if field in form.fields else field
@@ -104,23 +123,39 @@ def add_vendor(request):
 @login_required
 @owner_required
 def update_vendor(request, pk):
-    """HTMX endpoint: Update vendor candidate."""
+    """HTMX endpoint: Update vendor candidate inside the slide-over sheet."""
     vendor = get_object_or_404(VendorCandidate, pk=pk, wedding=request.wedding)
     if request.GET.get('cancel') == '1':
         return render(request, 'vendors/partials/vendor_card.html', {'vendor': vendor})
+    weights = {
+        'price': vendor.weight_price,
+        'quality': vendor.weight_quality,
+        'facility': vendor.weight_facility,
+        'reputation': vendor.weight_reputation,
+    }
     if request.method == 'POST':
         form = VendorCandidateForm(request.POST, instance=vendor)
         if form.is_valid():
             form.save()
+            messages.success(request, f'Perubahan vendor "{vendor.name}" berhasil disimpan.')
             return redirect('vendors:compare')
-        response = render(request, 'vendors/partials/vendor_form.html', {'form': form, 'vendor': vendor})
-        response['HX-Retarget'] = f'#edit-vendor-{vendor.pk}'
-        response['HX-Reselect'] = f'#edit-vendor-{vendor.pk}'
-        response['HX-Reswap'] = 'outerHTML'
+        response = render(request, 'vendors/partials/vendor_form.html', {
+            'form': form,
+            'vendor': vendor,
+            'is_edit': True,
+            'weights': weights,
+        })
+        response['HX-Retarget'] = '#vendor-sheet-edit'
+        response['HX-Reswap'] = 'innerHTML'
         return response
     else:
         form = VendorCandidateForm(instance=vendor)
-    return render(request, 'vendors/partials/vendor_form.html', {'form': form, 'vendor': vendor})
+    return render(request, 'vendors/partials/vendor_form.html', {
+        'form': form,
+        'vendor': vendor,
+        'is_edit': True,
+        'weights': weights,
+    })
 
 
 @login_required

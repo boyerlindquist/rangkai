@@ -155,9 +155,11 @@
     {% if not is_crew %}
     <div style="display: flex; gap: 4px;">
       <button type="button" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-gold-main);"
+              @click="$dispatch('vendor-sheet:open-edit')"
               hx-get="{% url 'vendors:update' vendor.pk %}"
-              hx-target="closest .surface-panel"
-              hx-swap="outerHTML" aria-label="Edit vendor {{ vendor.name }}" title="Edit Vendor"><i data-lucide="pencil" style="width: 13px; height: 13px;"></i></button>
+              hx-target="#vendor-sheet-edit"
+              hx-swap="innerHTML"
+              aria-label="Edit vendor {{ vendor.name }}" title="Edit Vendor"><i data-lucide="pencil" style="width: 13px; height: 13px;"></i></button>
       <button type="button" class="btn btn-ghost btn-icon btn-sm" style="color: var(--wp-text-muted);"
               hx-delete="{% url 'vendors:delete' vendor.pk %}"
               hx-confirm="Hapus kandidat vendor '{{ vendor.name }}'?"

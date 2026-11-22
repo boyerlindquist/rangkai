@@ -203,10 +203,11 @@ class RoleManagementAndCheckoutTests(TestCase):
         resp_settings = self.client.get(reverse('core:settings'))
         self.assertContains(resp_settings, 'value="2026-12-20"')
 
-        # 2. Vendor form hides raw English weight labels and shows (1-5) scale
+        # 2. Vendor sheet hides raw English weight labels and renders weighted evaluation section
         resp_vendors = self.client.get(reverse('vendors:compare'))
         self.assertNotContains(resp_vendors, 'Weight price')
-        self.assertContains(resp_vendors, 'Skor Harga (1-5)')
+        self.assertContains(resp_vendors, 'Evaluasi Berbobot')
+        self.assertContains(resp_vendors, 'Harga & Value')
 
         # 3. Adding vendor with category & 1-5 scores succeeds cleanly
         resp_add = self.client.post(reverse('vendors:add'), {
@@ -418,7 +419,7 @@ class SumopodPaymentTests(TestCase):
         mock_create_resp = {
             'payment_id': 'pay-uuid-1234',
             'order_id': 'RNK-MOCK',
-            'amount': 149000,
+            'amount': 99000,
             'fee': 1343,
             'net_amount': 147657,
             'payment_link_url': 'https://pay-sandbox.sumopod.com/pay/pay-uuid-1234',
@@ -464,7 +465,7 @@ class SumopodPaymentTests(TestCase):
             mock_status_resp = {
                 'payment_id': 'pay-uuid-1234',
                 'order_id': order.order_code,
-                'amount': 149000,
+                'amount': 99000,
                 'fee': 1343,
                 'net_amount': 147657,
                 'status': 'completed',
@@ -524,7 +525,7 @@ class SumopodPaymentTests(TestCase):
             user=user,
             customer_email=user.email,
             plan_type='wedding_owner',
-            amount=149000,
+            amount=99000,
             payment_method='qris',
             status='pending',
             gateway_ref='pay-wh-999',
@@ -579,7 +580,7 @@ class SumopodPaymentTests(TestCase):
                 'data': {
                     'payment_id': 'pay-wh-999',
                     'order_id': order.order_code,
-                    'amount': 149000,
+                    'amount': 99000,
                     'fee': 1343,
                     'net_amount': 147657,
                     'status': 'completed',
@@ -628,7 +629,7 @@ class SumopodPaymentTests(TestCase):
             user=u1,
             customer_email=u1.email,
             plan_type='wedding_owner',
-            amount=149000,
+            amount=99000,
             payment_method='qris',
             status='pending',
             payment_link_url='https://checkout.pymnt.app/payment-links/test-active',
@@ -651,7 +652,7 @@ class SumopodPaymentTests(TestCase):
         mock_create_resp = {
             'payment_id': 'pay-uuid-fresh',
             'order_id': 'RNK-FRESH',
-            'amount': 499000,
+            'amount': 299000,
             'fee': 3793,
             'net_amount': 495207,
             'payment_link_url': 'https://checkout.pymnt.app/payment-links/fresh-wo',
@@ -878,3 +879,95 @@ class CalendarAndPhaseRangeTests(TestCase):
         self.assertEqual(len(custom), 3)
         self.assertEqual(custom[0].range_display, 'H-120 s/d H-61')
         self.assertEqual(custom[2].range_display, 'H-14 s/d Hari-H')
+
+
+@override_settings(SUMOPOD_API_KEY='', SUMOPOD_TEST_AMOUNT=0)
+class WeddingNotesPrivacyTests(TestCase):
+    """Tests for /notes/ default-private owner notes, per-note sharing, global toggle, and Crew read-only."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user(username='note_owner', password='password123')
+        AccountProfile.objects.create(user=self.owner, account_type='couple', project_quota=1, plan_status='active')
+
+        self.wo = User.objects.create_user(username='note_wo', password='password123')
+        AccountProfile.objects.create(user=self.wo, account_type='wo_manager', project_quota=10, plan_status='active')
+
+        self.crew = User.objects.create_user(username='note_crew', password='password123')
+        AccountProfile.objects.create(user=self.crew, account_type='crew', project_quota=0, plan_status='active')
+
+        self.wedding = Wedding.objects.create(groom_name='Raka', bride_name='Sinta', managed_by=self.wo)
+        WeddingMembership.objects.create(user=self.owner, wedding=self.wedding, role='owner')
+        WeddingMembership.objects.create(user=self.wo, wedding=self.wedding, role='wo_manager')
+        WeddingMembership.objects.create(user=self.crew, wedding=self.wedding, role='crew')
+
+    def test_notes_privacy_per_note_and_global_toggle_and_crew_readonly(self):
+        import json
+        from operations.models import WeddingNote
+
+        c_owner = Client()
+        c_owner.login(username='note_owner', password='password123')
+        c_wo = Client()
+        c_wo.login(username='note_wo', password='password123')
+        c_crew = Client()
+        c_crew.login(username='note_crew', password='password123')
+
+        # 1. Owner creates a note -> PRIVATE by default
+        r_create = c_owner.post(
+            reverse('note_create'),
+            data=json.dumps({'title': 'Diskusi Rahasia Keluarga', 'content': 'Anggaran pribadi'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_create.status_code, 201)
+        note1_id = r_create.json()['note']['id']
+        self.assertFalse(WeddingNote.objects.get(pk=note1_id).is_shared_with_team)
+
+        # 2. WO Manager & Crew CANNOT see the private note on /notes/ or mutate it
+        self.assertNotContains(c_wo.get(reverse('notes')), 'Diskusi Rahasia Keluarga')
+        self.assertNotContains(c_crew.get(reverse('notes')), 'Diskusi Rahasia Keluarga')
+        self.assertEqual(
+            c_wo.post(reverse('note_save', args=[note1_id]), data=json.dumps({'title': 'Hacked'}), content_type='application/json').status_code,
+            404,
+        )
+
+        # 3. Owner shares note1 individually (per-note eye toggle) -> WO & Crew can now see it
+        r_share = c_owner.post(
+            reverse('note_save', args=[note1_id]),
+            data=json.dumps({'is_shared_with_team': True}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_share.status_code, 200)
+        self.assertContains(c_wo.get(reverse('notes')), 'Diskusi Rahasia Keluarga')
+        self.assertContains(c_crew.get(reverse('notes')), 'Diskusi Rahasia Keluarga')
+
+        # 4. Crew is strictly read-only (403 on create, save, delete, toggle-all)
+        self.assertEqual(c_crew.post(reverse('note_create'), data='{}', content_type='application/json').status_code, 403)
+        self.assertEqual(c_crew.post(reverse('note_save', args=[note1_id]), data='{"title":"x"}', content_type='application/json').status_code, 403)
+        self.assertEqual(c_crew.post(reverse('note_delete', args=[note1_id])).status_code, 403)
+        self.assertEqual(c_crew.post(reverse('notes_toggle_all_visibility')).status_code, 403)
+
+        # 5. Owner creates a second private note -> hidden from WO until global toggle is turned ON
+        r_create2 = c_owner.post(
+            reverse('note_create'),
+            data=json.dumps({'title': 'Catatan Privat Kedua', 'content': 'Detail internal'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_create2.status_code, 201)
+        self.assertNotContains(c_wo.get(reverse('notes')), 'Catatan Privat Kedua')
+
+        # WO cannot toggle global visibility (403); Owner CAN
+        self.assertEqual(c_wo.post(reverse('notes_toggle_all_visibility')).status_code, 403)
+        r_toggle = c_owner.post(reverse('notes_toggle_all_visibility'))
+        self.assertEqual(r_toggle.status_code, 200)
+        self.assertTrue(r_toggle.json()['allow_wo_notes_access'])
+        self.assertContains(c_wo.get(reverse('notes')), 'Catatan Privat Kedua')
+        self.assertContains(c_crew.get(reverse('notes')), 'Catatan Privat Kedua')
+
+        # 6. WO Manager creates a note -> automatically shared with team
+        r_wo_note = c_wo.post(
+            reverse('note_create'),
+            data=json.dumps({'title': 'Notulensi TM Venue', 'category': 'tech_meeting'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_wo_note.status_code, 201)
+        self.assertTrue(r_wo_note.json()['note']['is_shared_with_team'])
+        self.assertContains(c_owner.get(reverse('notes')), 'Notulensi TM Venue')

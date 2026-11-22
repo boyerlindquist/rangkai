@@ -20,7 +20,37 @@
 {% endblock %}
 
 {% block content %}
-<div class="workspace-canvas is-wide"
+<style>
+  /* Quieter Operate-mode restraint for Budget & Cashflow */
+  .budget-quiet .cat-card-icon {
+    color: var(--muted-foreground) !important;
+    background: var(--muted) !important;
+  }
+  .budget-quiet .cat-card.is-active .cat-card-icon {
+    color: var(--primary) !important;
+    background: var(--primary-soft) !important;
+  }
+  .budget-quiet .cat-card-rest {
+    color: var(--muted-foreground) !important;
+    font-weight: 500;
+  }
+  .budget-quiet .cat-card-rest.is-over {
+    color: var(--destructive) !important;
+    font-weight: 600;
+  }
+  .budget-quiet .metric-icon-box {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-xs);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>
+<div class="workspace-canvas is-wide budget-quiet"
      x-data="{ showNewCategory: false, showCashBreakdown: false, payerFilter: sessionStorage.getItem('wp_budget_payer_filter') || '' }"
      x-init="$watch('payerFilter', val => { sessionStorage.setItem('wp_budget_payer_filter', val || ''); window.dispatchEvent(new CustomEvent('budgetPayerFilterChanged', { detail: { payer: val } })); })">
   <!-- Clean Page Header -->
@@ -37,14 +67,14 @@
     <div class="metric-item">
       <div class="metric-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
         <span style="display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;">
-          <span style="width: 24px; height: 24px; border-radius: var(--wp-radius-xs); background: var(--wp-sage-soft); color: var(--wp-sage-main); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span class="metric-icon-box">
             <i data-lucide="piggy-bank" style="width: 14px; height: 14px;"></i>
           </span>
           Dana Terkumpul
         </span>
         <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">{{ saved_vs_need_pct }}%</span>
       </div>
-      <div class="metric-value" style="color: var(--wp-sage-main); white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
+      <div class="metric-value" style="color: var(--foreground); white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
       <div class="metric-sub">
         Rate tabungan: <strong>Rp {{ monthly_saving_rate|intcomma }}/bln</strong>
         · <a href="{% url 'finances:savings_tracker' %}"
@@ -53,7 +83,7 @@
              hx-select=".main-content"
              hx-swap="outerHTML show:top"
              hx-push-url="true"
-             style="color: var(--wp-gold-main); font-weight: 600; text-decoration: underline;">Kelola Tabungan</a>
+             style="color: var(--primary); font-weight: 600; text-decoration: none;">Kelola Tabungan</a>
       </div>
     </div>
 
@@ -61,18 +91,18 @@
     <div class="metric-item">
       <div class="metric-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
         <span style="display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;">
-          <span style="width: 24px; height: 24px; border-radius: var(--wp-radius-xs); background: var(--wp-gold-soft); color: var(--wp-gold-main); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span class="metric-icon-box">
             <i data-lucide="wallet" style="width: 14px; height: 14px;"></i>
           </span>
           Sisa Kas Siap Pakai
         </span>
         <span class="status-pill" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">{{ paid_of_saved_pct }}% Terpakai</span>
       </div>
-      <div class="metric-value" style="color: {% if is_cash_deficit %}var(--wp-terracotta-main){% else %}var(--wp-text-main){% endif %}; white-space: nowrap;">
+      <div class="metric-value" style="color: {% if is_cash_deficit %}var(--destructive){% else %}var(--foreground){% endif %}; white-space: nowrap;">
         {% if is_cash_deficit %}-Rp {{ cash_deficit_amount|intcomma }}{% else %}Rp {{ available_cash|intcomma }}{% endif %}
       </div>
       <div class="metric-sub">
-        Sudah dibayarkan: <strong style="color: var(--wp-sage-main);">Rp {{ total_paid|intcomma }}</strong> ({{ paid_items|length }} item)
+        Sudah dibayarkan: <strong>Rp {{ total_paid|intcomma }}</strong> ({{ paid_items|length }} item)
       </div>
     </div>
 
@@ -80,7 +110,7 @@
     <div class="metric-item" x-data="{ editingTotalBudget: false }">
       <div class="metric-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
         <span style="display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;">
-          <span style="width: 24px; height: 24px; border-radius: var(--wp-radius-xs); background: rgba(13, 31, 24, 0.06); color: var(--wp-text-secondary); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span class="metric-icon-box">
             <i data-lucide="target" style="width: 14px; height: 14px;"></i>
           </span>
           Target Total Anggaran
@@ -88,7 +118,7 @@
         <button type="button"
                 class="btn btn-ghost btn-icon btn-sm"
                 @click="editingTotalBudget = !editingTotalBudget"
-                style="padding: 2px 6px; height: auto; color: var(--wp-gold-main); font-size: 0.75rem;"
+                style="padding: 2px 6px; height: auto; color: var(--muted-foreground); font-size: 0.75rem;"
                 title="Ubah Target Total Anggaran">
           <i data-lucide="pencil" style="width: 12px; height: 12px;"></i>
         </button>
@@ -99,13 +129,13 @@
         </div>
         <div class="metric-sub">
           {% if is_over_allocated %}
-            <span style="color: var(--wp-terracotta-main); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+            <span style="color: var(--destructive); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
               <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i> Pagu: Rp {{ total_cat_planned|intcomma }} (+{{ over_allocated_pct }}%)
             </span>
           {% else %}
             Kesepakatan Vendor: <strong>Rp {{ total_actual|intcomma }}</strong>
             {% if total_remaining > 0 %}
-              · Belum lunas: <span style="color: var(--wp-gold-dark); font-weight: 600;">Rp {{ total_remaining|intcomma }}</span>
+              · Belum lunas: <strong>Rp {{ total_remaining|intcomma }}</strong>
             {% endif %}
           {% endif %}
         </div>
@@ -139,7 +169,7 @@
     <div class="metric-item">
       <div class="metric-label" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
         <span style="display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;">
-          <span style="width: 24px; height: 24px; border-radius: var(--wp-radius-xs); background: var(--wp-terracotta-soft); color: var(--wp-terracotta-main); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span class="metric-icon-box">
             <i data-lucide="calendar-clock" style="width: 14px; height: 14px;"></i>
           </span>
           Kekurangan Dana
@@ -147,12 +177,12 @@
         {% if shortfall_from_saved == 0 and effective_total_need > 0 %}
           <span class="status-pill status-done" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">Tercukupi 100%</span>
         {% elif months_needed > 0 %}
-          <span class="status-pill {% if is_saving_on_track %}status-warning{% else %}status-danger{% endif %}" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">
+          <span class="status-pill {% if is_saving_on_track %}{% else %}status-danger{% endif %}" style="font-size: 0.75rem; padding: 2px 7px; white-space: nowrap;">
             ~{{ months_needed }} bln lagi
           </span>
         {% endif %}
       </div>
-      <div class="metric-value" style="color: {% if shortfall_from_saved > 0 %}var(--wp-terracotta-main){% else %}var(--wp-sage-main){% endif %}; white-space: nowrap;">
+      <div class="metric-value" style="color: var(--foreground); white-space: nowrap;">
         {% if shortfall_from_saved > 0 %}Kurang Rp {{ shortfall_from_saved|intcomma }}{% else %}Rp 0 (Aman){% endif %}
       </div>
       <div class="metric-sub">
@@ -161,7 +191,7 @@
         {% elif monthly_saving_rate > 0 and months_needed > 0 %}
           Selesai <strong>{{ estimated_finish_date|date:"M Y" }}</strong> (rate Rp {{ monthly_saving_rate|intcomma }}/bln)
           {% if not is_saving_on_track and required_monthly_for_dday %}
-            · <span style="color: var(--wp-terracotta-main); font-weight: 600;">Butuh Rp {{ required_monthly_for_dday|intcomma }}/bln</span>
+            · <span style="color: var(--destructive); font-weight: 600;">Butuh Rp {{ required_monthly_for_dday|intcomma }}/bln</span>
           {% endif %}
         {% else %}
           Atur kesanggupan nabung/bulan di menu Tabungan
@@ -965,15 +995,15 @@
                 class="cat-card"
                 :class="{ 'is-active': mode === 'unused' }"
                 @click="openUnused()"
-                style="padding: 9px 12px; gap: 4px; border-color: var(--wp-gold-border); background: var(--wp-gold-soft);">
+                style="padding: 9px 12px; gap: 4px; border-style: dashed;">
           <span class="cat-card-top">
-            <span class="cat-card-icon" style="width: 22px; height: 22px; color: var(--wp-gold-dark);"><i data-lucide="sparkles" style="width: 12px; height: 12px;"></i></span>
-            <span class="cat-card-name" style="font-size: 0.84rem; color: var(--wp-gold-dark);">Belum Dialokasikan (Unused)</span>
-            <span class="status-pill status-warning cat-card-pill">Sisa Target</span>
+            <span class="cat-card-icon" style="width: 22px; height: 22px;"><i data-lucide="sparkles" style="width: 12px; height: 12px;"></i></span>
+            <span class="cat-card-name" style="font-size: 0.84rem;">Belum Dialokasikan</span>
+            <span class="status-pill cat-card-pill">Sisa Target</span>
           </span>
           <span class="cat-card-meta">
-            <strong class="tabular-nums" style="color: var(--wp-gold-dark);">Rp {{ unused_budget_amount|intcomma }}</strong>
-            <span style="font-size: 0.75rem; color: var(--wp-gold-dark); font-weight: 600;">Alokasikan &rarr;</span>
+            <strong class="tabular-nums">Rp {{ unused_budget_amount|intcomma }}</strong>
+            <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">Alokasikan &rarr;</span>
           </span>
         </button>
         {% endif %}
@@ -994,7 +1024,7 @@
             {% elif cat.coverage_status == 'ready' %}
               <span class="status-pill status-done cat-card-pill">Dana Siap</span>
             {% elif cat.coverage_status == 'partial' %}
-              <span class="status-pill status-warning cat-card-pill">{{ cat.cat_coverage_pct }}% Siap</span>
+              <span class="status-pill cat-card-pill">{{ cat.cat_coverage_pct }}% Siap</span>
             {% elif cat.coverage_status == 'shortfall' %}
               <span class="status-pill status-danger cat-card-pill">Kurang Dana</span>
             {% endif %}
@@ -1673,47 +1703,47 @@
       const goldColor = isDark ? '#34D399' : '#126E51';
       const tealColor = isDark ? '#2DD4BF' : '#0F766E';
 
-      // Rangkai Cohesive Category Palette (Flat Solid Emerald / Teal / Slate — Zero Muddy Gradients)
+      // Rangkai Monochrome Imperial Emerald + Pure Zinc Tonal Palette
       const colorMap = isDark ? {
         'Total Tabungan (Target)': '#22A076',
         'Tabungan Bersama': '#22A076',
-        'Belum Dialokasikan (Unused)': '#F59E0B',
+        'Belum Dialokasikan (Unused)': '#71717A',
         'Belum Ada Sumber Dana': '#F87171',
-        'Pengantin Pria': '#38BDF8',
-        'Pengantin Wanita': '#34D399',
-        'Keluarga Pria': '#2DD4BF',
-        'Keluarga Wanita': '#94A3B8',
+        'Pengantin Pria': '#2EB589',
+        'Pengantin Wanita': '#22A076',
+        'Keluarga Pria': '#3D7A67',
+        'Keluarga Wanita': '#71717A',
         'Catering & F&B': '#22A076',
-        'Venue & Gedung': '#14B8A6',
-        'Dekorasi': '#34D399',
-        'Attire & MUA': '#38BDF8',
-        'Dokumentasi': '#0EA5E9',
+        'Venue & Gedung': '#1C8A65',
+        'Dekorasi': '#2EB589',
+        'Attire & MUA': '#3F7D6A',
+        'Dokumentasi': '#528E7B',
         'Entertainment & MC': '#64748B',
-        'Admin & Legalitas': '#94A3B8',
-        'Seserahan & Cincin': '#10B981',
-        'Buffer / Darurat': '#71717A',
+        'Admin & Legalitas': '#71717A',
+        'Seserahan & Cincin': '#167555',
+        'Buffer / Darurat': '#52525B',
       } : {
-        'Total Tabungan (Target)': '#126E51',
-        'Tabungan Bersama': '#126E51',
-        'Belum Dialokasikan (Unused)': '#D97706',
+        'Total Tabungan (Target)': '#0E5A42',
+        'Tabungan Bersama': '#0E5A42',
+        'Belum Dialokasikan (Unused)': '#A1A1AA',
         'Belum Ada Sumber Dana': '#DC2626',
-        'Pengantin Pria': '#0284C7',
+        'Pengantin Pria': '#16805F',
         'Pengantin Wanita': '#126E51',
-        'Keluarga Pria': '#0F766E',
-        'Keluarga Wanita': '#475569',
+        'Keluarga Pria': '#3F6F60',
+        'Keluarga Wanita': '#71717A',
         'Catering & F&B': '#126E51',
-        'Venue & Gedung': '#0F766E',
-        'Dekorasi': '#1E9E73',
-        'Attire & MUA': '#0284C7',
-        'Dokumentasi': '#0D9488',
-        'Entertainment & MC': '#475569',
-        'Admin & Legalitas': '#334155',
-        'Seserahan & Cincin': '#059669',
-        'Buffer / Darurat': '#64748B',
+        'Venue & Gedung': '#177F5E',
+        'Dekorasi': '#249470',
+        'Attire & MUA': '#3D7A67',
+        'Dokumentasi': '#528776',
+        'Entertainment & MC': '#64748B',
+        'Admin & Legalitas': '#71717A',
+        'Seserahan & Cincin': '#0E5A42',
+        'Buffer / Darurat': '#94A3B8',
       };
       const fallbackPalette = isDark
-        ? ['#22A076', '#14B8A6', '#38BDF8', '#34D399', '#64748B', '#0EA5E9', '#94A3B8', '#10B981']
-        : ['#126E51', '#0F766E', '#0284C7', '#1E9E73', '#475569', '#0D9488', '#334155', '#64748B'];
+        ? ['#22A076', '#1C8A65', '#2EB589', '#3F7D6A', '#528E7B', '#64748B', '#71717A', '#52525B']
+        : ['#126E51', '#177F5E', '#249470', '#3D7A67', '#528776', '#64748B', '#71717A', '#94A3B8'];
       function getNodeColor(name, idx) {
         const c = cleanStr(name);
         return colorMap[c] || fallbackPalette[idx % fallbackPalette.length];

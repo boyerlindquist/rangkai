@@ -1,0 +1,1431 @@
+{% extends "base.html" %}
+{% block title %}Catatan | Rangkai.click{% endblock %}
+{% block breadcrumb %}Catatan{% endblock %}
+
+{% block content %}
+<style>
+  /* Placed inside block content so HTMX hx-boost navigation always loads styles */
+  .notes-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .notes-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .notes-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .notes-global-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  }
+
+  .notes-global-toggle:hover {
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  }
+
+  .notes-global-toggle.is-on {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    background: color-mix(in srgb, var(--primary) 10%, var(--card));
+    color: var(--primary);
+  }
+
+  .notes-global-toggle svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+
+  /* Split-Pane Studio Frame */
+  .notes-frame {
+    display: grid;
+    grid-template-columns: 332px minmax(0, 1fr);
+    min-height: calc(100dvh - 200px);
+    max-height: calc(100dvh - 172px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* Left Pane: Search, Filter & Note List */
+  .notes-list-pane {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 45%, var(--card));
+    min-height: 0;
+  }
+
+  .notes-list-controls {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notes-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .notes-search-wrap svg {
+    position: absolute;
+    left: 10px;
+    width: 15px;
+    height: 15px;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .notes-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px 0 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.84rem;
+    font-family: var(--font-sans);
+  }
+
+  .notes-search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .notes-cat-strip {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .notes-cat-strip::-webkit-scrollbar { display: none; }
+
+  .notes-cat-pill {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+
+  .notes-cat-pill:hover {
+    color: var(--foreground);
+  }
+
+  .notes-cat-pill.is-active {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+  }
+
+  .notes-list-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .notes-item {
+    width: 100%;
+    text-align: left;
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: var(--radius-md);
+    padding: 11px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+
+  .notes-item:hover {
+    background: color-mix(in srgb, var(--muted) 70%, var(--card));
+  }
+
+  .notes-item.is-active {
+    background: var(--card);
+    border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+    box-shadow: var(--shadow-xs);
+  }
+
+  .notes-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .notes-item-title {
+    font-size: 0.86rem;
+    font-weight: 650;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .notes-item-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+  }
+
+  .notes-item-icons svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .notes-item-icons .is-pin { color: var(--primary); }
+  .notes-item-icons .is-eye { color: var(--primary); }
+
+  .notes-item-snippet {
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  .notes-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .notes-item-cat {
+    font-weight: 600;
+    color: var(--muted-foreground);
+  }
+
+  .notes-item-date {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Right Pane: Editor / Reader */
+  .notes-editor-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--card);
+  }
+
+  .notes-editor-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .notes-bar-left,
+  .notes-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .notes-back-btn {
+    display: none;
+  }
+
+  .notes-cat-select {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+  }
+
+  .notes-vis-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 140ms ease;
+  }
+
+  .notes-vis-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .notes-vis-btn.is-shared {
+    border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+    background: color-mix(in srgb, var(--primary) 10%, var(--card));
+    color: var(--primary);
+  }
+
+  .notes-save-status {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .notes-save-status.is-saved { color: var(--primary); }
+  .notes-save-status.is-err { color: var(--destructive); }
+
+  .notes-editor-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .notes-editor-inner {
+    width: 100%;
+    max-width: 72ch;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+
+  .notes-title-input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    padding: 0;
+  }
+
+  .notes-title-input:focus {
+    outline: none;
+  }
+
+  .notes-title-input::placeholder {
+    color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+  }
+
+  .notes-format-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .notes-fmt-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--muted-foreground);
+    height: 28px;
+    padding: 0 9px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .notes-fmt-btn:hover {
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  }
+
+  .notes-fmt-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .notes-templates-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border);
+    background: color-mix(in srgb, var(--background) 60%, var(--card));
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+  }
+
+  /* Single Unified ContentEditable Document Area (Real Bullets + Clickable Checklists) */
+  .notes-doc-editor {
+    width: 100%;
+    flex: 1;
+    min-height: 320px;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 0.94rem;
+    line-height: 1.72;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .notes-doc-editor:empty::before {
+    content: attr(data-placeholder);
+    color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+    pointer-events: none;
+  }
+
+  .notes-doc-editor ul {
+    margin: 4px 0 6px;
+    padding-left: 22px;
+    list-style-type: disc;
+  }
+
+  .notes-doc-editor li {
+    margin: 2px 0;
+  }
+
+  .notes-doc-editor li::marker {
+    color: var(--primary);
+  }
+
+  .notes-doc-editor .n-todo {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 3px 0;
+  }
+
+  .notes-doc-editor .n-chk {
+    width: 17px;
+    height: 17px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1.5px solid color-mix(in srgb, var(--muted-foreground) 55%, var(--border));
+    background: var(--card);
+    color: var(--primary-foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+
+  .notes-doc-editor .n-chk:hover {
+    border-color: var(--primary);
+  }
+
+  .notes-doc-editor .n-todo[data-done="1"] .n-chk {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .notes-doc-editor .n-todo[data-done="1"] .n-chk::after {
+    content: "✓";
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .notes-doc-editor .n-chk-txt {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .notes-doc-editor .n-todo[data-done="1"] .n-chk-txt {
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+  }
+
+  .notes-fmt-btn.is-active {
+    background: color-mix(in srgb, var(--primary) 12%, var(--card));
+    color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  }
+
+  /* Read-only rendered view for Crew */
+  .notes-readonly-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.94rem;
+    line-height: 1.7;
+    color: var(--foreground);
+  }
+
+  .notes-ro-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .notes-ro-bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-left: 4px;
+  }
+
+  .notes-ro-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: var(--primary);
+    margin-top: 10px;
+    flex-shrink: 0;
+  }
+
+  .notes-ro-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-left: 2px;
+  }
+
+  .notes-ro-box {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border);
+    margin-top: 4px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+  }
+
+  .notes-ro-box.is-done {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .notes-editor-foot {
+    padding: 10px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.76rem;
+    color: var(--muted-foreground);
+    background: color-mix(in srgb, var(--background) 40%, var(--card));
+  }
+
+  .notes-empty-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 36px 24px;
+    gap: 12px;
+  }
+
+  .notes-empty-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--primary) 12%, var(--card));
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .notes-empty-pane h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: var(--foreground);
+  }
+
+  .notes-empty-pane p {
+    margin: 0;
+    max-width: 44ch;
+    font-size: 0.86rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+  }
+
+  .notes-empty-templates {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .notes-frame {
+      grid-template-columns: 1fr;
+      min-height: calc(100dvh - 220px);
+      max-height: none;
+    }
+    .notes-list-pane {
+      border-right: 0;
+    }
+    .notes-frame.is-mobile-detail .notes-list-pane {
+      display: none;
+    }
+    .notes-frame:not(.is-mobile-detail) .notes-editor-pane {
+      display: none;
+    }
+    .notes-back-btn {
+      display: inline-flex;
+    }
+    .notes-editor-body {
+      padding: 18px 16px 24px;
+    }
+  }
+</style>
+
+<input type="hidden" id="rangkai-notes-csrf" value="{{ csrf_token }}" />
+<script id="rangkai-notes-config" type="application/json">{{ notes_config_json|safe }}</script>
+<script>
+window.rangkaiNotesApp = function () {
+  const el = document.getElementById('rangkai-notes-config');
+  const cfg = el ? JSON.parse(el.textContent) : { notes: [], categories: [], isCoupleOrAdmin: false, canEdit: false, allowWoNotesAccess: false, urls: {} };
+
+  function getCsrf() {
+    const inp = document.getElementById('rangkai-notes-csrf');
+    if (inp && inp.value) return inp.value;
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  const TEMPLATES = {
+    family: {
+      title: 'Notulensi Meeting Keluarga',
+      category: 'family_meeting',
+      content: 'Tanggal & Lokasi:\n- \n\nPeserta Hadir:\n- \n\nPoin Diskusi & Keputusan:\n- \n\nTindak Lanjut:\n[ ] \n[ ] '
+    },
+    vendor: {
+      title: 'Catatan Survei & Test Food Vendor',
+      category: 'vendor_survey',
+      content: 'Nama Vendor & PIC:\n- \n\nKelebihan:\n- \n\nCatatan / Kekurangan:\n- \n\nHarga, Bonus & Termin:\n- \n\nTindak Lanjut:\n[ ] Bandingkan dengan kandidat lain'
+    },
+    tm: {
+      title: 'Briefing Technical Meeting (TM)',
+      category: 'tech_meeting',
+      content: 'Jadwal Loading Vendor:\n- \n\nAturan Khusus Venue / Parkir:\n- \n\nPIC Lapangan & Kontak Penting:\n- \n\nChecklist Sebelum Hari-H:\n[ ] Konfirmasi rundown final ke MC & WO\n[ ] Cek perlengkapan akad & mahar'
+    }
+  };
+
+  return {
+    notes: cfg.notes || [],
+    categories: cfg.categories || [],
+    isCoupleOrAdmin: !!cfg.isCoupleOrAdmin,
+    canEdit: !!cfg.canEdit,
+    allowWoNotesAccess: !!cfg.allowWoNotesAccess,
+    urls: cfg.urls || {},
+
+    search: '',
+    categoryFilter: 'all',
+    selectedId: (cfg.notes && cfg.notes.length) ? cfg.notes[0].id : null,
+    mobileDetail: false,
+
+    draftTitle: '',
+    draftContent: '',
+    draftCategory: 'general',
+    draftPinned: false,
+    draftShared: false,
+
+    saveState: 'idle', // idle | saving | saved | error
+    saveTimer: null,
+    togglingAll: false,
+
+    init() {
+      if (this.selectedId) {
+        this.loadNoteIntoDraft(this.selectedId, false);
+      }
+      this.$nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+        this.renderEditorFromDraft();
+      });
+    },
+
+    _makeTodoEl(text, done) {
+      const row = document.createElement('div');
+      row.className = 'n-todo';
+      row.setAttribute('data-done', done ? '1' : '0');
+      const chk = document.createElement('span');
+      chk.className = 'n-chk';
+      chk.setAttribute('contenteditable', 'false');
+      const txt = document.createElement('span');
+      txt.className = 'n-chk-txt';
+      if (text) txt.textContent = text;
+      else txt.appendChild(document.createElement('br'));
+      row.appendChild(chk);
+      row.appendChild(txt);
+      return row;
+    },
+
+    renderEditorFromDraft() {
+      if (!this.canEdit) return;
+      this.$nextTick(() => {
+        const ed = this.$refs.docEditor;
+        if (!ed) return;
+        ed.innerHTML = '';
+        const raw = this.draftContent || '';
+        if (!raw) return;
+        const lines = raw.split('\n');
+        let currentUl = null;
+        lines.forEach((line) => {
+          if (/^\s*-\s+/.test(line)) {
+            if (!currentUl) {
+              currentUl = document.createElement('ul');
+              ed.appendChild(currentUl);
+            }
+            const li = document.createElement('li');
+            const t = line.replace(/^\s*-\s+/, '');
+            if (t) li.textContent = t;
+            else li.appendChild(document.createElement('br'));
+            currentUl.appendChild(li);
+          } else {
+            currentUl = null;
+            if (/^\s*\[x\]\s*/i.test(line)) {
+              ed.appendChild(this._makeTodoEl(line.replace(/^\s*\[x\]\s*/i, ''), true));
+            } else if (/^\s*\[\s*\]\s*/.test(line)) {
+              ed.appendChild(this._makeTodoEl(line.replace(/^\s*\[\s*\]\s*/, ''), false));
+            } else {
+              const div = document.createElement('div');
+              if (line) div.textContent = line;
+              else div.appendChild(document.createElement('br'));
+              ed.appendChild(div);
+            }
+          }
+        });
+      });
+    },
+
+    serializeEditor() {
+      const ed = this.$refs.docEditor;
+      if (!ed) return this.draftContent || '';
+      const out = [];
+      const walk = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const val = node.textContent.replace(/\u200B/g, '');
+          if (val) out.push(val);
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = node.tagName;
+        if (tag === 'UL' || tag === 'OL') {
+          Array.from(node.children).forEach((li) => {
+            const t = (li.innerText || '').replace(/\n+$/, '');
+            out.push('- ' + t);
+          });
+        } else if (node.classList.contains('n-todo')) {
+          const done = node.getAttribute('data-done') === '1';
+          const txtEl = node.querySelector('.n-chk-txt');
+          const t = (txtEl ? txtEl.innerText : node.innerText || '').replace(/\n+$/, '');
+          out.push((done ? '[x] ' : '[ ] ') + t);
+        } else if (tag === 'DIV' || tag === 'P') {
+          const t = (node.innerText || '').replace(/\n+$/, '');
+          out.push(t);
+        } else if (tag === 'BR') {
+          out.push('');
+        }
+      };
+      Array.from(ed.childNodes).forEach(walk);
+      return out.join('\n').replace(/\n+$/, '');
+    },
+
+    _placeCaret(el, toEnd = true) {
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(el);
+      range.collapse(!toEnd);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    },
+
+    _findClosestBlock(node, ed) {
+      let cur = node;
+      while (cur && cur !== ed) {
+        if (cur.nodeType === Node.ELEMENT_NODE && (cur.classList.contains('n-todo') || cur.tagName === 'LI' || cur.tagName === 'DIV' || cur.tagName === 'P')) {
+          return cur;
+        }
+        cur = cur.parentNode;
+      }
+      return null;
+    },
+
+    toggleBulletList() {
+      const ed = this.$refs.docEditor;
+      if (!ed || !this.canEdit) return;
+      ed.focus();
+      const sel = window.getSelection();
+      const blk = sel && sel.rangeCount ? this._findClosestBlock(sel.anchorNode, ed) : null;
+      if (blk && blk.classList.contains('n-todo')) {
+        const txt = (blk.querySelector('.n-chk-txt')?.innerText || '').trim();
+        const ul = document.createElement('ul');
+        const li = document.createElement('li');
+        if (txt) li.textContent = txt; else li.appendChild(document.createElement('br'));
+        ul.appendChild(li);
+        blk.replaceWith(ul);
+        this._placeCaret(li, true);
+      } else {
+        document.execCommand('insertUnorderedList');
+      }
+      this.draftContent = this.serializeEditor();
+      this.scheduleSave();
+    },
+
+    insertChecklist() {
+      const ed = this.$refs.docEditor;
+      if (!ed || !this.canEdit) return;
+      ed.focus();
+      const sel = window.getSelection();
+      const blk = sel && sel.rangeCount ? this._findClosestBlock(sel.anchorNode, ed) : null;
+      if (blk && blk.classList.contains('n-todo')) {
+        // Toggle checklist back to normal line
+        const txt = (blk.querySelector('.n-chk-txt')?.innerText || '').trim();
+        const div = document.createElement('div');
+        if (txt) div.textContent = txt; else div.appendChild(document.createElement('br'));
+        blk.replaceWith(div);
+        this._placeCaret(div, true);
+      } else if (blk && blk.parentNode === ed) {
+        const txt = (blk.innerText || '').trim();
+        const todo = this._makeTodoEl(txt, false);
+        blk.replaceWith(todo);
+        this._placeCaret(todo.querySelector('.n-chk-txt'), true);
+      } else {
+        const todo = this._makeTodoEl('', false);
+        ed.appendChild(todo);
+        this._placeCaret(todo.querySelector('.n-chk-txt'), true);
+      }
+      this.draftContent = this.serializeEditor();
+      this.scheduleSave();
+    },
+
+    onEditorClick(e) {
+      const chk = e.target.closest('.n-chk');
+      if (!chk) return;
+      e.preventDefault();
+      const todo = chk.closest('.n-todo');
+      if (!todo) return;
+      todo.setAttribute('data-done', todo.getAttribute('data-done') === '1' ? '0' : '1');
+      this.draftContent = this.serializeEditor();
+      this.saveNow();
+    },
+
+    onEditorInput() {
+      const ed = this.$refs.docEditor;
+      if (!ed) return;
+      // Live markdown shortcuts: typing "- " -> real <ul><li>, typing "[] " or "[ ] " -> real checklist
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount && sel.isCollapsed) {
+        const node = sel.anchorNode;
+        if (node && node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent || '';
+          const blk = this._findClosestBlock(node, ed);
+          const inListOrTodo = blk && (blk.tagName === 'LI' || blk.classList.contains('n-todo'));
+          if (!inListOrTodo) {
+            if (/^-\s/.test(text)) {
+              const rest = text.replace(/^-\s/, '');
+              const ul = document.createElement('ul');
+              const li = document.createElement('li');
+              if (rest) li.textContent = rest; else li.appendChild(document.createElement('br'));
+              ul.appendChild(li);
+              if (blk && blk.parentNode === ed) blk.replaceWith(ul);
+              else node.parentNode.replaceChild(ul, node);
+              this._placeCaret(li, true);
+            } else if (/^\[\s?\]\s/.test(text)) {
+              const rest = text.replace(/^\[\s?\]\s/, '');
+              const todo = this._makeTodoEl(rest, false);
+              if (blk && blk.parentNode === ed) blk.replaceWith(todo);
+              else node.parentNode.replaceChild(todo, node);
+              this._placeCaret(todo.querySelector('.n-chk-txt'), true);
+            }
+          }
+        }
+      }
+      this.draftContent = this.serializeEditor();
+      this.scheduleSave();
+    },
+
+    onEditorKeydown(e) {
+      const ed = this.$refs.docEditor;
+      if (!ed) return;
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const blk = this._findClosestBlock(sel.anchorNode, ed);
+      if (!blk || !blk.classList.contains('n-todo')) return;
+
+      const txtEl = blk.querySelector('.n-chk-txt');
+      const txtVal = (txtEl ? txtEl.innerText : '').replace(/\n/g, '').trim();
+
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!txtVal) {
+          // Empty checklist item -> exit checklist cleanly back to normal line
+          const div = document.createElement('div');
+          div.appendChild(document.createElement('br'));
+          blk.replaceWith(div);
+          this._placeCaret(div, false);
+        } else {
+          // Auto-create next checklist item below
+          const nextTodo = this._makeTodoEl('', false);
+          blk.insertAdjacentElement('afterend', nextTodo);
+          this._placeCaret(nextTodo.querySelector('.n-chk-txt'), false);
+        }
+        this.draftContent = this.serializeEditor();
+        this.scheduleSave();
+      } else if (e.key === 'Backspace' && sel.isCollapsed && sel.anchorOffset === 0) {
+        // Backspace at start of checklist converts it back to normal text
+        e.preventDefault();
+        const div = document.createElement('div');
+        if (txtVal) div.textContent = txtVal; else div.appendChild(document.createElement('br'));
+        blk.replaceWith(div);
+        this._placeCaret(div, false);
+        this.draftContent = this.serializeEditor();
+        this.scheduleSave();
+      }
+    },
+
+    onEditorPaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      if (!text) return;
+      document.execCommand('insertText', false, text);
+      this.draftContent = this.serializeEditor();
+      this.scheduleSave();
+    },
+
+    get activeNote() {
+      return this.notes.find((n) => n.id === this.selectedId) || null;
+    },
+
+    get filteredNotes() {
+      const q = (this.search || '').trim().toLowerCase();
+      return this.notes
+        .filter((n) => {
+          if (this.categoryFilter !== 'all' && n.category !== this.categoryFilter) return false;
+          if (!q) return true;
+          return (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q);
+        })
+        .sort((a, b) => {
+          if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+          return (b.updated_at_iso || '').localeCompare(a.updated_at_iso || '');
+        });
+    },
+
+    snippet(text) {
+      const clean = (text || '').replace(/^\s*(\[[x ]\]|-)\s*/gim, '').replace(/\s+/g, ' ').trim();
+      return clean || 'Catatan kosong...';
+    },
+
+    parsedReadonlyLines() {
+      return (this.draftContent || '').split('\n').map((line) => {
+        if (/^\s*\[x\]\s*/i.test(line)) return { type: 'check', done: true, text: line.replace(/^\s*\[x\]\s*/i, '') };
+        if (/^\s*\[\s*\]\s*/.test(line)) return { type: 'check', done: false, text: line.replace(/^\s*\[\s*\]\s*/, '') };
+        if (/^\s*-\s+/.test(line)) return { type: 'bullet', text: line.replace(/^\s*-\s+/, '') };
+        return { type: 'text', text: line || '\u00A0' };
+      });
+    },
+
+    loadNoteIntoDraft(id, openMobile = true) {
+      const n = this.notes.find((x) => x.id === id);
+      if (!n) return;
+      this.selectedId = n.id;
+      this.draftTitle = n.title || '';
+      this.draftContent = n.content || '';
+      this.draftCategory = n.category || 'general';
+      this.draftPinned = !!n.is_pinned;
+      this.draftShared = !!n.is_shared_with_team;
+      this.saveState = 'idle';
+      if (openMobile) this.mobileDetail = true;
+      this.$nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+        this.renderEditorFromDraft();
+      });
+    },
+
+    async selectNote(id) {
+      if (this.saveTimer && this.activeNote && this.canEdit) {
+        clearTimeout(this.saveTimer);
+        this.saveTimer = null;
+        await this.persistActiveNote();
+      }
+      this.loadNoteIntoDraft(id, true);
+    },
+
+    async createNote(templateKey = null) {
+      if (!this.canEdit) return;
+      if (this.saveTimer && this.activeNote) {
+        clearTimeout(this.saveTimer);
+        this.saveTimer = null;
+        await this.persistActiveNote();
+      }
+      const tpl = templateKey ? TEMPLATES[templateKey] : null;
+      const body = tpl
+        ? { title: tpl.title, content: tpl.content, category: tpl.category }
+        : { title: '', content: '', category: this.categoryFilter !== 'all' ? this.categoryFilter : 'general' };
+
+      try {
+        const res = await fetch(this.urls.create, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.note) {
+          this.notes.unshift(data.note);
+          this.categoryFilter = 'all';
+          this.search = '';
+          this.loadNoteIntoDraft(data.note.id, true);
+          this.saveState = 'saved';
+          this.$nextTick(() => {
+            if (window.lucide) lucide.createIcons();
+            const titleInput = this.$refs.titleInput;
+            if (titleInput && !tpl) titleInput.focus();
+          });
+        }
+      } catch (e) {
+        this.saveState = 'error';
+      }
+    },
+
+    applyTemplateToCurrent(templateKey) {
+      const tpl = TEMPLATES[templateKey];
+      if (!tpl || !this.canEdit || !this.activeNote) return;
+      if (!this.draftTitle.trim()) this.draftTitle = tpl.title;
+      this.draftCategory = tpl.category;
+      this.draftContent = tpl.content;
+      this.renderEditorFromDraft();
+      this.saveNow();
+    },
+
+    scheduleSave() {
+      if (!this.canEdit || !this.activeNote) return;
+      this.saveState = 'saving';
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => {
+        this.saveTimer = null;
+        this.persistActiveNote();
+      }, 850);
+    },
+
+    saveNow() {
+      if (!this.canEdit || !this.activeNote) return;
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+      this.persistActiveNote();
+    },
+
+    togglePin() {
+      if (!this.canEdit || !this.activeNote) return;
+      this.draftPinned = !this.draftPinned;
+      this.saveNow();
+    },
+
+    togglePerNoteShare() {
+      if (!this.isCoupleOrAdmin || !this.activeNote) return;
+      this.draftShared = !this.draftShared;
+      this.saveNow();
+    },
+
+    async toggleAllVisibility() {
+      if (!this.isCoupleOrAdmin || this.togglingAll) return;
+      this.togglingAll = true;
+      try {
+        const res = await fetch(this.urls.toggleAll, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrf() },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          this.allowWoNotesAccess = !!data.allow_wo_notes_access;
+          this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        }
+      } finally {
+        this.togglingAll = false;
+      }
+    },
+
+    async persistActiveNote() {
+      const targetId = this.selectedId;
+      if (!targetId || !this.canEdit) return;
+      this.saveState = 'saving';
+      try {
+        const res = await fetch(`/notes/${targetId}/save/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+          body: JSON.stringify({
+            title: this.draftTitle,
+            content: this.draftContent,
+            category: this.draftCategory,
+            is_pinned: this.draftPinned,
+            is_shared_with_team: this.draftShared,
+          }),
+        });
+        if (!res.ok) {
+          this.saveState = 'error';
+          return;
+        }
+        const data = await res.json();
+        if (data.note) {
+          const idx = this.notes.findIndex((x) => x.id === data.note.id);
+          if (idx !== -1) this.notes.splice(idx, 1, data.note);
+          this.saveState = 'saved';
+          this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        }
+      } catch (e) {
+        this.saveState = 'error';
+      }
+    },
+
+    async deleteActiveNote() {
+      const target = this.activeNote;
+      if (!target || !this.canEdit) return;
+      const label = target.title || 'Catatan Tanpa Judul';
+      if (!window.confirm(`Hapus catatan "${label}" secara permanen?`)) return;
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+      try {
+        const res = await fetch(`/notes/${target.id}/delete/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrf() },
+        });
+        if (!res.ok) return;
+        this.notes = this.notes.filter((x) => x.id !== target.id);
+        if (this.filteredNotes.length) {
+          this.loadNoteIntoDraft(this.filteredNotes[0].id, false);
+        } else {
+          this.selectedId = null;
+          this.mobileDetail = false;
+        }
+        this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+      } catch (e) {
+        this.saveState = 'error';
+      }
+    },
+  };
+};
+</script>
+
+<div class="workspace-canvas notes-shell" x-data="rangkaiNotesApp()" x-init="init()">
+  <!-- Page Header -->
+  <div class="notes-top">
+    <div>
+      <h1 class="page-title">Catatan &amp; Notulensi</h1>
+      <p class="page-subtitle">
+        {% if is_couple_or_admin %}
+        Simpan hasil meeting keluarga, survei vendor, dan ide bebas. Secara default catatan pasangan bersifat privat kecuali kamu tampilkan ke WO &amp; Crew.
+        {% elif can_edit_notes %}
+        Catatan operasional dan notulensi yang dibagikan untuk koordinasi bersama pengantin &amp; tim lapangan.
+        {% else %}
+        Mode baca untuk catatan operasional &amp; hasil technical meeting yang dibagikan ke tim lapangan.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="notes-top-actions">
+      {% if is_couple_or_admin %}
+      <button type="button" class="notes-global-toggle" :class="{ 'is-on': allowWoNotesAccess }" @click="toggleAllVisibility()" :disabled="togglingAll" title="Atur apakah seluruh catatan otomatis terlihat oleh WO Manager dan Crew">
+        <svg x-show="allowWoNotesAccess" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg x-show="!allowWoNotesAccess" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+        <span x-text="allowWoNotesAccess ? 'Semua Catatan: Tampil ke WO & Crew' : 'Tampilkan Semua ke WO & Crew'"></span>
+      </button>
+      {% endif %}
+
+      {% if can_edit_notes %}
+      <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="createNote()">
+        <i data-lucide="plus"></i> Catatan Baru
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Split-Pane Workspace -->
+  <div class="notes-frame" :class="{ 'is-mobile-detail': mobileDetail }">
+    <!-- LEFT PANE: Search, Filter & Note List -->
+    <aside class="notes-list-pane" aria-label="Daftar catatan">
+      <div class="notes-list-controls">
+        <div class="notes-search-wrap">
+          <i data-lucide="search"></i>
+          <input type="search" class="notes-search-input" x-model="search" placeholder="Cari judul atau isi catatan..." aria-label="Cari catatan" />
+        </div>
+        <div class="notes-cat-strip">
+          <button type="button" class="notes-cat-pill" :class="{ 'is-active': categoryFilter === 'all' }" @click="categoryFilter = 'all'">Semua</button>
+          <template x-for="cat in categories" :key="cat.key">
+            <button type="button" class="notes-cat-pill" :class="{ 'is-active': categoryFilter === cat.key }" @click="categoryFilter = cat.key" x-text="cat.label"></button>
+          </template>
+        </div>
+      </div>
+
+      <div class="notes-list-scroll">
+        <template x-for="n in filteredNotes" :key="n.id">
+          <button type="button" class="notes-item" :class="{ 'is-active': selectedId === n.id }" @click="selectNote(n.id)">
+            <div class="notes-item-top">
+              <span class="notes-item-title" x-text="n.title || 'Catatan Tanpa Judul'"></span>
+              <span class="notes-item-icons">
+                <svg x-show="n.is_pinned" class="is-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Disematkan"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+                <svg x-show="isCoupleOrAdmin && (allowWoNotesAccess || n.is_shared_with_team)" class="is-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Terlihat oleh WO &amp; Crew"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg x-show="isCoupleOrAdmin && !allowWoNotesAccess && !n.is_shared_with_team" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Privat Pasangan"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+            </div>
+            <div class="notes-item-snippet" x-text="snippet(n.content)"></div>
+            <div class="notes-item-meta">
+              <span class="notes-item-cat" x-text="n.category_label"></span>
+              <span class="notes-item-date" x-text="n.updated_short"></span>
+            </div>
+          </button>
+        </template>
+
+        <template x-if="filteredNotes.length === 0">
+          <div style="padding: 28px 16px; text-align: center; color: var(--muted-foreground); font-size: 0.82rem;">
+            <template x-if="notes.length === 0">
+              <span>Belum ada catatan di workspace ini.</span>
+            </template>
+            <template x-if="notes.length > 0">
+              <div>
+                <div style="margin-bottom: 8px;">Tidak ada catatan yang cocok dengan filter.</div>
+                <button type="button" data-slot="button" data-variant="ghost" data-size="sm" @click="search = ''; categoryFilter = 'all'">Reset Filter</button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANE: Editor / Reader -->
+    <section class="notes-editor-pane" aria-label="Isi catatan">
+      <template x-if="activeNote">
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <!-- Editor Top Bar -->
+          <div class="notes-editor-bar">
+            <div class="notes-bar-left">
+              <button type="button" class="notes-back-btn" data-slot="button" data-variant="ghost" data-size="sm" @click="mobileDetail = false">
+                <i data-lucide="arrow-left"></i> Daftar
+              </button>
+
+              <template x-if="canEdit">
+                <select class="notes-cat-select" x-model="draftCategory" @change="saveNow()" aria-label="Kategori catatan">
+                  <template x-for="cat in categories" :key="cat.key">
+                    <option :value="cat.key" x-text="cat.label"></option>
+                  </template>
+                </select>
+              </template>
+              <template x-if="!canEdit">
+                <span data-slot="badge" data-variant="secondary" x-text="activeNote.category_label"></span>
+              </template>
+
+              <template x-if="canEdit">
+                <button type="button" class="notes-vis-btn" :class="{ 'is-shared': draftPinned }" @click="togglePin()" title="Sematkan ke atas daftar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+                  <span x-text="draftPinned ? 'Disematkan' : 'Sematkan'"></span>
+                </button>
+              </template>
+
+              <template x-if="isCoupleOrAdmin">
+                <button type="button" class="notes-vis-btn" :class="{ 'is-shared': allowWoNotesAccess || draftShared }" @click="togglePerNoteShare()" :disabled="allowWoNotesAccess" :title="allowWoNotesAccess ? 'Semua catatan sedang ditampilkan ke WO & Crew' : 'Tampilkan atau sembunyikan catatan ini dari WO & Crew'">
+                  <svg x-show="allowWoNotesAccess || draftShared" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg x-show="!allowWoNotesAccess && !draftShared" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                  <span x-text="allowWoNotesAccess ? 'Tampil ke WO (Semua Aktif)' : (draftShared ? 'Tampil ke WO & Crew' : 'Privat Pasangan')"></span>
+                </button>
+              </template>
+            </div>
+
+            <div class="notes-bar-right">
+              <template x-if="canEdit">
+                <span class="notes-save-status" :class="{ 'is-saved': saveState === 'saved', 'is-err': saveState === 'error' }">
+                  <template x-if="saveState === 'saving'"><span>Menyimpan...</span></template>
+                  <template x-if="saveState === 'saved'"><span>Tersimpan &middot; <span x-text="activeNote.updated_time"></span></span></template>
+                  <template x-if="saveState === 'error'"><span>Gagal simpan</span></template>
+                </span>
+              </template>
+
+              <template x-if="canEdit">
+                <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="deleteActiveNote()" title="Hapus catatan" aria-label="Hapus catatan" style="color: var(--destructive);">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Editor / Reader Body -->
+          <div class="notes-editor-body">
+            <div class="notes-editor-inner">
+              <template x-if="canEdit">
+                <input type="text" x-ref="titleInput" class="notes-title-input" x-model="draftTitle" @input="scheduleSave()" placeholder="Judul catatan..." />
+              </template>
+              <template x-if="!canEdit">
+                <h2 class="notes-title-input" style="margin:0;" x-text="draftTitle || 'Catatan Tanpa Judul'"></h2>
+              </template>
+
+              <template x-if="canEdit">
+                <div class="notes-format-row">
+                  <button type="button" class="notes-fmt-btn" @mousedown.prevent @click="toggleBulletList()">
+                    <i data-lucide="list"></i> Bullet
+                  </button>
+                  <button type="button" class="notes-fmt-btn" @mousedown.prevent @click="insertChecklist()">
+                    <i data-lucide="check-square"></i> Checklist
+                  </button>
+                  <span style="margin-left:auto;font-size:0.75rem;color:var(--muted-foreground);">Ketik <code class="font-mono">- </code> atau <code class="font-mono">[] </code></span>
+                </div>
+              </template>
+
+              <template x-if="canEdit && !draftContent.trim()">
+                <div class="notes-templates-box">
+                  <span>Mulai cepat pakai template:</span>
+                  <button type="button" class="notes-fmt-btn" @click="applyTemplateToCurrent('family')">Meeting Keluarga</button>
+                  <button type="button" class="notes-fmt-btn" @click="applyTemplateToCurrent('vendor')">Survei Vendor</button>
+                  <button type="button" class="notes-fmt-btn" @click="applyTemplateToCurrent('tm')">Technical Meeting</button>
+                </div>
+              </template>
+
+              <template x-if="canEdit">
+                <div
+                  x-ref="docEditor"
+                  class="notes-doc-editor"
+                  contenteditable="true"
+                  spellcheck="true"
+                  data-placeholder="Tulis catatan di sini... (ketik - atau [] untuk list)"
+                  @click="onEditorClick($event)"
+                  @input="onEditorInput()"
+                  @keydown="onEditorKeydown($event)"
+                  @paste="onEditorPaste($event)"
+                ></div>
+              </template>
+
+              <template x-if="!canEdit">
+                <div class="notes-readonly-content">
+                  <template x-for="(ln, idx) in parsedReadonlyLines()" :key="idx">
+                    <div>
+                      <template x-if="ln.type === 'bullet'">
+                        <div class="notes-ro-bullet"><span class="notes-ro-dot"></span><span x-text="ln.text"></span></div>
+                      </template>
+                      <template x-if="ln.type === 'check'">
+                        <div class="notes-ro-check">
+                          <span class="notes-ro-box" :class="{ 'is-done': ln.done }" x-text="ln.done ? '✓' : ''"></span>
+                          <span :style="ln.done ? 'text-decoration:line-through;color:var(--muted-foreground);' : ''" x-text="ln.text"></span>
+                        </div>
+                      </template>
+                      <template x-if="ln.type === 'text'">
+                        <div class="notes-ro-line" x-text="ln.text"></div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Footer Metadata -->
+          <div class="notes-editor-foot">
+            <span>Diubah oleh <strong style="color:var(--foreground);" x-text="activeNote.updated_by"></strong> &middot; <span class="font-mono" x-text="activeNote.updated_display"></span></span>
+            <span x-show="!canEdit">Mode baca (Crew Operasional)</span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Empty State -->
+      <template x-if="!activeNote">
+        <div class="notes-empty-pane">
+          <span class="notes-empty-icon"><i data-lucide="notebook-pen"></i></span>
+          <h3>Belum ada catatan yang dipilih</h3>
+          <p>
+            {% if can_edit_notes %}
+            Catat hasil meeting keluarga, poin survei vendor, atau notulensi technical meeting di satu tempat yang rapi.
+            {% else %}
+            Belum ada catatan tim yang dibagikan oleh pengantin atau WO Manager di workspace ini.
+            {% endif %}
+          </p>
+          {% if can_edit_notes %}
+          <div class="notes-empty-templates">
+            <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="createNote()">
+              <i data-lucide="plus"></i> Catatan Kosong
+            </button>
+            <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="createNote('family')">
+              Template Meeting Keluarga
+            </button>
+            <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="createNote('vendor')">
+              Template Survei Vendor
+            </button>
+            <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="createNote('tm')">
+              Template Technical Meeting
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </template>
+    </section>
+  </div>
+</div>
+{% endblock %}

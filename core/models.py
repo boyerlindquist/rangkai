@@ -170,6 +170,10 @@ class Wedding(models.Model):
         'Izinkan WO Akses Anggaran & Kas',
         default=False,
     )
+    allow_wo_notes_access = models.BooleanField(
+        'Tampilkan Semua Catatan ke WO & Crew',
+        default=False,
+    )
     status = models.CharField(
         'Status Workspace',
         max_length=15,

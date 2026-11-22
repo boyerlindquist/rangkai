@@ -6,10 +6,10 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://rangkai.click/">
 <meta property="og:title" content="Rangkai.click | Rangkai Persiapan Nikahmu Tanpa Drama Spreadsheet">
-<meta property="og:description" content="Workspace perencanaan pernikahan terpadu untuk pasangan dan tim WO di Indonesia. Mulai Rp 149rb sekali bayar, undang pasangan &amp; tim gratis, privasi data terjaga.">
+<meta property="og:description" content="Workspace perencanaan pernikahan terpadu untuk pasangan dan tim WO di Indonesia. Mulai Rp 99rb sekali bayar (Early Bird), undang pasangan &amp; tim gratis, privasi data terjaga.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Rangkai.click | Workspace Perencanaan Pernikahan Terpadu">
-<meta name="twitter:description" content="Mulai Rp 149rb sekali bayar. Menyatukan aliran dana, kalender fase, tabungan privat, shortlist vendor, tamu &amp; katering, hingga rundown hari-H.">
+<meta name="twitter:description" content="Mulai Rp 99rb sekali bayar (Early Bird). Menyatukan aliran dana, kalender, catatan, tabungan privat, shortlist vendor, tamu &amp; katering, hingga rundown hari-H.">
 {% endblock %}
 {% block title %}Rangkai.click | Workspace Perencanaan Pernikahan Terpadu untuk Pasangan &amp; WO{% endblock %}
 
@@ -812,30 +812,166 @@
   }
 
   .lp-plan {
-    background: var(--card);
+    position: relative;
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(
+        105deg,
+        rgba(24, 24, 27, 0.014) 0px,
+        rgba(24, 24, 27, 0.014) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      linear-gradient(155deg, #ffffff 0%, #f8f8fb 54%, #f2f3f7 100%);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 30px 28px;
     display: flex;
     flex-direction: column;
     gap: 18px;
-    box-shadow: var(--shadow-xs);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 0 rgba(24, 24, 27, 0.04),
+      var(--shadow-xs);
     cursor: pointer;
-    transition: border-color 180ms ease, box-shadow 200ms ease, background 200ms ease, transform 180ms ease;
+    transform: perspective(1100px) rotateX(0deg) rotateY(0deg) translateY(0px);
+    transform-style: preserve-3d;
+    transition: border-color 200ms ease, box-shadow 280ms ease, background 220ms ease, transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-theme="dark"] .lp-plan {
+    background:
+      repeating-linear-gradient(
+        105deg,
+        rgba(255, 255, 255, 0.018) 0px,
+        rgba(255, 255, 255, 0.018) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      linear-gradient(155deg, #1d1d24 0%, #16161b 55%, #121217 100%);
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+      var(--shadow-xs);
+  }
+
+  /* Soft Satin Metallic Surface Sheen (Toned down, never blinding) */
+  .lp-plan::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(
+        300px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 255, 255, 0.44) 0%,
+        rgba(216, 219, 228, 0.14) 40%,
+        rgba(24, 24, 27, 0.025) 76%
+      ),
+      linear-gradient(
+        118deg,
+        transparent 22%,
+        rgba(195, 200, 212, 0.15) 41%,
+        rgba(255, 255, 255, 0.48) 49%,
+        rgba(195, 200, 212, 0.13) 57%,
+        transparent 76%
+      );
+    background-size: 100% 100%, 240% 240%;
+    background-position: 0 0, var(--bgx, 50%) var(--bgy, 50%);
+    transition: opacity 240ms ease;
+    z-index: 3;
+  }
+
+  [data-theme="dark"] .lp-plan::before {
+    background:
+      radial-gradient(
+        280px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 255, 255, 0.09) 0%,
+        rgba(255, 255, 255, 0.03) 40%,
+        transparent 74%
+      ),
+      linear-gradient(
+        118deg,
+        transparent 24%,
+        rgba(255, 255, 255, 0.075) 48%,
+        rgba(255, 255, 255, 0.02) 56%,
+        transparent 76%
+      );
+    background-size: 100% 100%, 240% 240%;
+    background-position: 0 0, var(--bgx, 50%) var(--bgy, 50%);
+  }
+
+  /* Cursor-Tracking Metallic Bevel Rim Light (1px Edge) */
+  .lp-plan::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(18, 110, 81, 0.52),
+      rgba(160, 166, 180, 0.35) 45%,
+      transparent 75%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    transition: opacity 240ms ease;
+    z-index: 4;
+  }
+
+  [data-theme="dark"] .lp-plan::after {
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, 0.36),
+      rgba(34, 160, 118, 0.22) 48%,
+      transparent 76%
+    );
+  }
+
+  .lp-plan > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  .lp-plan.is-tilting {
+    transition: border-color 180ms ease, box-shadow 140ms ease, background 180ms ease, transform 75ms ease-out;
+  }
+
+  .lp-plan.is-tilting::before,
+  .lp-plan.is-tilting::after {
+    opacity: 1;
   }
 
   .lp-plan:hover,
   .lp-plan.is-selected {
-    border-color: var(--primary);
-    box-shadow: 0 10px 28px -12px rgba(18, 110, 81, 0.22);
-    background: linear-gradient(180deg, rgba(18, 110, 81, 0.045) 0%, var(--card) 42%);
-    transform: translateY(-2px);
+    border-color: var(--primary-border);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.98),
+      inset 0 -1px 0 rgba(24, 24, 27, 0.05),
+      var(--sx, 0px) var(--sy, 14px) 32px -14px rgba(18, 110, 81, 0.20),
+      0 6px 16px -8px rgba(9, 9, 11, 0.10);
   }
 
   [data-theme="dark"] .lp-plan:hover,
   [data-theme="dark"] .lp-plan.is-selected {
-    background: linear-gradient(180deg, rgba(34, 160, 118, 0.10) 0%, var(--card) 42%);
-    box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.55);
+    border-color: rgba(34, 160, 118, 0.42);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+      var(--sx, 0px) var(--sy, 16px) 36px -12px rgba(0, 0, 0, 0.68);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-plan { transform: none !important; }
+    .lp-plan::before,
+    .lp-plan::after { display: none; }
   }
 
   .lp-plan:hover .lp-plan-cta,
@@ -863,11 +999,44 @@
 
   .lp-plan-price {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lp-plan-promo-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lp-plan-strike {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lp-plan-early {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-border);
+  }
+
+  .lp-plan-price-main {
+    display: flex;
     align-items: baseline;
     gap: 8px;
     flex-wrap: wrap;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
   }
 
   .lp-plan-amount {
@@ -1000,6 +1169,9 @@
     user-select: none;
     -webkit-user-drag: none;
   }
+  .lp-cflow-card img.lp-shot-dark { display: none; }
+  [data-theme="dark"] .lp-cflow-card img.lp-shot-light { display: none; }
+  [data-theme="dark"] .lp-cflow-card img.lp-shot-dark { display: block; }
 
   .lp-cflow-card.is-active {
     z-index: 4;
@@ -1050,23 +1222,82 @@
 
   .lp-cflow-arrow {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: calc(50% - 22px);
     z-index: 6;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 9999px !important;
-    background: var(--card) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: 0 8px 20px -6px rgba(9, 9, 11, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    box-shadow:
+      0 2px 6px rgba(9, 9, 11, 0.06),
+      0 10px 24px -8px rgba(9, 9, 11, 0.16);
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      box-shadow 160ms ease,
+      transform 120ms ease;
+  }
+
+  .lp-cflow-arrow svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lp-cflow-arrow:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow:
+      0 4px 12px rgba(18, 110, 81, 0.22),
+      0 12px 28px -8px rgba(18, 110, 81, 0.32);
+  }
+
+  .lp-cflow-arrow.is-left:hover svg {
+    transform: translateX(-2px);
+  }
+
+  .lp-cflow-arrow.is-right:hover svg {
+    transform: translateX(2px);
+  }
+
+  .lp-cflow-arrow:active {
+    transform: scale(0.94);
+  }
+
+  .lp-cflow-arrow:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 
   [data-theme="dark"] .lp-cflow-arrow {
-    box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.6);
+    background: var(--popover);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.40),
+      0 12px 26px -6px rgba(0, 0, 0, 0.65);
   }
 
-  .lp-cflow-arrow.is-left { left: 8px; }
-  .lp-cflow-arrow.is-right { right: 8px; }
+  [data-theme="dark"] .lp-cflow-arrow:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow:
+      0 4px 14px rgba(34, 160, 118, 0.28),
+      0 14px 30px -8px rgba(0, 0, 0, 0.72);
+  }
+
+  .lp-cflow-arrow.is-left { left: 10px; }
+  .lp-cflow-arrow.is-right { right: 10px; }
 
   .lp-cflow-foot {
     margin-top: 14px;
@@ -1122,7 +1353,12 @@
     }
     .lp-cflow-card { width: 92%; }
     .lp-cflow-card.is-prev, .lp-cflow-card.is-next { opacity: 0; pointer-events: none; }
-    .lp-cflow-arrow { width: 34px !important; height: 34px !important; }
+    .lp-cflow-arrow {
+      width: 38px;
+      height: 38px;
+      top: calc(50% - 19px);
+      border-radius: var(--radius-lg);
+    }
   }
 
   .lp-faq-help {
@@ -1264,13 +1500,14 @@
   selectedPlan: null,
   mobileNav: false,
   shotIdx: 0,
-  shotCount: 5,
+  shotCount: 6,
   touchStartX: 0,
-  shotTitles: ['Ringkasan Persiapan', 'Anggaran & Diagram Sankey', 'Kalender Fase & Deadline', 'Daftar Tamu & Katering', 'Direktori & Evaluasi Vendor'],
+  shotTitles: ['Ringkasan Persiapan', 'Anggaran & Diagram Sankey', 'Kalender & Deadline', 'Catatan & Notulensi', 'Tamu & Katering', 'Evaluasi Vendor'],
   shotCaptions: [
     'Pantau hitung mundur, fase aktif, sisa ruang anggaran, dan fokus tugas dalam 1 layar.',
     'Visualisasi Sankey 3-tingkat yang menghubungkan tabungan, pagu kategori, dan rincian vendor.',
     'Peta warna fase H-minus, tanggal merah libur nasional, deadline tugas, dan jatuh tempo vendor.',
+    'Catat notulensi rapat, hasil test food, dan ide bebas dengan kontrol privasi per catatan untuk WO & Crew.',
     'Database undangan 4-arah lengkap dengan simulator otomatis porsi prasmanan dan gubukan.',
     'Bandingkan kandidat vendor dengan skor berbobot untuk harga, kualitas, fasilitas, dan reputasi.'
   ],
@@ -1288,6 +1525,37 @@
   onShotTouchEnd(e) {
     const dx = e.changedTouches[0].clientX - this.touchStartX;
     if (Math.abs(dx) > 40) { dx < 0 ? this.nextShot() : this.prevShot(); }
+  },
+  tiltPlan(e) {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const px = (x / rect.width) - 0.5;
+    const py = (y / rect.height) - 0.5;
+    const rx = (-py * 4.8).toFixed(2);
+    const ry = (px * 4.8).toFixed(2);
+    const bgx = (100 - (x / rect.width) * 100).toFixed(1);
+    const bgy = (100 - (y / rect.height) * 100).toFixed(1);
+    const sx = (-px * 14).toFixed(1);
+    const sy = (14 - py * 10).toFixed(1);
+    card.style.setProperty('--mx', x.toFixed(1) + 'px');
+    card.style.setProperty('--my', y.toFixed(1) + 'px');
+    card.style.setProperty('--bgx', bgx + '%');
+    card.style.setProperty('--bgy', bgy + '%');
+    card.style.setProperty('--sx', sx + 'px');
+    card.style.setProperty('--sy', sy + 'px');
+    card.style.transform = 'perspective(1100px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-3px)';
+    card.classList.add('is-tilting');
+  },
+  resetPlan(e) {
+    const card = e.currentTarget;
+    card.classList.remove('is-tilting');
+    card.style.transform = '';
+    card.style.removeProperty('--sx');
+    card.style.removeProperty('--sy');
   },
   toggleTheme() {
     this.isDark = !this.isDark;
@@ -1371,7 +1639,7 @@
           {% endif %}
         </div>
         <div class="lp-hero-note">
-          Mulai Rp 149rb sekali bayar &middot; Undang pasangan &amp; tim gratis &middot; Privasi data terjaga
+          Mulai Rp 99rb sekali bayar (Early Bird) &middot; Undang pasangan &amp; tim gratis &middot; Privasi data terjaga
         </div>
       </div>
 
@@ -1548,30 +1816,45 @@
         </div>
 
         <div class="lp-cflow-wrap">
-          <button type="button" class="lp-cflow-arrow is-left" data-slot="button" data-variant="outline" data-size="icon-sm" @click="prevShot()" aria-label="Tampilan sebelumnya">
-            <i data-lucide="chevron-left"></i>
+          <button type="button" class="lp-cflow-arrow is-left" @click="prevShot()" aria-label="Tampilan sebelumnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 12H5"></path>
+              <path d="m12 19-7-7 7-7"></path>
+            </svg>
           </button>
 
           <div class="lp-cflow-stage" @touchstart.passive="onShotTouchStart($event)" @touchend.passive="onShotTouchEnd($event)">
             <div class="lp-cflow-card" :class="slideClass(0)" @click="shotIdx = 0">
-              <img src="{% static 'img/preview/ringkasan.png' %}" alt="Tampilan Dashboard Ringkasan Persiapan Rangkai.click" loading="lazy" />
+              <img class="lp-shot-light" src="{% static 'img/preview/ringkasan.png' %}?v=2" alt="Tampilan Dashboard Ringkasan Persiapan Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/ringkasan-dark.png' %}?v=2" alt="Tampilan Dashboard Ringkasan Persiapan Mode Gelap Rangkai.click" loading="lazy" />
             </div>
             <div class="lp-cflow-card" :class="slideClass(1)" @click="shotIdx = 1">
-              <img src="{% static 'img/preview/anggaran.png' %}" alt="Tampilan Anggaran &amp; Diagram Sankey Rangkai.click" loading="lazy" />
+              <img class="lp-shot-light" src="{% static 'img/preview/anggaran.png' %}?v=2" alt="Tampilan Anggaran &amp; Diagram Sankey Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/anggaran-dark.png' %}?v=2" alt="Tampilan Anggaran &amp; Diagram Sankey Mode Gelap Rangkai.click" loading="lazy" />
             </div>
             <div class="lp-cflow-card" :class="slideClass(2)" @click="shotIdx = 2">
-              <img src="{% static 'img/preview/kalender.png' %}" alt="Tampilan Kalender Fase &amp; Deadline Rangkai.click" loading="lazy" />
+              <img class="lp-shot-light" src="{% static 'img/preview/kalender.png' %}?v=2" alt="Tampilan Kalender &amp; Deadline Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/kalender-dark.png' %}?v=2" alt="Tampilan Kalender &amp; Deadline Mode Gelap Rangkai.click" loading="lazy" />
             </div>
             <div class="lp-cflow-card" :class="slideClass(3)" @click="shotIdx = 3">
-              <img src="{% static 'img/preview/tamu.png' %}" alt="Tampilan Database Tamu &amp; Simulator Katering Rangkai.click" loading="lazy" />
+              <img class="lp-shot-light" src="{% static 'img/preview/catatan.png' %}?v=2" alt="Tampilan Catatan &amp; Notulensi Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/catatan-dark.png' %}?v=2" alt="Tampilan Catatan &amp; Notulensi Mode Gelap Rangkai.click" loading="lazy" />
             </div>
             <div class="lp-cflow-card" :class="slideClass(4)" @click="shotIdx = 4">
-              <img src="{% static 'img/preview/vendor.png' %}" alt="Tampilan Direktori &amp; Evaluasi Vendor Rangkai.click" loading="lazy" />
+              <img class="lp-shot-light" src="{% static 'img/preview/tamu.png' %}?v=2" alt="Tampilan Database Tamu &amp; Simulator Katering Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/tamu-dark.png' %}?v=2" alt="Tampilan Database Tamu &amp; Simulator Katering Mode Gelap Rangkai.click" loading="lazy" />
+            </div>
+            <div class="lp-cflow-card" :class="slideClass(5)" @click="shotIdx = 5">
+              <img class="lp-shot-light" src="{% static 'img/preview/vendor.png' %}?v=2" alt="Tampilan Evaluasi Vendor Rangkai.click" loading="lazy" />
+              <img class="lp-shot-dark" src="{% static 'img/preview/vendor-dark.png' %}?v=2" alt="Tampilan Evaluasi Vendor Mode Gelap Rangkai.click" loading="lazy" />
             </div>
           </div>
 
-          <button type="button" class="lp-cflow-arrow is-right" data-slot="button" data-variant="outline" data-size="icon-sm" @click="nextShot()" aria-label="Tampilan berikutnya">
-            <i data-lucide="chevron-right"></i>
+          <button type="button" class="lp-cflow-arrow is-right" @click="nextShot()" aria-label="Tampilan berikutnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m12 5 7 7-7 7"></path>
+            </svg>
           </button>
         </div>
 
@@ -1586,6 +1869,7 @@
             <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 2 }" @click="shotIdx = 2" aria-label="Slide 3"></button>
             <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 3 }" @click="shotIdx = 3" aria-label="Slide 4"></button>
             <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 4 }" @click="shotIdx = 4" aria-label="Slide 5"></button>
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 5 }" @click="shotIdx = 5" aria-label="Slide 6"></button>
           </div>
         </div>
       </div>
@@ -1753,14 +2037,20 @@
 
       <div class="lp-pricing-grid">
         <!-- Paket 1: Wedding Owner -->
-        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wedding_owner' }" @click="selectedPlan = 'wedding_owner'">
+        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wedding_owner' }" @click="selectedPlan = 'wedding_owner'" @mousemove="tiltPlan($event)" @mouseleave="resetPlan($event)">
           <div class="lp-plan-top">
             <h3 class="lp-plan-name">Paket Wedding Owner</h3>
             <span data-slot="badge" data-variant="secondary">Untuk Calon Pengantin</span>
           </div>
           <div class="lp-plan-price">
-            <span class="lp-plan-amount">Rp 149.000</span>
-            <span class="lp-plan-period">sekali bayar sampai hari-H</span>
+            <div class="lp-plan-promo-row">
+              <span class="lp-plan-strike">Rp 149.000</span>
+              <span class="lp-plan-early">Early Bird</span>
+            </div>
+            <div class="lp-plan-price-main">
+              <span class="lp-plan-amount">Rp 99.000</span>
+              <span class="lp-plan-period">sekali bayar sampai hari-H</span>
+            </div>
           </div>
           <p class="lp-plan-summary">
             Khusus 1 workspace pernikahan aktif penuh untuk pasangan, lengkap dengan kontrol privasi dan kolaborasi tim operasional.
@@ -1783,14 +2073,20 @@
         </div>
 
         <!-- Paket 2: WO Manager -->
-        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wo_manager' }" @click="selectedPlan = 'wo_manager'">
+        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wo_manager' }" @click="selectedPlan = 'wo_manager'" @mousemove="tiltPlan($event)" @mouseleave="resetPlan($event)">
           <div class="lp-plan-top">
             <h3 class="lp-plan-name">Paket WO Manager</h3>
             <span data-slot="badge" data-variant="secondary">Untuk Wedding Organizer</span>
           </div>
           <div class="lp-plan-price">
-            <span class="lp-plan-amount">Rp 499.000</span>
-            <span class="lp-plan-period">per bulan (hingga 10 project aktif)</span>
+            <div class="lp-plan-promo-row">
+              <span class="lp-plan-strike">Rp 499.000</span>
+              <span class="lp-plan-early">Early Bird</span>
+            </div>
+            <div class="lp-plan-price-main">
+              <span class="lp-plan-amount">Rp 299.000</span>
+              <span class="lp-plan-period">per bulan (hingga 10 project aktif)</span>
+            </div>
           </div>
           <p class="lp-plan-summary">
             Jadikan Rangkai sebagai fasilitas resmi layanan WO-mu. Tangani banyak pernikahan klien dari satu Portal WO sambil menjaga privasi klien.
@@ -1835,7 +2131,7 @@
             <i data-lucide="chevron-down"></i>
           </button>
           <div id="faq-panel-0" class="lp-faq-ans" x-show="openFaq === 0" x-cloak>
-            Ya. Cukup bayar Rp 149.000 satu kali saja untuk 1 workspace pernikahan. Tidak ada tagihan bulanan dan workspace tetap aktif penuh sampai seluruh rangkaian acara selesai.
+            Ya. Cukup bayar Rp 99.000 (harga Early Bird dari normal Rp 149.000) satu kali saja untuk 1 workspace pernikahan. Tidak ada tagihan bulanan dan workspace tetap aktif penuh sampai seluruh rangkaian acara selesai.
           </div>
         </div>
 
@@ -1932,8 +2228,8 @@
 
       <div class="lp-faq-help">
         <span><strong>Masih ada pertanyaan</strong> seputar paket, fitur, atau pembayaran QRIS?</span>
-        <a href="mailto:halo@rangkai.click" data-slot="button" data-variant="outline" data-size="sm">
-          <i data-lucide="mail"></i> halo@rangkai.click
+        <a href="mailto:support@rangkai.click" data-slot="button" data-variant="outline" data-size="sm">
+          <i data-lucide="mail"></i> support@rangkai.click
         </a>
       </div>
     </div>
@@ -1975,7 +2271,7 @@
             <span class="brand-lockup-tld">.click</span>
           </span>
         </span>
-        <span>&middot; &copy; 2026 Rangkai.click &middot; <a href="mailto:halo@rangkai.click" style="color:inherit;text-decoration:none;">halo@rangkai.click</a></span>
+        <span>&middot; &copy; 2026 Rangkai.click &middot; <a href="mailto:support@rangkai.click" style="color:inherit;text-decoration:none;">support@rangkai.click</a></span>
       </div>
       <div style="display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <a href="#harga" style="color:inherit;text-decoration:none;">Paket &amp; Harga</a>

@@ -1,93 +1,308 @@
-<div id="edit-vendor-{{ vendor.pk }}" class="surface-panel fade-in" style="grid-column: 1 / -1; border-color: var(--wp-sage-main);">
-  <div class="surface-panel-header">
-    <h3><i data-lucide="edit-3" style="color: var(--wp-gold-main);"></i> Edit Kandidat Vendor: {{ vendor.name }}</h3>
+<div class="vs-shell"
+     x-data="vendorSheetForm({
+       status: '{{ form.status.value|default:'shortlist'|escapejs }}',
+       price: '{{ form.price_estimate.value|default_if_none:''|escapejs }}',
+       scores: {
+         price: {{ form.score_price.value|default:3 }},
+         quality: {{ form.score_quality.value|default:3 }},
+         facility: {{ form.score_facility.value|default:3 }},
+         reputation: {{ form.score_reputation.value|default:3 }}
+       },
+       weights: {
+         price: {{ weights.price|default:30 }},
+         quality: {{ weights.quality|default:30 }},
+         facility: {{ weights.facility|default:20 }},
+         reputation: {{ weights.reputation|default:20 }}
+       }
+     })">
+  <!-- Sticky Header -->
+  <div class="vs-header">
+    <div class="vs-header-text">
+      <h2 class="vs-title">{% if is_edit %}Edit Kandidat Vendor{% else %}Tambah Kandidat Vendor{% endif %}</h2>
+      <p class="vs-subtitle">
+        {% if is_edit %}
+          Perbarui penawaran, skor evaluasi, atau catatan untuk <strong>{{ vendor.name }}</strong>.
+        {% else %}
+          Catat penawaran dan nilai 4 kriteria untuk membandingkan kandidat secara objektif.
+        {% endif %}
+      </p>
+    </div>
     <button type="button"
-            class="btn btn-ghost btn-sm"
-            hx-get="{% url 'vendors:update' vendor.pk %}?cancel=1"
-            hx-target="closest .surface-panel"
-            hx-swap="outerHTML"><i data-lucide="x" style="width: 14px; height: 14px;"></i> Tutup</button>
+            class="vs-close-btn"
+            @click="$dispatch('vendor-sheet:close')"
+            aria-label="Tutup panel form vendor"
+            title="Tutup (Esc)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
   </div>
-  <form hx-post="{% url 'vendors:update' vendor.pk %}"
+
+  <!-- Form Body + Sticky Footer -->
+  <form class="vs-form"
+        method="post"
+        action="{% if is_edit %}{% url 'vendors:update' vendor.pk %}{% else %}{% url 'vendors:add' %}{% endif %}"
+        hx-post="{% if is_edit %}{% url 'vendors:update' vendor.pk %}{% else %}{% url 'vendors:add' %}{% endif %}"
         hx-target=".main-content"
         hx-select=".main-content"
         hx-swap="outerHTML show:none"
-        hx-disinherit="hx-select hx-target hx-swap">
+        hx-disinherit="hx-select hx-target hx-swap"
+        hx-disabled-elt="button[type='submit']">
     {% csrf_token %}
     {{ form.weight_price.as_hidden }}
     {{ form.weight_quality.as_hidden }}
     {{ form.weight_facility.as_hidden }}
     {{ form.weight_reputation.as_hidden }}
+    <input type="hidden" name="status" :value="status">
+    <input type="hidden" name="score_price" :value="scores.price">
+    <input type="hidden" name="score_quality" :value="scores.quality">
+    <input type="hidden" name="score_facility" :value="scores.facility">
+    <input type="hidden" name="score_reputation" :value="scores.reputation">
 
-    <div class="surface-panel-body">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Nama Vendor *</label>
-          {{ form.name }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Kategori</label>
-          {{ form.category }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Kontak / PIC</label>
-          {{ form.contact_pic }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Telepon / WhatsApp</label>
-          {{ form.phone }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Estimasi Harga (Rp)</label>
-          {{ form.price_estimate }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Status</label>
-          {{ form.status }}
-        </div>
+    <div class="vs-body">
+      {% if form.non_field_errors %}
+      <div class="vs-alert-error" role="alert">
+        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
       </div>
+      {% endif %}
 
-      <div style="margin: 18px 0 10px 0; padding-top: 14px; border-top: 1px solid var(--wp-hairline); font-weight: 600; font-size: 0.84rem; color: var(--wp-text-secondary);">
-        Skoring Evaluasi (Skala 1 – 5)
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Skor Harga ({{ vendor.weight_price }}%)</label>
-          {{ form.score_price }}
+      <!-- Seksi 1: Identitas & Penawaran -->
+      <section class="vs-section">
+        <div class="vs-section-head">
+          <h3>Identitas &amp; Penawaran</h3>
+          <p>Data inti untuk mengelompokkan dan membandingkan biaya vendor.</p>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Skor Kualitas ({{ vendor.weight_quality }}%)</label>
-          {{ form.score_quality }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Skor Fasilitas ({{ vendor.weight_facility }}%)</label>
-          {{ form.score_facility }}
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Skor Reputasi ({{ vendor.weight_reputation }}%)</label>
-          {{ form.score_reputation }}
-        </div>
-      </div>
 
-      <div class="rg-stack" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Link Proposal / GDrive (Opsional)</label>
-          {{ form.offer_link }}
+        <div class="vs-field">
+          <label class="vs-label" for="{{ form.name.id_for_label }}{% if is_edit %}_edit{% endif %}">
+            Nama Vendor <span class="vs-req">*</span>
+          </label>
+          <input type="text"
+                 id="{{ form.name.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                 name="name"
+                 value="{{ form.name.value|default_if_none:'' }}"
+                 class="vs-input{% if form.name.errors %} is-invalid{% endif %}"
+                 placeholder="Contoh: Studio Dekorasi Nusantara"
+                 required>
+          {% if form.name.errors %}
+          <p class="vs-error">{% for err in form.name.errors %}{{ err }}{% endfor %}</p>
+          {% endif %}
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label>Catatan Tambahan</label>
-          {{ form.notes }}
-        </div>
-      </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--wp-hairline);">
-        <button type="button"
-                class="btn btn-secondary btn-sm"
-                hx-get="{% url 'vendors:update' vendor.pk %}?cancel=1"
-                hx-target="closest .surface-panel"
-                hx-select="unset"
-                hx-swap="outerHTML">Batal</button>
-        <button type="submit" class="btn btn-gold btn-sm"><i data-lucide="save"></i> Simpan Perubahan</button>
-      </div>
+        <div class="vs-grid-2">
+          <div class="vs-field">
+            <label class="vs-label" for="{{ form.category.id_for_label }}{% if is_edit %}_edit{% endif %}">
+              Kategori <span class="vs-req">*</span>
+            </label>
+            <div class="vs-select-wrap">
+              <select id="{{ form.category.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                      name="category"
+                      class="vs-input vs-select{% if form.category.errors %} is-invalid{% endif %}"
+                      required>
+                {% for val, label in form.fields.category.choices %}
+                <option value="{{ val }}" {% if form.category.value == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <svg class="vs-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            {% if form.category.errors %}
+            <p class="vs-error">{% for err in form.category.errors %}{{ err }}{% endfor %}</p>
+            {% endif %}
+          </div>
+
+          <div class="vs-field">
+            <label class="vs-label" for="{{ form.price_estimate.id_for_label }}{% if is_edit %}_edit{% endif %}">
+              Estimasi Harga
+            </label>
+            <div class="vs-input-group{% if form.price_estimate.errors %} is-invalid{% endif %}">
+              <span class="vs-input-prefix font-mono">Rp</span>
+              <input type="number"
+                     id="{{ form.price_estimate.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                     name="price_estimate"
+                     x-model="price"
+                     min="0"
+                     step="1000"
+                     inputmode="numeric"
+                     class="vs-input-bare font-mono tabular-nums"
+                     placeholder="0">
+            </div>
+            <p class="vs-hint tabular-nums" x-text="formattedPrice"></p>
+            {% if form.price_estimate.errors %}
+            <p class="vs-error">{% for err in form.price_estimate.errors %}{{ err }}{% endfor %}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="vs-field">
+          <span class="vs-label">Status Keputusan</span>
+          <div class="vs-status-seg" role="radiogroup" aria-label="Status keputusan vendor">
+            <button type="button"
+                    class="vs-status-opt"
+                    :class="{ 'is-active is-shortlist': status === 'shortlist' }"
+                    @click="status = 'shortlist'"
+                    :aria-checked="status === 'shortlist'"
+                    role="radio">
+              <span class="vs-dot vs-dot-warning"></span>
+              <span>Shortlist</span>
+            </button>
+            <button type="button"
+                    class="vs-status-opt"
+                    :class="{ 'is-active is-booked': status === 'booked' }"
+                    @click="status = 'booked'"
+                    :aria-checked="status === 'booked'"
+                    role="radio">
+              <span class="vs-dot vs-dot-success"></span>
+              <span>Booked</span>
+            </button>
+            <button type="button"
+                    class="vs-status-opt"
+                    :class="{ 'is-active is-rejected': status === 'rejected' }"
+                    @click="status = 'rejected'"
+                    :aria-checked="status === 'rejected'"
+                    role="radio">
+              <span class="vs-dot vs-dot-danger"></span>
+              <span>Ditolak</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Seksi 2: Evaluasi Berbobot -->
+      <section class="vs-section">
+        <div class="vs-section-head">
+          <h3>Evaluasi Berbobot</h3>
+          <p>Pilih skala 1 sampai 5. Skor akhir otomatis mengikuti bobot prioritas workspace.</p>
+        </div>
+
+        <!-- Live Score Preview -->
+        <div class="vs-score-banner">
+          <div class="vs-score-banner-top">
+            <div>
+              <div class="vs-score-banner-label">Estimasi Skor Akhir</div>
+              <div class="vs-score-banner-tier" x-text="scoreTier"></div>
+            </div>
+            <div class="vs-score-banner-num font-mono tabular-nums">
+              <span x-text="liveScore"></span><small>/100</small>
+            </div>
+          </div>
+          <div class="vs-score-bar-track">
+            <div class="vs-score-bar-fill" :style="'width: ' + liveScore + '%'"></div>
+          </div>
+        </div>
+
+        <!-- 4 Criteria Rows -->
+        <div class="vs-criteria-list">
+          <template x-for="item in criteria" :key="item.key">
+            <div class="vs-criterion">
+              <div class="vs-criterion-meta">
+                <div class="vs-criterion-title-row">
+                  <span class="vs-criterion-name" x-text="item.label"></span>
+                  <span class="vs-weight-tag font-mono tabular-nums" x-text="weights[item.key] + '%'"></span>
+                </div>
+                <span class="vs-criterion-word" x-text="scoreLabel(scores[item.key])"></span>
+              </div>
+              <div class="vs-score-picker" role="radiogroup" :aria-label="'Skor ' + item.label">
+                <template x-for="n in [1, 2, 3, 4, 5]" :key="n">
+                  <button type="button"
+                          class="vs-score-btn font-mono tabular-nums"
+                          :class="{ 'is-selected': scores[item.key] === n }"
+                          @click="scores[item.key] = n"
+                          :aria-checked="scores[item.key] === n"
+                          :title="n + ' - ' + scoreLabel(n)"
+                          role="radio"
+                          x-text="n"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- Seksi 3: Kontak & Catatan Survei -->
+      <section class="vs-section vs-section-last">
+        <div class="vs-section-head">
+          <h3>Kontak &amp; Catatan Survei</h3>
+          <p>Opsional. Berguna saat follow-up atau merangkum hasil test food &amp; survei lokasi.</p>
+        </div>
+
+        <div class="vs-grid-2">
+          <div class="vs-field">
+            <label class="vs-label" for="{{ form.contact_pic.id_for_label }}{% if is_edit %}_edit{% endif %}">
+              PIC / Kontak
+            </label>
+            <input type="text"
+                   id="{{ form.contact_pic.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                   name="contact_pic"
+                   value="{{ form.contact_pic.value|default_if_none:'' }}"
+                   class="vs-input"
+                   placeholder="Nama admin / sales">
+          </div>
+
+          <div class="vs-field">
+            <label class="vs-label" for="{{ form.phone.id_for_label }}{% if is_edit %}_edit{% endif %}">
+              No. HP / WhatsApp
+            </label>
+            <input type="tel"
+                   id="{{ form.phone.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                   name="phone"
+                   value="{{ form.phone.value|default_if_none:'' }}"
+                   class="vs-input font-mono tabular-nums"
+                   placeholder="08xxxxxxxxxx">
+          </div>
+        </div>
+
+        <div class="vs-field">
+          <label class="vs-label" for="{{ form.offer_link.id_for_label }}{% if is_edit %}_edit{% endif %}">
+            Link Proposal / Pricelist
+          </label>
+          <div class="vs-input-group{% if form.offer_link.errors %} is-invalid{% endif %}">
+            <span class="vs-input-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </span>
+            <input type="url"
+                   id="{{ form.offer_link.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                   name="offer_link"
+                   value="{{ form.offer_link.value|default_if_none:'' }}"
+                   class="vs-input-bare"
+                   placeholder="https://drive.google.com/...">
+          </div>
+          {% if form.offer_link.errors %}
+          <p class="vs-error">{% for err in form.offer_link.errors %}{{ err }}{% endfor %}</p>
+          {% endif %}
+        </div>
+
+        <div class="vs-field">
+          <label class="vs-label" for="{{ form.notes.id_for_label }}{% if is_edit %}_edit{% endif %}">
+            Catatan Tambahan
+          </label>
+          <textarea id="{{ form.notes.id_for_label }}{% if is_edit %}_edit{% endif %}"
+                    name="notes"
+                    rows="3"
+                    class="vs-input vs-textarea"
+                    placeholder="Contoh: Free test food 4 pax, DP 30%, bonus photobooth 2 jam...">{{ form.notes.value|default_if_none:'' }}</textarea>
+        </div>
+      </section>
+    </div>
+
+    <!-- Sticky Footer -->
+    <div class="vs-footer">
+      <button type="button"
+              class="btn btn-secondary"
+              @click="$dispatch('vendor-sheet:close')">
+        Batal
+      </button>
+      <button type="submit" class="btn btn-gold vs-submit-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>{% if is_edit %}Simpan Perubahan{% else %}Simpan Vendor{% endif %}</span>
+      </button>
     </div>
   </form>
 </div>

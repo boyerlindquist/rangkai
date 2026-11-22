@@ -5,8 +5,9 @@ import json
 import uuid
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
@@ -20,6 +21,7 @@ from operations.models import (
     RundownEvent,
     AssetCustodian,
     FabricEntry,
+    WeddingNote,
     DEFAULT_PHASE_RANGES,
     PHASE_COLOR_CHOICES,
     format_h_day,
@@ -1473,3 +1475,179 @@ def update_seserahan(request, pk):
     else:
         form = SeserahanItemForm(instance=ses)
     return render(request, 'operations/partials/ses_form_inline.html', {'ses_form': form, 'ses': ses})
+
+
+# ============================================================
+# FREE NOTES & MEETING MINUTES (/notes/)
+# ============================================================
+
+def _notes_role_flags(request):
+    """Return (is_couple_or_admin, can_edit_notes) for current workspace request."""
+    role = getattr(request, 'wedding_role', None)
+    is_admin = bool(getattr(request, 'is_platform_admin', False))
+    is_couple_or_admin = is_admin or role in ('owner', 'co_owner', 'admin')
+    can_edit_notes = is_couple_or_admin or role == 'wo_manager'
+    return is_couple_or_admin, can_edit_notes
+
+
+def _visible_notes_qs(request):
+    """
+    Strictly isolate notes per wedding and enforce default privacy:
+    - Owner / Co-Owner / Admin see all notes in the workspace.
+    - WO Manager & Crew see all notes ONLY when wedding.allow_wo_notes_access is True,
+      otherwise they only see notes with is_shared_with_team=True.
+    """
+    wedding = request.wedding
+    is_couple_or_admin, _ = _notes_role_flags(request)
+    qs = WeddingNote.objects.filter(wedding=wedding).select_related('created_by', 'updated_by')
+    if not is_couple_or_admin and not wedding.allow_wo_notes_access:
+        qs = qs.filter(is_shared_with_team=True)
+    return qs
+
+
+def _serialize_note(note):
+    local_dt = timezone.localtime(note.updated_at) if note.updated_at else timezone.localtime()
+    return {
+        'id': note.pk,
+        'title': note.title,
+        'content': note.content,
+        'category': note.category,
+        'category_label': note.get_category_display(),
+        'is_pinned': note.is_pinned,
+        'is_shared_with_team': note.is_shared_with_team,
+        'created_by': note.created_by.username if note.created_by else '-',
+        'updated_by': note.updated_by.username if note.updated_by else (note.created_by.username if note.created_by else '-'),
+        'updated_at_iso': local_dt.isoformat(),
+        'updated_display': local_dt.strftime('%d %b %Y, %H:%M'),
+        'updated_short': local_dt.strftime('%d %b'),
+        'updated_time': local_dt.strftime('%H:%M'),
+    }
+
+
+@login_required
+@workspace_required
+def notes_view(request):
+    """Split-pane Free Notes & Meeting Minutes workspace (/notes/)."""
+    wedding = request.wedding
+    is_couple_or_admin, can_edit_notes = _notes_role_flags(request)
+    notes = [_serialize_note(n) for n in _visible_notes_qs(request)]
+
+    config_payload = {
+        'notes': notes,
+        'categories': [{'key': k, 'label': v} for k, v in WeddingNote.CATEGORY_CHOICES],
+        'isCoupleOrAdmin': is_couple_or_admin,
+        'canEdit': can_edit_notes,
+        'allowWoNotesAccess': bool(wedding.allow_wo_notes_access),
+        'urls': {
+            'create': '/notes/create/',
+            'toggleAll': '/notes/toggle-all-visibility/',
+        },
+    }
+
+    return render(request, 'operations/notes.html', {
+        'notes_config_json': json.dumps(config_payload),
+        'is_couple_or_admin': is_couple_or_admin,
+        'can_edit_notes': can_edit_notes,
+        'allow_wo_notes_access': bool(wedding.allow_wo_notes_access),
+        'notes_count': len(notes),
+    })
+
+
+@login_required
+@workspace_required
+@require_POST
+def note_create_api(request):
+    """Create a new note. Default is private for Owner/Co-Owner, shared for WO Manager."""
+    is_couple_or_admin, can_edit_notes = _notes_role_flags(request)
+    if not can_edit_notes:
+        return JsonResponse({'error': 'Crew operasional hanya memiliki akses baca pada catatan.'}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        payload = {}
+
+    valid_categories = dict(WeddingNote.CATEGORY_CHOICES)
+    category = payload.get('category') if payload.get('category') in valid_categories else 'general'
+    title = (payload.get('title') or '').strip()[:200]
+    content = payload.get('content') or ''
+
+    # Default private for Owner/Co-Owner; WO Manager notes are automatically shared with team
+    is_shared = bool(payload.get('is_shared_with_team', False)) if is_couple_or_admin else True
+
+    note = WeddingNote.objects.create(
+        wedding=request.wedding,
+        title=title,
+        content=content,
+        category=category,
+        is_pinned=bool(payload.get('is_pinned', False)),
+        is_shared_with_team=is_shared,
+        created_by=request.user,
+        updated_by=request.user,
+    )
+    return JsonResponse({'ok': True, 'note': _serialize_note(note)}, status=201)
+
+
+@login_required
+@workspace_required
+@require_POST
+def note_save_api(request, pk):
+    """Auto-save note title, content, category, pin, and (couple/admin only) team visibility."""
+    is_couple_or_admin, can_edit_notes = _notes_role_flags(request)
+    if not can_edit_notes:
+        return JsonResponse({'error': 'Akses ditolak.'}, status=403)
+
+    note = get_object_or_404(_visible_notes_qs(request), pk=pk)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({'error': 'Payload tidak valid.'}, status=400)
+
+    valid_categories = dict(WeddingNote.CATEGORY_CHOICES)
+    if 'title' in payload:
+        note.title = (payload.get('title') or '').strip()[:200]
+    if 'content' in payload:
+        note.content = payload.get('content') or ''
+    if 'category' in payload and payload.get('category') in valid_categories:
+        note.category = payload.get('category')
+    if 'is_pinned' in payload:
+        note.is_pinned = bool(payload.get('is_pinned'))
+    if 'is_shared_with_team' in payload and is_couple_or_admin:
+        note.is_shared_with_team = bool(payload.get('is_shared_with_team'))
+
+    note.updated_by = request.user
+    note.save()
+    return JsonResponse({'ok': True, 'note': _serialize_note(note)})
+
+
+@login_required
+@workspace_required
+@require_POST
+def note_delete_api(request, pk):
+    """Delete a note inside current wedding workspace."""
+    _, can_edit_notes = _notes_role_flags(request)
+    if not can_edit_notes:
+        return JsonResponse({'error': 'Akses ditolak.'}, status=403)
+
+    note = get_object_or_404(_visible_notes_qs(request), pk=pk)
+    note.delete()
+    return JsonResponse({'ok': True, 'deleted_id': pk})
+
+
+@login_required
+@workspace_required
+@require_POST
+def notes_toggle_all_visibility_api(request):
+    """Owner/Co-Owner/Admin global toggle: show all workspace notes to WO & Crew."""
+    is_couple_or_admin, _ = _notes_role_flags(request)
+    if not is_couple_or_admin:
+        return JsonResponse({'error': 'Hanya Pengantin (Owner/Co-Owner) yang dapat mengubah izin privasi catatan.'}, status=403)
+
+    wedding = request.wedding
+    wedding.allow_wo_notes_access = not wedding.allow_wo_notes_access
+    wedding.save(update_fields=['allow_wo_notes_access'])
+    return JsonResponse({
+        'ok': True,
+        'allow_wo_notes_access': wedding.allow_wo_notes_access,
+    })

@@ -2,6 +2,7 @@
 Operations models: TaskMilestone, RundownEvent, AssetCustodian, FabricEntry.
 """
 from datetime import timedelta
+from django.conf import settings
 from django.db import models
 from core.models import Wedding
 
@@ -425,3 +426,56 @@ class SeserahanItem(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WeddingNote(models.Model):
+    """Free-form notes & meeting minutes per wedding workspace with per-note & global privacy."""
+    CATEGORY_CHOICES = [
+        ('family_meeting', 'Meeting Keluarga'),
+        ('vendor_survey', 'Survei Vendor'),
+        ('tech_meeting', 'Technical Meeting'),
+        ('ideas', 'Ide & Referensi'),
+        ('general', 'Umum'),
+    ]
+
+    wedding = models.ForeignKey(
+        Wedding,
+        on_delete=models.CASCADE,
+        related_name='notes',
+    )
+    title = models.CharField('Judul Catatan', max_length=200, blank=True, default='')
+    content = models.TextField('Isi Catatan', blank=True, default='')
+    category = models.CharField(
+        'Kategori',
+        max_length=24,
+        choices=CATEGORY_CHOICES,
+        default='general',
+    )
+    is_pinned = models.BooleanField('Sematkan', default=False)
+    is_shared_with_team = models.BooleanField(
+        'Tampilkan ke WO & Crew',
+        default=False,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_wedding_notes',
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_wedding_notes',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_pinned', '-updated_at']
+        verbose_name = 'Wedding Note'
+
+    def __str__(self):
+        return self.title or 'Catatan Tanpa Judul'
