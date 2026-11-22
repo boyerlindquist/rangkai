@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Rangkai.click | Workspace Perencanaan Pernikahan Terpadu untuk Pasangan & WO{% endblock %}
+{% block head_meta %}
+<meta name="description" content="Rangkai persiapan nikahmu tanpa drama spreadsheet. Workspace terpadu untuk pasangan dan tim WO di Indonesia: aliran dana, kalender fase, tabungan privat, vendor, tamu &amp; katering, hingga rundown hari-H.">
+<meta property="og:site_name" content="Rangkai.click">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rangkai.click/">
+<meta property="og:title" content="Rangkai.click | Rangkai Persiapan Nikahmu Tanpa Drama Spreadsheet">
+<meta property="og:description" content="Workspace perencanaan pernikahan terpadu untuk pasangan dan tim WO di Indonesia. Mulai Rp 149rb sekali bayar, undang pasangan &amp; tim gratis, privasi data terjaga.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rangkai.click | Workspace Perencanaan Pernikahan Terpadu">
+<meta name="twitter:description" content="Mulai Rp 149rb sekali bayar. Menyatukan aliran dana, kalender fase, tabungan privat, shortlist vendor, tamu &amp; katering, hingga rundown hari-H.">
+{% endblock %}
+{% block title %}Rangkai.click | Workspace Perencanaan Pernikahan Terpadu untuk Pasangan &amp; WO{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -33,23 +44,6 @@
     gap: 16px;
   }
 
-  .lp-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    color: var(--foreground);
-    font-weight: 650;
-    font-size: 1rem;
-    letter-spacing: -0.02em;
-  }
-
-  .lp-brand img {
-    width: 24px;
-    height: 24px;
-    display: block;
-  }
-
   .lp-links {
     display: flex;
     align-items: center;
@@ -74,6 +68,41 @@
     gap: 8px;
   }
 
+  .lp-mobile-toggle {
+    display: none;
+  }
+
+  .lp-mobile-menu {
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    padding: 12px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lp-mobile-menu a {
+    padding: 10px 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--foreground);
+    text-decoration: none;
+  }
+
+  .lp-mobile-menu a:hover {
+    background: var(--muted);
+  }
+
+  .lp-links a:focus-visible,
+  .lp-faq-btn:focus-visible,
+  .lp-footer a:focus-visible,
+  .lp-mobile-menu a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
   /* Container */
   .lp-wrap {
     max-width: 1160px;
@@ -81,33 +110,49 @@
     padding: 0 24px;
   }
 
-  /* Hero Section */
+  /* Hero Section — Calm Structured Hybrid: Centered Copy + 3 Static Feature Cards + 1 Marquee Strip */
   .lp-hero {
-    padding: 68px 0 60px;
-    background:
-      radial-gradient(900px 420px at 50% -60px, rgba(18, 110, 81, 0.09), transparent 70%),
-      var(--background);
+    position: relative;
+    padding: 56px 0 48px;
+    min-height: calc(100dvh - 63px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(circle at 50% 24%, rgba(18, 110, 81, 0.065), transparent 54%),
+      radial-gradient(circle, rgba(24, 24, 27, 0.075) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px;
     border-bottom: 1px solid var(--border);
+    overflow: hidden;
   }
 
   [data-theme="dark"] .lp-hero {
-    background:
-      radial-gradient(900px 420px at 50% -60px, rgba(34, 160, 118, 0.14), transparent 70%),
-      var(--background);
+    background-image:
+      radial-gradient(circle at 50% 24%, rgba(34, 160, 118, 0.12), transparent 54%),
+      radial-gradient(circle, rgba(255, 255, 255, 0.065) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px;
+  }
+
+  .lp-hero-inner {
+    width: 100%;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 24px;
   }
 
   .lp-hero-copy {
-    max-width: 780px;
+    max-width: 680px;
     margin: 0 auto;
     text-align: center;
   }
 
   .lp-hero h1 {
     margin: 0;
-    font-size: clamp(2.1rem, 4.4vw, 3.35rem);
+    font-size: clamp(2rem, 3.8vw, 3.05rem);
     font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.08;
+    letter-spacing: -0.036em;
+    line-height: 1.15;
     color: var(--foreground);
     text-wrap: balance;
   }
@@ -116,16 +161,20 @@
     color: var(--primary);
   }
 
+  .lp-br-desktop {
+    display: inline;
+  }
+
   .lp-hero-sub {
-    margin: 18px auto 0;
-    max-width: 62ch;
-    font-size: 1.02rem;
+    margin: 16px auto 0;
+    max-width: 54ch;
+    font-size: 0.96rem;
     line-height: 1.62;
     color: var(--muted-foreground);
   }
 
   .lp-hero-cta {
-    margin-top: 28px;
+    margin-top: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,161 +183,389 @@
   }
 
   .lp-hero-note {
-    margin-top: 14px;
-    font-size: 0.78rem;
+    margin: 14px auto 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
     color: var(--muted-foreground);
   }
 
-  /* Live UI Preview Mockup (Real Rangkai Tokens) */
-  .lp-showcase {
-    margin-top: 46px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    box-shadow: var(--shadow-lg);
+  /* =========================================================
+     BORDERLESS EDITORIAL FILMSTRIP + PLAIN TEXT TICKER
+     ========================================================= */
+  @keyframes lpMarqueeRight {
+    from { transform: translateX(-50%); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes lpMarqueeLeft {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .lp-filmstrip-section {
+    margin-top: 40px;
+  }
+
+  .lp-filmstrip {
     overflow: hidden;
-  }
-
-  .lp-showcase-chrome {
-    height: 36px;
-    padding: 0 14px;
+    position: relative;
+    border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    background: var(--muted);
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  }
+
+  .lp-filmstrip-track {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
+    align-items: stretch;
+    width: max-content;
+    animation: lpMarqueeRight 58s linear infinite;
   }
 
-  .lp-dots {
-    display: inline-flex;
-    gap: 6px;
+  .lp-filmstrip:hover .lp-filmstrip-track {
+    animation-play-state: paused;
   }
 
-  .lp-dots span {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--border);
-  }
-
-  .lp-showcase-app {
-    display: grid;
-    grid-template-columns: 205px minmax(0, 1fr);
-    min-height: 350px;
-  }
-
-  .lp-mock-sidebar {
-    background: #0b1e17;
-    color: #e6f2ec;
-    padding: 16px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  [data-theme="dark"] .lp-mock-sidebar {
-    background: #111115;
+  .lp-film-cell {
+    flex-shrink: 0;
+    padding: 18px 24px;
     border-right: 1px solid var(--border);
-  }
-
-  .lp-mock-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 6px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-    margin-bottom: 6px;
-    font-weight: 600;
-    font-size: 0.86rem;
-  }
-
-  .lp-mock-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 9px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    color: #9cb8ac;
-  }
-
-  .lp-mock-item.active {
-    background: rgba(34, 160, 118, 0.22);
-    border: 1px solid rgba(52, 211, 153, 0.30);
-    color: #ffffff;
-    font-weight: 600;
-  }
-
-  .lp-mock-main {
-    background: var(--background);
-    padding: 18px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-  }
-
-  .lp-mock-kpis {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .lp-mock-kpi {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 12px;
-  }
-
-  .lp-mock-kpi-label {
-    font-size: 0.72rem;
-    color: var(--muted-foreground);
-  }
-
-  .lp-mock-kpi-val {
-    margin-top: 4px;
-    font-size: 1.05rem;
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .lp-mock-grid {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
+    justify-content: space-between;
     gap: 12px;
   }
 
-  .lp-mock-panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+  .lp-w-sankey { width: 336px; }
+  .lp-w-cal { width: 268px; }
+  .lp-w-tasks { width: 292px; }
+  .lp-w-savings { width: 248px; }
+  .lp-w-catering { width: 244px; }
+  .lp-w-vendor { width: 264px; }
+  .lp-w-rundown { width: 268px; }
 
-  .lp-mock-row {
+  .lp-ct-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.79rem;
+    gap: 10px;
+    white-space: nowrap;
   }
 
-  .lp-mock-row:last-child {
+  .lp-ct-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.84rem;
+    font-weight: 650;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .lp-ct-title svg {
+    width: 15px;
+    height: 15px;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  /* Clean hairline rows inside filmstrip cells (zero nested boxes) */
+  .lp-hair-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lp-hair-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    font-size: 0.78rem;
+  }
+
+  .lp-hair-row.is-rd {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .lp-hair-row:last-child {
     border-bottom: 0;
     padding-bottom: 0;
   }
 
-  /* Open Editorial Sections (Minimal Cards, Hairline Architecture) */
+  .lp-hair-row:first-child {
+    padding-top: 0;
+  }
+
+  .lp-mini-kpi-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  .lp-mini-kpi-col strong {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .lp-mini-kpi-col span {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  .lp-mini-subnote {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    white-space: nowrap;
+  }
+
+  .lp-mini-subnote strong {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .lp-mini-rd-time {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .lp-mini-rd-name {
+    color: var(--foreground);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lp-mini-vendor-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .lp-mini-vendor-tag.is-picked {
+    color: var(--primary);
+  }
+
+  /* Borderless Plain Text Ticker underneath filmstrip */
+  .lp-ticker-plain {
+    margin-top: 14px;
+    overflow: hidden;
+    position: relative;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  }
+
+  .lp-ticker-track {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: max-content;
+    padding: 4px 0;
+    animation: lpMarqueeLeft 38s linear infinite;
+  }
+
+  .lp-ticker-plain:hover .lp-ticker-track {
+    animation-play-state: paused;
+  }
+
+  .lp-ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .lp-ticker-item svg {
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .lp-ticker-item strong {
+    font-weight: 600;
+  }
+
+  .lp-ticker-item span {
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+
+  .lp-ticker-sep {
+    width: 3px;
+    height: 3px;
+    border-radius: 9999px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-filmstrip-track, .lp-ticker-track { animation: none !important; }
+    .lp-filmstrip, .lp-ticker-plain { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  }
+
+  /* Mini Calendar inside Filmstrip */
+  .lp-mini-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lp-mini-cal-head {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--muted-foreground);
+    padding-bottom: 2px;
+  }
+
+  .lp-mini-cal-head.is-red { color: var(--destructive); }
+
+  .lp-mini-cal-day {
+    padding: 4px 0;
+    border-radius: 4px;
+    border-top: 2px solid var(--primary);
+    color: var(--foreground);
+  }
+
+  .lp-mini-cal-day.is-p2 {
+    border-top-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 11%, transparent);
+  }
+
+  .lp-mini-cal-day.is-p3 {
+    border-top-color: color-mix(in srgb, var(--primary) 45%, transparent);
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+  }
+
+  .lp-mini-cal-day.is-red { color: var(--destructive); font-weight: 600; }
+  .lp-mini-cal-day.is-today {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-top-color: var(--primary);
+    font-weight: 700;
+  }
+
+  .lp-ct-task-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .lp-ct-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .lp-ct-check.is-done {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .lp-ct-check svg {
+    width: 11px;
+    height: 11px;
+    stroke-width: 3;
+  }
+
+  .lp-ct-task-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lp-ct-task-name.is-done {
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+    font-weight: 500;
+  }
+
+  .lp-ct-task-date {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  /* 8-Module Icon Badge Grid inside Bottom-Right */
+  .lp-ct-mod-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 2px;
+  }
+
+  .lp-ct-mod-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--background) 70%, var(--card));
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .lp-ct-mod-badge svg {
+    width: 16px;
+    height: 16px;
+    color: var(--primary);
+  }
+
+  /* Sections */
   .lp-section {
-    padding: 76px 0;
+    padding: 72px 0;
     border-bottom: 1px solid var(--border);
   }
 
@@ -297,27 +574,27 @@
   }
 
   .lp-section-head {
-    max-width: 660px;
+    max-width: 680px;
     margin-bottom: 40px;
   }
 
   .lp-section-head h2 {
     margin: 0;
-    font-size: clamp(1.55rem, 2.8vw, 2.15rem);
-    font-weight: 650;
+    font-size: clamp(1.55rem, 3vw, 2.15rem);
+    font-weight: 700;
     letter-spacing: -0.03em;
-    line-height: 1.16;
+    line-height: 1.15;
     color: var(--foreground);
   }
 
   .lp-section-head p {
     margin: 10px 0 0;
-    font-size: 0.95rem;
+    font-size: 0.94rem;
     color: var(--muted-foreground);
     line-height: 1.6;
   }
 
-  /* 1. Hairline 3-Column Problem -> Solution Strip (No Cards) */
+  /* 1. Problem Strip */
   .lp-problem-strip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -325,28 +602,41 @@
   }
 
   .lp-problem-col {
-    padding: 26px 24px 8px 0;
+    padding: 26px 26px 8px 0;
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
 
-  .lp-problem-col:not(:first-child) {
-    padding-left: 24px;
+  .lp-problem-col:not(:first-child) { padding-left: 26px; }
+  .lp-problem-col:last-child { border-right: 0; padding-right: 0; }
+
+  .lp-problem-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--destructive);
   }
 
-  .lp-problem-col:last-child {
-    border-right: 0;
-    padding-right: 0;
+  .lp-solution-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: auto;
+    padding-top: 8px;
   }
 
   .lp-problem-col h3 {
     margin: 0;
     font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    color: var(--foreground);
+    font-weight: 650;
+    line-height: 1.35;
   }
 
   .lp-problem-col p {
@@ -356,36 +646,17 @@
     line-height: 1.6;
   }
 
-  .lp-problem-tag {
-    font-size: 0.76rem;
-    color: var(--destructive);
-    font-weight: 550;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .lp-solution-tag {
-    font-size: 0.8rem;
-    color: var(--primary);
-    font-weight: 550;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-  }
-
-  /* 2. Sticky Split Feature Index (No Card Grid) */
+  /* 2. Feature Split Index */
   .lp-feature-split {
     display: grid;
-    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-    gap: 56px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr);
+    gap: 48px;
     align-items: start;
   }
 
   .lp-feature-sticky {
     position: sticky;
-    top: 92px;
+    top: 88px;
   }
 
   .lp-feature-list {
@@ -396,83 +667,75 @@
 
   .lp-feature-row {
     display: grid;
-    grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-columns: 36px minmax(0, 1fr);
     gap: 16px;
-    padding: 22px 0;
+    padding: 20px 0;
     border-bottom: 1px solid var(--border);
     align-items: start;
   }
 
   .lp-feature-icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
-    background: var(--primary-soft);
+    border: 1px solid var(--border);
+    background: var(--card);
     color: var(--primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 2px;
   }
 
-  .lp-feature-icon svg {
-    width: 17px;
-    height: 17px;
-  }
+  .lp-feature-icon svg { width: 17px; height: 17px; }
 
   .lp-feature-row h3 {
-    margin: 0;
+    margin: 0 0 4px;
     font-size: 0.98rem;
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-weight: 650;
     color: var(--foreground);
   }
 
   .lp-feature-row p {
-    margin: 5px 0 0;
-    font-size: 0.875rem;
+    margin: 0;
+    font-size: 0.86rem;
     color: var(--muted-foreground);
     line-height: 1.6;
   }
 
-  /* 3. Two-Role Open Split (Hairline Divider, Not Heavy Cards) */
+  /* 3. 3-Role Comparison */
   .lp-roles-split {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     border-top: 1px solid var(--border);
   }
 
   .lp-role-col {
-    padding: 32px 32px 8px 0;
+    padding: 28px 24px 8px 0;
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  .lp-role-col:last-child {
-    padding: 32px 0 8px 32px;
-    border-right: 0;
-  }
+  .lp-role-col:not(:first-child) { padding-left: 24px; }
+  .lp-role-col:last-child { border-right: 0; padding-right: 0; }
 
   .lp-role-col h3 {
-    margin: 4px 0 0;
-    font-size: 1.15rem;
+    margin: 0;
+    font-size: 1.08rem;
     font-weight: 650;
-    letter-spacing: -0.02em;
-    color: var(--foreground);
   }
 
   .lp-role-col > p {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     color: var(--muted-foreground);
-    line-height: 1.6;
+    line-height: 1.55;
   }
 
   .lp-checklist {
     list-style: none;
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -482,9 +745,9 @@
   .lp-checklist li {
     display: flex;
     align-items: flex-start;
-    gap: 9px;
-    font-size: 0.86rem;
-    color: var(--foreground);
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
     line-height: 1.5;
   }
 
@@ -496,46 +759,48 @@
     margin-top: 3px;
   }
 
-  /* 4. Open 2x2 Advantages Grid (Top-Rule Typography, Zero Boxes) */
-  .lp-adv-grid {
+  /* 4. 3-Step Flow */
+  .lp-steps-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 32px 48px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
   }
 
-  .lp-adv-item {
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
+  .lp-step-item {
+    padding: 22px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .lp-adv-head {
-    display: flex;
-    align-items: center;
     gap: 10px;
   }
 
-  .lp-adv-head svg {
-    width: 18px;
-    height: 18px;
+  .lp-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--primary) 12%, var(--card));
     color: var(--primary);
-    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.84rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .lp-adv-head h3 {
+  .lp-step-item h3 {
     margin: 0;
     font-size: 0.98rem;
-    font-weight: 600;
-    color: var(--foreground);
+    font-weight: 650;
   }
 
-  .lp-adv-item p {
+  .lp-step-item p {
     margin: 0;
-    font-size: 0.87rem;
+    font-size: 0.86rem;
     color: var(--muted-foreground);
-    line-height: 1.6;
+    line-height: 1.55;
   }
 
   /* 5. Pricing 2-Column Editorial Split */
@@ -549,23 +814,35 @@
   .lp-plan {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 30px 28px;
     display: flex;
     flex-direction: column;
     gap: 18px;
     box-shadow: var(--shadow-xs);
+    cursor: pointer;
+    transition: border-color 180ms ease, box-shadow 200ms ease, background 200ms ease, transform 180ms ease;
   }
 
-  .lp-plan.is-featured {
+  .lp-plan:hover,
+  .lp-plan.is-selected {
     border-color: var(--primary);
-    box-shadow: 0 8px 28px -12px rgba(18, 110, 81, 0.22);
+    box-shadow: 0 10px 28px -12px rgba(18, 110, 81, 0.22);
     background: linear-gradient(180deg, rgba(18, 110, 81, 0.045) 0%, var(--card) 42%);
+    transform: translateY(-2px);
   }
 
-  [data-theme="dark"] .lp-plan.is-featured {
+  [data-theme="dark"] .lp-plan:hover,
+  [data-theme="dark"] .lp-plan.is-selected {
     background: linear-gradient(180deg, rgba(34, 160, 118, 0.10) 0%, var(--card) 42%);
-    box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.55);
+  }
+
+  .lp-plan:hover .lp-plan-cta,
+  .lp-plan.is-selected .lp-plan-cta {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
   }
 
   .lp-plan-top {
@@ -630,6 +907,244 @@
     gap: 6px;
   }
 
+  /* 6. FAQ Accordion */
+  .lp-faq-list {
+    max-width: 780px;
+    border-top: 1px solid var(--border);
+  }
+
+  .lp-faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lp-faq-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    width: 100%;
+    padding: 18px 0;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .lp-faq-btn svg {
+    width: 17px;
+    height: 17px;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    transition: transform 180ms ease;
+  }
+
+  .lp-faq-btn.is-open svg {
+    transform: rotate(180deg);
+    color: var(--primary);
+  }
+
+  .lp-faq-ans {
+    padding: 0 0 18px;
+    font-size: 0.88rem;
+    color: var(--muted-foreground);
+    line-height: 1.65;
+    max-width: 68ch;
+  }
+
+  /* 3D Perspective Coverflow Product Screenshot Carousel */
+  .lp-shot-showcase {
+    margin-bottom: 56px;
+  }
+
+  .lp-cflow-stage {
+    position: relative;
+    width: 100%;
+    height: clamp(230px, 40vw, 480px);
+    perspective: 1400px;
+    overflow: hidden;
+    touch-action: pan-y;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .lp-cflow-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(740px, 84%);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease, filter 360ms ease, box-shadow 360ms ease;
+    box-shadow:
+      0 2px 6px rgba(9, 9, 11, 0.06),
+      0 20px 44px -16px rgba(9, 9, 11, 0.18);
+  }
+
+  [data-theme="dark"] .lp-cflow-card {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.45),
+      0 24px 52px -16px rgba(0, 0, 0, 0.72);
+  }
+
+  .lp-cflow-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .lp-cflow-card.is-active {
+    z-index: 4;
+    opacity: 1;
+    filter: none;
+    transform: translate(-50%, -50%) translateX(0%) scale(1) rotateY(0deg);
+    cursor: default;
+  }
+
+  .lp-cflow-card.is-prev {
+    z-index: 2;
+    opacity: 0.56;
+    filter: saturate(0.75) brightness(0.96);
+    transform: translate(-50%, -50%) translateX(-48%) scale(0.8) rotateY(22deg);
+    cursor: pointer;
+  }
+
+  .lp-cflow-card.is-next {
+    z-index: 2;
+    opacity: 0.56;
+    filter: saturate(0.75) brightness(0.96);
+    transform: translate(-50%, -50%) translateX(48%) scale(0.8) rotateY(-22deg);
+    cursor: pointer;
+  }
+
+  .lp-cflow-card.is-prev:hover,
+  .lp-cflow-card.is-next:hover {
+    opacity: 0.78;
+  }
+
+  .lp-cflow-card.is-far-left {
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) translateX(-76%) scale(0.66) rotateY(30deg);
+  }
+
+  .lp-cflow-card.is-far-right {
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) translateX(76%) scale(0.66) rotateY(-30deg);
+  }
+
+  .lp-cflow-wrap {
+    position: relative;
+  }
+
+  .lp-cflow-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 9999px !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 8px 20px -6px rgba(9, 9, 11, 0.16);
+  }
+
+  [data-theme="dark"] .lp-cflow-arrow {
+    box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.6);
+  }
+
+  .lp-cflow-arrow.is-left { left: 8px; }
+  .lp-cflow-arrow.is-right { right: 8px; }
+
+  .lp-cflow-foot {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .lp-cflow-caption {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.86rem;
+    color: var(--muted-foreground);
+    line-height: 1.5;
+  }
+
+  .lp-cflow-caption strong {
+    color: var(--foreground);
+    font-weight: 650;
+  }
+
+  .lp-cflow-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .lp-cflow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    border: 0;
+    padding: 0;
+    background: var(--border);
+    cursor: pointer;
+    transition: width 180ms ease, background 180ms ease;
+  }
+
+  .lp-cflow-dot.is-active {
+    width: 22px;
+    background: var(--primary);
+  }
+
+  @media (max-width: 640px) {
+    .lp-cflow-stage {
+      height: 220px;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    .lp-cflow-card { width: 92%; }
+    .lp-cflow-card.is-prev, .lp-cflow-card.is-next { opacity: 0; pointer-events: none; }
+    .lp-cflow-arrow { width: 34px !important; height: 34px !important; }
+  }
+
+  .lp-faq-help {
+    margin-top: 24px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    max-width: 780px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 0.86rem;
+    color: var(--muted-foreground);
+  }
+
+  .lp-faq-help strong {
+    color: var(--foreground);
+  }
+
   /* Closing Deep Forest CTA Band */
   .lp-cta-band {
     padding: 68px 0;
@@ -665,6 +1180,30 @@
     line-height: 1.6;
   }
 
+  [data-theme="dark"] .lp-cta-inner p {
+    color: var(--muted-foreground);
+  }
+
+  .lp-cta-btn-primary {
+    background: #22a076 !important;
+    color: #051b14 !important;
+    border-color: #22a076 !important;
+  }
+
+  .lp-cta-btn-primary:hover {
+    background: #29b486 !important;
+  }
+
+  .lp-cta-btn-outline {
+    background: transparent !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+  }
+
+  .lp-cta-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
   .lp-footer {
     padding: 26px 0;
     background: var(--background);
@@ -683,11 +1222,13 @@
 
   @media (max-width: 960px) {
     .lp-links { display: none; }
-    .lp-showcase-app { grid-template-columns: 1fr; }
-    .lp-mock-sidebar { display: none; }
-    .lp-mock-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lp-mock-grid { grid-template-columns: 1fr; }
-    .lp-problem-strip, .lp-feature-split, .lp-roles-split, .lp-adv-grid, .lp-pricing-grid {
+    .lp-mobile-toggle { display: inline-flex; }
+    .lp-hero {
+      padding: 48px 0 44px;
+      min-height: 0;
+      display: block;
+    }
+    .lp-problem-strip, .lp-feature-split, .lp-roles-split, .lp-steps-grid, .lp-pricing-grid {
       grid-template-columns: 1fr;
     }
     .lp-problem-col, .lp-role-col {
@@ -698,19 +1239,20 @@
     .lp-problem-col:last-child, .lp-role-col:last-child {
       border-bottom: 0;
     }
-    .lp-feature-sticky {
-      position: static;
-    }
-    .lp-feature-split {
-      gap: 24px;
-    }
+    .lp-feature-sticky { position: static; }
+    .lp-feature-split { gap: 24px; }
   }
 
   @media (max-width: 640px) {
     .lp-nav-inner { padding: 0 14px; }
-    .lp-wrap { padding: 0 16px; }
-    .lp-hero { padding: 42px 0 40px; }
-    .lp-section { padding: 48px 0; }
+    .lp-wrap, .lp-hero-inner { padding: 0 16px; }
+    .lp-hero { padding: 40px 0 38px; }
+    .lp-filmstrip-section { margin-top: 28px; }
+    .lp-film-cell { padding: 14px 18px; }
+    .lp-w-sankey { width: 292px; }
+    .lp-w-tasks { width: 268px; }
+    .lp-br-desktop { display: none; }
+    .lp-section { padding: 50px 0; }
   }
 </style>
 {% endblock %}
@@ -718,6 +1260,35 @@
 {% block body %}
 <div class="lp-page" x-data="{
   isDark: document.documentElement.getAttribute('data-theme') === 'dark',
+  openFaq: 0,
+  selectedPlan: null,
+  mobileNav: false,
+  shotIdx: 0,
+  shotCount: 5,
+  touchStartX: 0,
+  shotTitles: ['Ringkasan Persiapan', 'Anggaran & Diagram Sankey', 'Kalender Fase & Deadline', 'Daftar Tamu & Katering', 'Direktori & Evaluasi Vendor'],
+  shotCaptions: [
+    'Pantau hitung mundur, fase aktif, sisa ruang anggaran, dan fokus tugas dalam 1 layar.',
+    'Visualisasi Sankey 3-tingkat yang menghubungkan tabungan, pagu kategori, dan rincian vendor.',
+    'Peta warna fase H-minus, tanggal merah libur nasional, deadline tugas, dan jatuh tempo vendor.',
+    'Database undangan 4-arah lengkap dengan simulator otomatis porsi prasmanan dan gubukan.',
+    'Bandingkan kandidat vendor dengan skor berbobot untuk harga, kualitas, fasilitas, dan reputasi.'
+  ],
+  slideClass(i) {
+    const diff = (i - this.shotIdx + this.shotCount) % this.shotCount;
+    if (diff === 0) return 'is-active';
+    if (diff === 1) return 'is-next';
+    if (diff === this.shotCount - 1) return 'is-prev';
+    if (diff === 2) return 'is-far-right';
+    return 'is-far-left';
+  },
+  prevShot() { this.shotIdx = (this.shotIdx + this.shotCount - 1) % this.shotCount; },
+  nextShot() { this.shotIdx = (this.shotIdx + 1) % this.shotCount; },
+  onShotTouchStart(e) { this.touchStartX = e.changedTouches[0].clientX; },
+  onShotTouchEnd(e) {
+    const dx = e.changedTouches[0].clientX - this.touchStartX;
+    if (Math.abs(dx) > 40) { dx < 0 ? this.nextShot() : this.prevShot(); }
+  },
   toggleTheme() {
     this.isDark = !this.isDark;
     const t = this.isDark ? 'dark' : 'light';
@@ -738,11 +1309,11 @@
       </a>
 
       <nav class="lp-links" aria-label="Navigasi landing page">
-        <a href="#masalah">Masalah</a>
-        <a href="#fitur">Fitur Lengkap</a>
-        <a href="#untuk-siapa">Untuk Siapa</a>
-        <a href="#keunggulan">Keunggulan</a>
+        <a href="#fitur">Fitur</a>
+        <a href="#untuk-siapa">Peran</a>
+        <a href="#cara-mulai">Cara Mulai</a>
         <a href="#harga">Harga</a>
+        <a href="#faq">FAQ</a>
       </nav>
 
       <div class="lp-nav-actions">
@@ -757,17 +1328,33 @@
         <a href="{% url 'core:login' %}" data-slot="button" data-variant="ghost" data-size="sm">Masuk</a>
         <a href="#harga" data-slot="button" data-variant="default" data-size="sm">Pilih Paket</a>
         {% endif %}
+        <button type="button" class="lp-mobile-toggle" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="mobileNav = !mobileNav" :aria-expanded="mobileNav" aria-label="Buka menu navigasi">
+          <i :data-lucide="mobileNav ? 'x' : 'menu'"></i>
+        </button>
       </div>
     </div>
+
+    <nav class="lp-mobile-menu" x-show="mobileNav" x-transition x-cloak aria-label="Navigasi mobile">
+      <a href="#fitur" @click="mobileNav = false">Fitur Lengkap</a>
+      <a href="#untuk-siapa" @click="mobileNav = false">3 Peran &amp; Privasi</a>
+      <a href="#cara-mulai" @click="mobileNav = false">Cara Mulai</a>
+      <a href="#harga" @click="mobileNav = false">Paket &amp; Harga</a>
+      <a href="#faq" @click="mobileNav = false">FAQ</a>
+    </nav>
   </header>
 
-  <!-- Hero Section -->
+  <main>
+
+  <!-- Hero Section: Centered Copy + 3 Structured Feature Cards + 1 Calm Marquee Strip -->
   <section class="lp-hero">
-    <div class="lp-wrap">
+    <div class="lp-hero-inner">
+      <!-- Center Copy -->
       <div class="lp-hero-copy">
-        <h1>Rangkai pernikahanmu <span class="lp-hero-em">tanpa drama spreadsheet</span> dan catatan tercecer.</h1>
+        <h1>
+          <span class="lp-hero-em">Rangkai</span> persiapan nikahmu,<br class="lp-br-desktop" /> tanpa <span class="lp-hero-em">drama spreadsheet</span>.
+        </h1>
         <p class="lp-hero-sub">
-          Satu workspace terpadu untuk pasangan dan tim WO di Indonesia. Menyatukan rencana anggaran, arus kas, tabungan bersama, evaluasi vendor berbobot, daftar tamu dan porsi katering, hingga rundown hari-H dalam satu kendali yang tenang.
+          Workspace terpadu untuk pasangan dan tim WO di Indonesia. Menyatukan kalender fase, arus kas &amp; alokasi anggaran visual, tabungan privat, evaluasi vendor, hingga tugas hari-H dalam satu kendali.
         </p>
         <div class="lp-hero-cta">
           {% if user.is_authenticated %}
@@ -779,113 +1366,145 @@
             Lihat Paket &amp; Harga <i data-lucide="arrow-right"></i>
           </a>
           <a href="{% url 'core:join_workspace' %}" data-slot="button" data-variant="outline" data-size="lg">
-            <i data-lucide="link-2"></i> Gabung Pakai Kode Undangan
+            <i data-lucide="link-2"></i> Gabung Kode Undangan
           </a>
           {% endif %}
         </div>
         <div class="lp-hero-note">
-          Siap pakai dalam 1 menit · Bahasa Indonesia &amp; Rupiah (Rp) · Nyaman di HP maupun laptop
+          Mulai Rp 149rb sekali bayar &middot; Undang pasangan &amp; tim gratis &middot; Privasi data terjaga
         </div>
       </div>
 
-      <!-- Product Preview Showcase (Illustrative Workspace Snapshot) -->
-      <div class="lp-showcase" aria-label="Pratinjau antarmuka workspace Rangkai">
-        <div class="lp-showcase-chrome">
-          <div class="lp-dots"><span></span><span></span><span></span></div>
-          <span class="font-mono" style="font-size: 0.72rem;">rangkai.click / workspace</span>
-          <span data-slot="badge" data-variant="success" class="tabular-nums">H-90 Hari</span>
-        </div>
-        <div class="lp-showcase-app">
-          <div class="lp-mock-sidebar">
-            <div class="lp-mock-brand brand-lockup is-sm">
-              <img src="{% static 'img/logo.svg' %}?v=22" alt="" class="brand-lockup-icon" />
-              <span class="brand-lockup-text">
-                <span class="brand-lockup-main">Rangkai</span>
-                <span class="brand-lockup-tld">.click</span>
-              </span>
+      <!-- Borderless Editorial Filmstrip (Left -> Right, pauses on hover) + Plain Ticker -->
+      <div class="lp-filmstrip-section" aria-hidden="true">
+        <div class="lp-filmstrip">
+          <div class="lp-filmstrip-track">
+            {% for _ in "12" %}
+            <!-- 1. Aliran Dana (full-width balanced Sankey, zero dead right whitespace) -->
+            <div class="lp-film-cell lp-w-sankey">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="git-branch"></i> Aliran Dana</span>
+              </div>
+              <svg viewBox="0 0 288 102" width="100%" height="102" style="display:block;">
+                <rect x="2" y="16" width="8" height="70" rx="2" fill="var(--primary)" />
+                <path d="M 10 16 C 84 16, 108 5, 184 5 L 184 31 C 108 31, 84 42, 10 42 Z" fill="var(--primary)" fill-opacity="0.34" />
+                <path d="M 10 42 C 84 42, 108 38, 184 38 L 184 55 C 108 55, 84 59, 10 59 Z" fill="var(--primary)" fill-opacity="0.24" />
+                <path d="M 10 59 C 84 59, 108 62, 184 62 L 184 76 C 108 76, 84 73, 10 73 Z" fill="var(--primary)" fill-opacity="0.17" />
+                <path d="M 10 73 C 84 73, 108 84, 184 84 L 184 97 C 108 97, 84 86, 10 86 Z" fill="var(--primary)" fill-opacity="0.11" />
+                <rect x="184" y="5" width="6" height="26" rx="2" fill="var(--primary)" />
+                <text x="197" y="22" fill="var(--foreground)" font-size="11.5" font-weight="600" font-family="Inter, sans-serif">Catering 38%</text>
+                <rect x="184" y="38" width="6" height="17" rx="2" fill="var(--primary)" fill-opacity="0.78" />
+                <text x="197" y="50" fill="var(--foreground)" font-size="11.5" font-weight="600" font-family="Inter, sans-serif">Venue 24%</text>
+                <rect x="184" y="62" width="6" height="14" rx="2" fill="var(--primary)" fill-opacity="0.58" />
+                <text x="197" y="73" fill="var(--foreground)" font-size="11.5" font-weight="600" font-family="Inter, sans-serif">Dekor 18%</text>
+                <rect x="184" y="84" width="6" height="13" rx="2" fill="var(--primary)" fill-opacity="0.40" />
+                <text x="197" y="94" fill="var(--foreground)" font-size="11.5" font-weight="600" font-family="Inter, sans-serif">Sisa 20%</text>
+              </svg>
             </div>
-            <div class="lp-mock-item active"><i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Ringkasan</div>
-            <div class="lp-mock-item"><i data-lucide="check-square" style="width:14px;height:14px;"></i> Timeline &amp; Tugas</div>
-            <div class="lp-mock-item"><i data-lucide="store" style="width:14px;height:14px;"></i> Direktori Vendor</div>
-            <div class="lp-mock-item"><i data-lucide="wallet" style="width:14px;height:14px;"></i> Anggaran &amp; Kas</div>
-            <div class="lp-mock-item"><i data-lucide="piggy-bank" style="width:14px;height:14px;"></i> Tabungan Bersama</div>
-            <div class="lp-mock-item"><i data-lucide="users" style="width:14px;height:14px;"></i> Tamu &amp; Katering</div>
-            <div class="lp-mock-item"><i data-lucide="settings-2" style="width:14px;height:14px;"></i> Logistik Hari-H</div>
+
+            <!-- 2. Kalender Fase -->
+            <div class="lp-film-cell lp-w-cal">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="calendar-days"></i> Kalender Fase</span>
+              </div>
+              <div class="lp-mini-cal-grid">
+                <span class="lp-mini-cal-head">Sn</span><span class="lp-mini-cal-head">Sl</span><span class="lp-mini-cal-head">Rb</span><span class="lp-mini-cal-head">Km</span><span class="lp-mini-cal-head">Jm</span><span class="lp-mini-cal-head is-red">Sb</span><span class="lp-mini-cal-head is-red">Mg</span>
+                <span class="lp-mini-cal-day is-p2">12</span><span class="lp-mini-cal-day is-p2">13</span><span class="lp-mini-cal-day is-today">14</span><span class="lp-mini-cal-day is-p2">15</span><span class="lp-mini-cal-day is-p2">16</span><span class="lp-mini-cal-day is-p2 is-red">17</span><span class="lp-mini-cal-day is-p2 is-red">18</span>
+                <span class="lp-mini-cal-day is-p3">19</span><span class="lp-mini-cal-day is-p3">20</span><span class="lp-mini-cal-day is-p3">21</span><span class="lp-mini-cal-day is-p3">22</span><span class="lp-mini-cal-day is-p3">23</span><span class="lp-mini-cal-day is-p3 is-red">24</span><span class="lp-mini-cal-day is-p3 is-red">25</span>
+              </div>
+            </div>
+
+            <!-- 3. Timeline & Tugas -->
+            <div class="lp-film-cell lp-w-tasks">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="list-checks"></i> Timeline &amp; Tugas</span>
+              </div>
+              <div class="lp-hair-list">
+                <div class="lp-hair-row">
+                  <span class="lp-ct-task-left"><span class="lp-ct-check is-done"><i data-lucide="check"></i></span><span class="lp-ct-task-name is-done">Konfirmasi Layout Gedung</span></span>
+                  <span class="lp-ct-task-date">10 Mei</span>
+                </div>
+                <div class="lp-hair-row">
+                  <span class="lp-ct-task-left"><span class="lp-ct-check"></span><span class="lp-ct-task-name">Test Food &amp; Final Porsi</span></span>
+                  <span class="lp-ct-task-date">14 Mei</span>
+                </div>
+                <div class="lp-hair-row">
+                  <span class="lp-ct-task-left"><span class="lp-ct-check"></span><span class="lp-ct-task-name">Fitting Busana Akad</span></span>
+                  <span class="lp-ct-task-date">24 Mei</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Tabungan Privat -->
+            <div class="lp-film-cell lp-w-savings">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="piggy-bank"></i> Tabungan Privat</span>
+              </div>
+              <div class="lp-mini-kpi-col">
+                <strong style="margin-bottom:8px;">Rp 98.500.000</strong>
+                <div data-slot="progress"><div data-slot="progress-indicator" style="width: 66%;"></div></div>
+              </div>
+              <div class="lp-mini-subnote"><span>Target Rp 150 jt</span><strong>Terkunci WO</strong></div>
+            </div>
+
+            <!-- 5. Tamu & Katering -->
+            <div class="lp-film-cell lp-w-catering">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="utensils"></i> Tamu &amp; Katering</span>
+              </div>
+              <div class="lp-mini-kpi-pair">
+                <div class="lp-mini-kpi-col"><strong>525</strong><span>Prasmanan</span></div>
+                <div class="lp-mini-kpi-col"><strong>320</strong><span>Gubukan</span></div>
+              </div>
+              <div class="lp-mini-subnote"><span>Import Excel</span><strong>RSVP 82%</strong></div>
+            </div>
+
+            <!-- 6. Shortlist Vendor -->
+            <div class="lp-film-cell lp-w-vendor">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="store"></i> Shortlist Vendor</span>
+              </div>
+              <div class="lp-hair-list">
+                <div class="lp-hair-row"><span class="lp-mini-rd-name">Catering Nusantara</span><span class="lp-mini-vendor-tag is-picked">Terpilih</span></div>
+                <div class="lp-hair-row"><span class="lp-mini-rd-name">Gedung Graha Senja</span><span class="lp-mini-vendor-tag">Survei</span></div>
+                <div class="lp-hair-row"><span class="lp-mini-rd-name">Lensa Kala Studio</span><span class="lp-mini-vendor-tag">Shortlist</span></div>
+              </div>
+            </div>
+
+            <!-- 7. Rundown Hari-H -->
+            <div class="lp-film-cell lp-w-rundown">
+              <div class="lp-ct-head">
+                <span class="lp-ct-title"><i data-lucide="clipboard-list"></i> Rundown Hari-H</span>
+              </div>
+              <div class="lp-hair-list">
+                <div class="lp-hair-row is-rd"><span class="lp-mini-rd-time">08:00</span><span class="lp-mini-rd-name">Akad Nikah &amp; Sungkeman</span></div>
+                <div class="lp-hair-row is-rd"><span class="lp-mini-rd-time">11:00</span><span class="lp-mini-rd-name">Kirab &amp; Resepsi Sesi 1</span></div>
+                <div class="lp-hair-row is-rd"><span class="lp-mini-rd-time">13:30</span><span class="lp-mini-rd-name">Foto Keluarga &amp; Closing</span></div>
+              </div>
+            </div>
+            {% endfor %}
           </div>
+        </div>
 
-          <div class="lp-mock-main">
-            <div class="lp-mock-kpis">
-              <div class="lp-mock-kpi">
-                <div class="lp-mock-kpi-label">Dana Terkumpul</div>
-                <div class="lp-mock-kpi-val" style="color: var(--primary);">Rp 65.000.000</div>
-              </div>
-              <div class="lp-mock-kpi">
-                <div class="lp-mock-kpi-label">Sisa Kas Siap Pakai</div>
-                <div class="lp-mock-kpi-val">Rp 42.500.000</div>
-              </div>
-              <div class="lp-mock-kpi">
-                <div class="lp-mock-kpi-label">Konfirmasi Tamu</div>
-                <div class="lp-mock-kpi-val">184 <span style="font-size:0.74rem;font-weight:500;color:var(--muted-foreground);">undangan</span></div>
-              </div>
-              <div class="lp-mock-kpi">
-                <div class="lp-mock-kpi-label">Kesiapan Tugas</div>
-                <div class="lp-mock-kpi-val">72%</div>
-              </div>
-            </div>
-
-            <div class="lp-mock-grid">
-              <div class="lp-mock-panel">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:0.84rem;">Alokasi Pagu per Kategori</strong>
-                  <span data-slot="badge" data-variant="secondary">Ilustrasi</span>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px;">
-                  <div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-bottom:3px;">
-                      <span>Catering &amp; F&amp;B</span><span class="tabular-nums font-mono">Rp 38.000.000</span>
-                    </div>
-                    <div data-slot="progress"><div data-slot="progress-indicator" style="width: 78%;"></div></div>
-                  </div>
-                  <div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-bottom:3px;">
-                      <span>Venue &amp; Gedung</span><span class="tabular-nums font-mono">Rp 20.000.000</span>
-                    </div>
-                    <div data-slot="progress"><div data-slot="progress-indicator" style="width: 100%;"></div></div>
-                  </div>
-                  <div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-bottom:3px;">
-                      <span>Dekorasi &amp; Dokumentasi</span><span class="tabular-nums font-mono">Rp 18.000.000</span>
-                    </div>
-                    <div data-slot="progress"><div data-slot="progress-indicator" style="width: 55%;"></div></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="lp-mock-panel">
-                <strong style="font-size:0.84rem;">Fokus Persiapan Saat Ini</strong>
-                <div>
-                  <div class="lp-mock-row">
-                    <span>Pengurusan berkas N1-N4 KUA</span>
-                    <span data-slot="badge" data-variant="warning">Prioritas</span>
-                  </div>
-                  <div class="lp-mock-row">
-                    <span>Pelunasan DP Venue &amp; Katering</span>
-                    <span data-slot="badge" data-variant="success">Dana Siap</span>
-                  </div>
-                  <div class="lp-mock-row">
-                    <span>Finalisasi Rundown &amp; PIC Aset</span>
-                    <span data-slot="badge" data-variant="secondary">WO</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <!-- Plain Editorial Ticker (Right -> Left, zero boxes) -->
+        <div class="lp-ticker-plain">
+          <div class="lp-ticker-track">
+            {% for _ in "12" %}
+            <span class="lp-ticker-item"><i data-lucide="lock"></i><strong>Tabungan Privat</strong><span>Terkunci dari WO</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="utensils"></i><strong>Tamu &amp; Katering</strong><span>420 tamu &middot; 525 porsi</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="store"></i><strong>Shortlist Vendor</strong><span>12 kandidat &middot; 3 terpilih</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="briefcase"></i><strong>Portal WO</strong><span>Hingga 10 klien aktif</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="clipboard-list"></i><strong>Rundown Hari-H</strong><span>Real-time Crew</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="file-check-2"></i><strong>Berkas &amp; Seserahan</strong><span>Checklist KUA</span></span><span class="lp-ticker-sep"></span>
+            <span class="lp-ticker-item"><i data-lucide="shield-check"></i><strong>3 Peran Terisolasi</strong><span>Pengantin, WO, Crew</span></span><span class="lp-ticker-sep"></span>
+            {% endfor %}
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 1: Masalah yang Dipecahkan (Open Hairline Strip, Zero Cards) -->
+  <!-- Section 1: Masalah yang Dipecahkan -->
   <section class="lp-section lp-section-surface" id="masalah">
     <div class="lp-wrap">
       <div class="lp-section-head">
@@ -898,7 +1517,7 @@
           <div class="lp-problem-tag"><i data-lucide="x-circle" style="width:14px;height:14px;"></i> Rumus spreadsheet gampang rusak</div>
           <h3>Salah hitung anggaran &amp; kaget saat jatuh tempo</h3>
           <p>Pagu kategori, tabungan bulanan, dan DP vendor terpisah-pisah sehingga sulit tahu kas mana yang benar-benar siap pakai.</p>
-          <div class="lp-solution-tag"><i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Terhubung otomatis di Anggaran &amp; Tabungan</div>
+          <div class="lp-solution-tag"><i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Terhubung otomatis di Anggaran, Sankey &amp; Kalender</div>
         </div>
 
         <div class="lp-problem-col">
@@ -912,15 +1531,65 @@
           <div class="lp-problem-tag"><i data-lucide="x-circle" style="width:14px;height:14px;"></i> Dilema privasi dengan WO</div>
           <h3>WO butuh akses, tapi keuangan tetap pribadi</h3>
           <p>Berbagi spreadsheet penuh berarti membuka rincian tabungan dan anggaran pribadi pasangan ke semua anggota WO atau tim acara.</p>
-          <div class="lp-solution-tag"><i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Isolasi peran Owner/Co-Owner vs Crew/WO</div>
+          <div class="lp-solution-tag"><i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> Isolasi peran Pengantin, WO Manager &amp; Crew</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 2: Semua Fitur Rangkai (Sticky Split Index, Zero Boxed Cards) -->
+  <!-- Section 2: Semua Fitur Rangkai -->
   <section class="lp-section" id="fitur">
     <div class="lp-wrap">
+      <!-- 3D Perspective Product Screenshot Carousel -->
+      <div class="lp-shot-showcase">
+        <div class="lp-section-head" style="margin-bottom: 20px;">
+          <h2>Lihat langsung tampilan workspace Rangkai</h2>
+          <p>Geser dengan panah kiri atau kanan untuk mengintip antarmuka asli yang langsung kamu pakai setelah aktivasi.</p>
+        </div>
+
+        <div class="lp-cflow-wrap">
+          <button type="button" class="lp-cflow-arrow is-left" data-slot="button" data-variant="outline" data-size="icon-sm" @click="prevShot()" aria-label="Tampilan sebelumnya">
+            <i data-lucide="chevron-left"></i>
+          </button>
+
+          <div class="lp-cflow-stage" @touchstart.passive="onShotTouchStart($event)" @touchend.passive="onShotTouchEnd($event)">
+            <div class="lp-cflow-card" :class="slideClass(0)" @click="shotIdx = 0">
+              <img src="{% static 'img/preview/ringkasan.png' %}" alt="Tampilan Dashboard Ringkasan Persiapan Rangkai.click" loading="lazy" />
+            </div>
+            <div class="lp-cflow-card" :class="slideClass(1)" @click="shotIdx = 1">
+              <img src="{% static 'img/preview/anggaran.png' %}" alt="Tampilan Anggaran &amp; Diagram Sankey Rangkai.click" loading="lazy" />
+            </div>
+            <div class="lp-cflow-card" :class="slideClass(2)" @click="shotIdx = 2">
+              <img src="{% static 'img/preview/kalender.png' %}" alt="Tampilan Kalender Fase &amp; Deadline Rangkai.click" loading="lazy" />
+            </div>
+            <div class="lp-cflow-card" :class="slideClass(3)" @click="shotIdx = 3">
+              <img src="{% static 'img/preview/tamu.png' %}" alt="Tampilan Database Tamu &amp; Simulator Katering Rangkai.click" loading="lazy" />
+            </div>
+            <div class="lp-cflow-card" :class="slideClass(4)" @click="shotIdx = 4">
+              <img src="{% static 'img/preview/vendor.png' %}" alt="Tampilan Direktori &amp; Evaluasi Vendor Rangkai.click" loading="lazy" />
+            </div>
+          </div>
+
+          <button type="button" class="lp-cflow-arrow is-right" data-slot="button" data-variant="outline" data-size="icon-sm" @click="nextShot()" aria-label="Tampilan berikutnya">
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="lp-cflow-foot">
+          <div class="lp-cflow-caption">
+            <strong x-text="shotTitles[shotIdx]">Ringkasan Persiapan</strong> &middot;
+            <span x-text="shotCaptions[shotIdx]">Pantau hitung mundur, fase aktif, sisa ruang anggaran, dan fokus tugas dalam 1 layar.</span>
+          </div>
+          <div class="lp-cflow-dots" aria-label="Indikator slide">
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 0 }" @click="shotIdx = 0" aria-label="Slide 1"></button>
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 1 }" @click="shotIdx = 1" aria-label="Slide 2"></button>
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 2 }" @click="shotIdx = 2" aria-label="Slide 3"></button>
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 3 }" @click="shotIdx = 3" aria-label="Slide 4"></button>
+            <button type="button" class="lp-cflow-dot" :class="{ 'is-active': shotIdx === 4 }" @click="shotIdx = 4" aria-label="Slide 5"></button>
+          </div>
+        </div>
+      </div>
+
       <div class="lp-feature-split">
         <div class="lp-feature-sticky">
           <div class="lp-section-head" style="margin-bottom: 18px;">
@@ -937,7 +1606,15 @@
             <span class="lp-feature-icon"><i data-lucide="wallet"></i></span>
             <div>
               <h3>Anggaran &amp; Arus Kas + Visualisasi Sankey</h3>
-              <p>Atur target total anggaran dan pagu per kategori memakai Nominal (Rp) atau Persentase (%) yang saling menghitung otomatis. Lacak DP, termin jatuh tempo, sisa kas siap pakai, deteksi over-allocation, dan alur distribusi dana lewat diagram Sankey interaktif.</p>
+              <p>Atur target total anggaran dan pagu per kategori memakai Nominal (Rp) atau Persentase (%) yang saling menghitung otomatis. Lacak DP, termin jatuh tempo, sisa kas siap pakai, dan alur distribusi dana lewat diagram Sankey interaktif.</p>
+            </div>
+          </div>
+
+          <div class="lp-feature-row">
+            <span class="lp-feature-icon"><i data-lucide="calendar-days"></i></span>
+            <div>
+              <h3>Kalender Fase, Tanggal Merah &amp; Deadline Tugas</h3>
+              <p>Visualisasikan rentang waktu tiap fase (H-360 s/d Hari-H) dengan penanda warna di kalender bulanan, lengkap dengan tanggal merah libur nasional Indonesia, tenggat waktu tugas, dan jatuh tempo pembayaran vendor.</p>
             </div>
           </div>
 
@@ -945,7 +1622,7 @@
             <span class="lp-feature-icon"><i data-lucide="piggy-bank"></i></span>
             <div>
               <h3>Tabungan Bersama &amp; Proyeksi Selesai</h3>
-              <p>Catat setoran per penyetor (Pria, Wanita, Bersama, Keluarga), pantau grafik akumulasi terhadap garis target, dan lihat estimasi bulan tercapai secara otomatis.</p>
+              <p>Catat setoran per penyetor (Pria, Wanita, Bersama, Keluarga), pantau grafik akumulasi terhadap garis target, dan lihat estimasi bulan tercapai secara otomatis. Terkunci privat khusus pengantin.</p>
             </div>
           </div>
 
@@ -953,7 +1630,7 @@
             <span class="lp-feature-icon"><i data-lucide="store"></i></span>
             <div>
               <h3>Direktori &amp; Evaluasi Vendor Berbobot</h3>
-              <p>Bandingkan kandidat vendor secara objektif dengan bobot dinamis (Harga, Kualitas, Fasilitas, Reputasi), skor otomatis, kontak WhatsApp langsung, dan status keputusan.</p>
+              <p>Bandingkan kandidat vendor secara objektif dengan skor (1-5) untuk Harga, Kualitas, Fasilitas, dan Reputasi, lengkap dengan kontak WhatsApp langsung dan status keputusan.</p>
             </div>
           </div>
 
@@ -961,15 +1638,15 @@
             <span class="lp-feature-icon"><i data-lucide="users"></i></span>
             <div>
               <h3>Database Tamu, Kuota 4-Arah &amp; Simulator Katering</h3>
-              <p>Kelola daftar undangan lengkap dengan kuota Keluarga/Teman Pria &amp; Wanita, status RSVP &amp; check-in, input cepat bergaya spreadsheet, import/export Excel, serta simulator otomatis jumlah porsi prasmanan (buffet) dan gubukan.</p>
+              <p>Kelola daftar undangan lengkap dengan kuota Keluarga/Teman Pria &amp; Wanita, status RSVP, import/export Excel, serta simulator otomatis jumlah porsi prasmanan (buffet) dan gubukan.</p>
             </div>
           </div>
 
           <div class="lp-feature-row">
             <span class="lp-feature-icon"><i data-lucide="check-square"></i></span>
             <div>
-              <h3>Timeline &amp; Checklist 5 Fase</h3>
-              <p>Roadmap siap pakai dari D-360 hingga H+1 yang bisa dikustomisasi penuh. Filter berdasarkan penanggung jawab, tandai prioritas, dan centang tuntas 1-klik.</p>
+              <h3>Timeline &amp; Checklist Kustom Anti-Overlap</h3>
+              <p>Roadmap siap pakai dari H-360 hingga H+1 yang bisa dikustomisasi penuh rentang waktunya tanpa bentrok, lengkap dengan tenggat waktu (deadline), filter penanggung jawab, dan centang tuntas 1-klik.</p>
             </div>
           </div>
 
@@ -985,7 +1662,7 @@
             <span class="lp-feature-icon"><i data-lucide="settings-2"></i></span>
             <div>
               <h3>Logistik &amp; Operasional Hari-H</h3>
-              <p>Susun rundown menit-ke-menit dengan deteksi bentrok jadwal, catat PIC pembawa aset kritis (cincin, mahar, buku nikah), serta hitung meter kain seragam keluarga.</p>
+              <p>Susun rundown menit-ke-menit, catat PIC pembawa aset kritis (cincin, mahar, buku nikah), serta hitung meter kain seragam keluarga dan bridesmaid.</p>
             </div>
           </div>
         </div>
@@ -993,95 +1670,90 @@
     </div>
   </section>
 
-  <!-- Section 3: Untuk Siapa (Open Hairline 2-Column Comparison) -->
+  <!-- Section 3: Untuk Siapa (3 Peran Jelas) -->
   <section class="lp-section lp-section-surface" id="untuk-siapa">
     <div class="lp-wrap">
       <div class="lp-section-head">
-        <h2>Dirancang untuk dua peran yang bekerja bareng setiap hari</h2>
-        <p>Pasangan tetap memegang kendali penuh atas keputusan dan keuangan, sementara WO dan tim acara bisa langsung mengeksekusi tugas di lapangan tanpa hambatan.</p>
+        <h2>Dirancang untuk tiga peran yang bekerja bareng</h2>
+        <p>Setiap peran punya ruang kerja dan batas privasi yang jelas, sehingga kolaborasi berjalan cepat tanpa mengorbankan data sensitif pasangan.</p>
       </div>
 
       <div class="lp-roles-split">
         <div class="lp-role-col">
-          <div><span data-slot="badge" data-variant="success">Owner &amp; Co-Owner</span></div>
+          <div><span data-slot="badge" data-variant="emerald">Owner &amp; Co-Owner</span></div>
           <h3>Pasangan Calon Pengantin</h3>
-          <p>Merencanakan pernikahan berdua dalam satu ruang kerja yang transparan tanpa saling lempar file.</p>
+          <p>Kendali penuh atas seluruh rencana, anggaran, dan tabungan pribadi berdua dengan pasangan.</p>
           <ul class="lp-checklist">
-            <li><i data-lucide="check"></i><span>Akses penuh ke Anggaran &amp; Arus Kas, Tabungan Bersama, dan Pengaturan Workspace.</span></li>
-            <li><i data-lucide="check"></i><span>Bandingkan vendor, kunci keputusan Booked, dan pantau termin pembayaran jatuh tempo.</span></li>
-            <li><i data-lucide="check"></i><span>Bagikan kode undangan 8 karakter dan atur peran setiap anggota yang bergabung.</span></li>
+            <li><i data-lucide="check"></i><span>Akses penuh ke Anggaran &amp; Kas, Sankey, dan Tabungan Bersama yang terkunci privat.</span></li>
+            <li><i data-lucide="check"></i><span>Kendali izin privasi: putuskan sendiri apakah WO boleh membuka Anggaran &amp; Kas.</span></li>
+            <li><i data-lucide="check"></i><span>Undang pasangan (Co-Owner) dan Crew lapangan tanpa biaya tambahan.</span></li>
           </ul>
         </div>
 
         <div class="lp-role-col">
-          <div><span data-slot="badge" data-variant="secondary">Crew / WO &amp; Tim Acara</span></div>
-          <h3>Wedding Organizer &amp; Tim Acara</h3>
-          <p>Bergabung cepat lewat kode undangan untuk membantu koordinasi operasional dari laptop maupun HP di lapangan.</p>
+          <div><span data-slot="badge" data-variant="outline">WO Manager</span></div>
+          <h3>Wedding Organizer</h3>
+          <p>Kelola banyak project pernikahan klien dari satu Portal WO sambil menjaga privasi tiap pasangan.</p>
           <ul class="lp-checklist">
-            <li><i data-lucide="check"></i><span>Fokus pada Timeline &amp; Tugas, Daftar Tamu &amp; Check-in, Berkas, Vendor, dan Logistik Hari-H.</span></li>
-            <li><i data-lucide="check"></i><span>Akses modul Keuangan &amp; Pengaturan otomatis terkunci demi privasi pasangan.</span></li>
-            <li><i data-lucide="check"></i><span>Navigasi mobile 1-tangan untuk update cepat saat survei lokasi maupun hari-H.</span></li>
+            <li><i data-lucide="check"></i><span>Portal WO Dashboard + Workspace Switcher untuk berpindah antar klien dalam 1 klik.</span></li>
+            <li><i data-lucide="check"></i><span>Buat project baru dan bagikan link undangan khusus pengantin secara instan.</span></li>
+            <li><i data-lucide="check"></i><span>Kelola Vendor, Tamu, Kalender Fase, Checklist, dan Rundown lintas klien.</span></li>
+          </ul>
+        </div>
+
+        <div class="lp-role-col">
+          <div><span data-slot="badge" data-variant="secondary">Crew Operasional</span></div>
+          <h3>Tim Acara &amp; Lapangan</h3>
+          <p>Gabung cepat lewat kode undangan 8 karakter untuk langsung membantu eksekusi di lapangan.</p>
+          <ul class="lp-checklist">
+            <li><i data-lucide="check"></i><span>Fokus pada Timeline &amp; Tugas, Kalender Fase, Daftar Tamu, Detail Acara, dan Logistik Hari-H.</span></li>
+            <li><i data-lucide="check"></i><span>Modul Keuangan, Tabungan, Vendor, dan Pengaturan otomatis tersembunyi.</span></li>
+            <li><i data-lucide="check"></i><span>Satu akun Crew bisa bergabung ke banyak project klien sekaligus.</span></li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 4: Keunggulan (Open Typographic 2x2 Grid, Zero Cards) -->
-  <section class="lp-section" id="keunggulan">
+  <!-- Section 4: Cara Mulai (3 Langkah Simpel) -->
+  <section class="lp-section" id="cara-mulai">
     <div class="lp-wrap">
       <div class="lp-section-head">
-        <h2>Kelebihan Rangkai dibanding merakit sendiri</h2>
-        <p>Dibangun khusus untuk alur pernikahan di Indonesia: ringan, cepat, dan terisolasi penuh untuk setiap workspace.</p>
+        <h2>Mulai dalam 3 langkah singkat</h2>
+        <p>Alur pendaftaran dibuat sederhana dan terpisah: bikin akun dulu, lalu pilih mau mengaktifkan paket atau gabung pakai kode undangan.</p>
       </div>
 
-      <div class="lp-adv-grid">
-        <div class="lp-adv-item">
-          <div class="lp-adv-head">
-            <i data-lucide="zap"></i>
-            <h3>Ringan &amp; Responsif di HP Maupun Laptop</h3>
-          </div>
-          <p>Interaksi instan tanpa reload berat. Nyaman dipakai untuk input massal di desktop maupun cek cepat dan centang checklist satu tangan di HP saat di lapangan.</p>
+      <div class="lp-steps-grid">
+        <div class="lp-step-item">
+          <span class="lp-step-num">1</span>
+          <h3>Buat Akun (30 Detik)</h3>
+          <p>Daftar cukup dengan username, email, dan password. Tanpa formulir panjang di awal.</p>
         </div>
-
-        <div class="lp-adv-item">
-          <div class="lp-adv-head">
-            <i data-lucide="map-pin"></i>
-            <h3>Konteks Pernikahan Indonesia</h3>
-          </div>
-          <p>Sepenuhnya berbahasa Indonesia dengan format Rupiah (Rp), berkas KUA/Sipil, inventaris seserahan, kalkulator gubukan &amp; prasmanan, hingga kain seragam keluarga.</p>
+        <div class="lp-step-item">
+          <span class="lp-step-num">2</span>
+          <h3>Pilih Paket atau Masukkan Kode</h3>
+          <p>Pilih Paket Wedding Owner / WO Manager dengan pembayaran QRIS instan, atau masukkan kode 8 karakter jika kamu diundang.</p>
         </div>
-
-        <div class="lp-adv-item">
-          <div class="lp-adv-head">
-            <i data-lucide="shield-check"></i>
-            <h3>Privasi Multi-Tenant &amp; Kontrol Akses</h3>
-          </div>
-          <p>Data setiap workspace pernikahan terisolasi penuh. Owner bisa membuat ulang kode undangan kapan saja dan mengubah peran anggota sesuai kebutuhan.</p>
-        </div>
-
-        <div class="lp-adv-item">
-          <div class="lp-adv-head">
-            <i data-lucide="moon"></i>
-            <h3>Nyaman Dipakai Kapan Saja (Light &amp; Dark Mode)</h3>
-          </div>
-          <p>Antarmuka modern yang bersih, bebas clutter, mendukung Mode Terang maupun Mode Gelap, plus ekspor/impor Excel untuk daftar tamu.</p>
+        <div class="lp-step-item">
+          <span class="lp-step-num">3</span>
+          <h3>Workspace Langsung Aktif</h3>
+          <p>Setelah QRIS terkonfirmasi otomatis (atau kode valid), kamu langsung masuk ke Dashboard lengkap dengan template fase dan anggaran siap pakai.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Section 5: Paket & Harga -->
-  <section class="lp-section is-alt" id="harga">
+  <section class="lp-section lp-section-surface" id="harga">
     <div class="lp-wrap">
       <div class="lp-section-head">
         <h2>Pilih paket sesuai peranmu</h2>
-        <p>Tersedia dua paket jelas: untuk calon pengantin yang merencanakan 1 pernikahan, atau untuk Wedding Organizer yang menangani banyak klien sekaligus.</p>
+        <p>Transparan tanpa biaya tersembunyi. Pilih paket untuk pernikahanmu sendiri atau untuk layanan Wedding Organizer yang menangani banyak klien.</p>
       </div>
 
       <div class="lp-pricing-grid">
         <!-- Paket 1: Wedding Owner -->
-        <div class="lp-plan">
+        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wedding_owner' }" @click="selectedPlan = 'wedding_owner'">
           <div class="lp-plan-top">
             <h3 class="lp-plan-name">Paket Wedding Owner</h3>
             <span data-slot="badge" data-variant="secondary">Untuk Calon Pengantin</span>
@@ -1095,26 +1767,26 @@
           </p>
           <ul class="lp-checklist">
             <li><i data-lucide="check"></i><span><strong>1 Workspace Pernikahan</strong> aktif penuh tanpa batas waktu hingga acara selesai</span></li>
-            <li><i data-lucide="check"></i><span>Undang <strong>1 Co-Owner (Pasangan)</strong> dan <strong>Crew Operasional</strong> tanpa batas</span></li>
+            <li><i data-lucide="check"></i><span>Undang <strong>1 Co-Owner (Pasangan)</strong> dan <strong>Crew Operasional</strong> tanpa biaya tambahan</span></li>
             <li><i data-lucide="check"></i><span>Ruang <strong>Tabungan Pribadi</strong> terkunci khusus Owner &amp; Co-Owner</span></li>
-            <li><i data-lucide="check"></i><span>Akses seluruh modul: Budget &amp; Sankey, Vendor Scoring, Tamu, Checklist &amp; Rundown</span></li>
+            <li><i data-lucide="check"></i><span>Seluruh modul: Budget &amp; Sankey, Kalender Fase, Shortlist Vendor, Tamu, Checklist &amp; Rundown</span></li>
           </ul>
           <div class="lp-plan-foot">
-            <a href="{% url 'core:checkout' %}?plan=wedding_owner" data-slot="button" data-variant="outline" data-size="lg" style="width:100%;justify-content:center;">
+            <a href="{% url 'core:checkout' %}?plan=wedding_owner" class="lp-plan-cta" data-slot="button" data-variant="outline" data-size="lg" style="width:100%;justify-content:center;">
               Beli Paket Wedding Owner <i data-lucide="arrow-right"></i>
             </a>
             <div class="lp-plan-note">
-              <i data-lucide="shield-check" style="width:14px;height:14px;color:var(--primary);"></i>
-              Pembayaran via QRIS, Virtual Account, atau E-Wallet
+              <i data-lucide="qr-code" style="width:14px;height:14px;color:var(--primary);"></i>
+              Pembayaran QRIS instan (semua m-banking &amp; e-wallet Indonesia, aktif otomatis)
             </div>
           </div>
         </div>
 
         <!-- Paket 2: WO Manager -->
-        <div class="lp-plan is-featured">
+        <div class="lp-plan" :class="{ 'is-selected': selectedPlan === 'wo_manager' }" @click="selectedPlan = 'wo_manager'">
           <div class="lp-plan-top">
             <h3 class="lp-plan-name">Paket WO Manager</h3>
-            <span data-slot="badge" data-variant="emerald">Untuk Wedding Organizer</span>
+            <span data-slot="badge" data-variant="secondary">Untuk Wedding Organizer</span>
           </div>
           <div class="lp-plan-price">
             <span class="lp-plan-amount">Rp 499.000</span>
@@ -1125,25 +1797,145 @@
           </p>
           <ul class="lp-checklist">
             <li><i data-lucide="check"></i><span>Kelola <strong>hingga 10 Workspace Klien</strong> aktif bersamaan + pindah project instan</span></li>
-            <li><i data-lucide="check"></i><span><strong>Portal WO Dashboard</strong> untuk pantau progres dan countdown semua klien</span></li>
+            <li><i data-lucide="check"></i><span><strong>Portal WO Dashboard</strong> untuk pantau progres, fase aktif, dan countdown semua klien</span></li>
             <li><i data-lucide="check"></i><span>Generate <strong>link undangan khusus Pengantin</strong> (data Tabungan klien tetap 100% privat)</span></li>
             <li><i data-lucide="check"></i><span>Undang &amp; atur <strong>Crew Operasional</strong> lintas project pernikahan klien</span></li>
           </ul>
           <div class="lp-plan-foot">
-            <a href="{% url 'core:checkout' %}?plan=wo_manager" data-slot="button" data-variant="default" data-size="lg" style="width:100%;justify-content:center;">
+            <a href="{% url 'core:checkout' %}?plan=wo_manager" class="lp-plan-cta" data-slot="button" data-variant="outline" data-size="lg" style="width:100%;justify-content:center;">
               Beli Paket WO Manager <i data-lucide="arrow-right"></i>
             </a>
             <div class="lp-plan-note">
               <i data-lucide="lock" style="width:14px;height:14px;color:var(--primary);"></i>
-              Data pribadi pengantin yang diundang tetap terisolasi dan aman
+              Pembayaran QRIS instan &middot; Data pribadi pengantin yang diundang tetap terisolasi
             </div>
           </div>
         </div>
       </div>
 
-      <p style="margin:20px 0 0;font-size:0.84rem;color:var(--muted-foreground);">
-        Sudah mendapat kode undangan 8 karakter dari pasangan atau WO? <a href="{% url 'core:join_workspace' %}" style="color:var(--primary);font-weight:600;text-decoration:none;">Gabung workspace di sini</a>.
-      </p>
+      <div style="margin:20px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:0.84rem;color:var(--muted-foreground);">
+        <span>Sudah mendapat kode undangan 8 karakter dari pasangan atau WO? <a href="{% url 'core:join_workspace' %}" style="color:var(--primary);font-weight:600;text-decoration:none;">Gabung workspace di sini</a>.</span>
+        <span>Aktivasi otomatis setelah QRIS lunas &middot; <a href="{% url 'core:refund_policy' %}" style="color:var(--primary);font-weight:600;text-decoration:none;">Kebijakan Pembayaran &amp; Refund</a></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 6: FAQ Accordion -->
+  <section class="lp-section" id="faq">
+    <div class="lp-wrap">
+      <div class="lp-section-head">
+        <h2>Pertanyaan yang sering ditanyakan</h2>
+        <p>Hal-hal penting seputar paket, privasi data, dan cara kolaborasi sebelum kamu memulai.</p>
+      </div>
+
+      <div class="lp-faq-list">
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 0 }" :aria-expanded="openFaq === 0" aria-controls="faq-panel-0" @click="openFaq = openFaq === 0 ? -1 : 0">
+            <span>Apakah Paket Wedding Owner benar-benar sekali bayar sampai hari-H?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-0" class="lp-faq-ans" x-show="openFaq === 0" x-cloak>
+            Ya. Cukup bayar Rp 149.000 satu kali saja untuk 1 workspace pernikahan. Tidak ada tagihan bulanan dan workspace tetap aktif penuh sampai seluruh rangkaian acara selesai.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 1 }" :aria-expanded="openFaq === 1" aria-controls="faq-panel-1" @click="openFaq = openFaq === 1 ? -1 : 1">
+            <span>Jika pasangan (Co-Owner) atau Crew ikut bergabung, apakah mereka harus bayar lagi?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-1" class="lp-faq-ans" x-show="openFaq === 1" x-cloak>
+            Tidak perlu. Cukup 1 akun yang mengaktifkan paket (Pengantin Owner atau WO Manager). Pasangan dan seluruh Crew operasional cukup membuat akun lalu memasukkan kode undangan 8 karakter untuk langsung bergabung tanpa biaya tambahan.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 2 }" :aria-expanded="openFaq === 2" aria-controls="faq-panel-2" @click="openFaq = openFaq === 2 ? -1 : 2">
+            <span>Apakah WO atau Crew bisa melihat Tabungan Bersama dan Anggaran pasangan?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-2" class="lp-faq-ans" x-show="openFaq === 2" x-cloak>
+            Tidak. Modul Tabungan Bersama terkunci permanen hanya untuk Owner &amp; Co-Owner (pasangan). Untuk modul Anggaran &amp; Kas, akses WO secara default juga terkunci dan hanya bisa dibuka jika pasangan mengaktifkannya di menu Pengaturan. Crew operasional tidak pernah memiliki akses ke data keuangan maupun vendor.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 3 }" :aria-expanded="openFaq === 3" aria-controls="faq-panel-3" @click="openFaq = openFaq === 3 ? -1 : 3">
+            <span>Bagaimana cara pembayarannya dan berapa lama akun aktif?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-3" class="lp-faq-ans" x-show="openFaq === 3" x-cloak>
+            Pembayaran menggunakan QRIS instan yang mendukung seluruh aplikasi m-banking (BCA, Mandiri, BRI, BNI, BSI, dll.) dan e-wallet (GoPay, OVO, DANA, ShopeePay). Setelah QRIS terpindai dan lunas, sistem otomatis memverifikasi dan langsung membawa kamu masuk ke workspace dalam hitungan detik.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 4 }" :aria-expanded="openFaq === 4" aria-controls="faq-panel-4" @click="openFaq = openFaq === 4 ? -1 : 4">
+            <span>Apakah Rangkai.click nyaman dipakai di HP dan laptop secara bersamaan?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-4" class="lp-faq-ans" x-show="openFaq === 4" x-cloak>
+            Ya. Rangkai berbasis web yang ringan dan responsif, tanpa perlu install aplikasi tambahan. Enak dipakai di laptop saat menyusun anggaran atau import daftar tamu Excel, sekaligus praktis dipakai satu tangan di HP saat survei vendor atau koordinasi hari-H.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 5 }" :aria-expanded="openFaq === 5" aria-controls="faq-panel-5" @click="openFaq = openFaq === 5 ? -1 : 5">
+            <span>Bagaimana jika tanggal pernikahan berubah? Apakah fase di kalender ikut menyesuaikan?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-5" class="lp-faq-ans" x-show="openFaq === 5" x-cloak>
+            Otomatis menyesuaikan. Setiap fase di Rangkai berbasis rentang hari mundur (H-minus) dari tanggal pernikahan, sehingga saat tanggal acara digeser di Pengaturan, seluruh peta fase dan hitung mundur di Ringkasan serta Kalender Fase langsung terhitung ulang tanpa perlu atur manual satu per satu.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 6 }" :aria-expanded="openFaq === 6" aria-controls="faq-panel-6" @click="openFaq = openFaq === 6 ? -1 : 6">
+            <span>Kalau sudah punya daftar tamu di Excel, apakah harus input ulang dari nol?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-6" class="lp-faq-ans" x-show="openFaq === 6" x-cloak>
+            Tidak perlu. Modul Daftar Tamu mendukung import massal dari file Excel/CSV. Begitu daftar tamu masuk, kalkulator Katering otomatis menghitung estimasi kebutuhan porsi prasmanan dan gubukan berdasarkan jumlah pax serta status RSVP.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 7 }" :aria-expanded="openFaq === 7" aria-controls="faq-panel-7" @click="openFaq = openFaq === 7 ? -1 : 7">
+            <span>Kalau memakai jasa WO, siapa yang sebaiknya membeli paket?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-7" class="lp-faq-ans" x-show="openFaq === 7" x-cloak>
+            Keduanya fleksibel. Jika kamu membeli Paket Wedding Owner, kamu bisa langsung mengundang tim acara atau koordinator lapangan sebagai Crew gratis. Sebaliknya, jika WO berlangganan Paket WO Manager, WO cukup membuat workspace klien lalu membagikan link undangan ke pasangan, sementara Tabungan Bersama pasangan tetap 100% privat.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 8 }" :aria-expanded="openFaq === 8" aria-controls="faq-panel-8" @click="openFaq = openFaq === 8 ? -1 : 8">
+            <span>Apakah bisa mulai dari nol atau memakai template bawaan Rangkai?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-8" class="lp-faq-ans" x-show="openFaq === 8" x-cloak>
+            Keduanya bisa. Saat workspace baru aktif, Rangkai sudah menyiapkan struktur fase persiapan, daftar tugas inti, dan kategori anggaran pernikahan Indonesia. Kalau kamu ingin merancang semuanya dari halaman kosong, tersedia tombol "Mulai dari Nol" kapan saja.
+          </div>
+        </div>
+
+        <div class="lp-faq-item">
+          <button type="button" class="lp-faq-btn" :class="{ 'is-open': openFaq === 9 }" :aria-expanded="openFaq === 9" aria-controls="faq-panel-9" @click="openFaq = openFaq === 9 ? -1 : 9">
+            <span>Apakah data pernikahan dan rincian anggaran di Rangkai aman?</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div id="faq-panel-9" class="lp-faq-ans" x-show="openFaq === 9" x-cloak>
+            Ya. Setiap workspace terisolasi secara ketat per project (multi-tenant), seluruh koneksi terenkripsi HTTPS, dan setiap peran (Pengantin, WO Manager, Crew) memiliki batas izin akses yang divalidasi langsung di sisi server.
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-faq-help">
+        <span><strong>Masih ada pertanyaan</strong> seputar paket, fitur, atau pembayaran QRIS?</span>
+        <a href="mailto:halo@rangkai.click" data-slot="button" data-variant="outline" data-size="sm">
+          <i data-lucide="mail"></i> halo@rangkai.click
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1152,23 +1944,30 @@
     <div class="lp-wrap">
       <div class="lp-cta-inner">
         <h2>Siap merangkai hari bahagiamu dengan lebih tenang?</h2>
-        <p>Pilih paket untuk pernikahanmu atau layanan WO-mu dan aktifkan workspace seketika, atau langsung gabung memakai kode undangan 8 karakter.</p>
+        <p>Aktifkan workspace untuk pernikahanmu atau layanan WO-mu dengan QRIS instan, atau langsung gabung memakai kode undangan 8 karakter.</p>
         <div class="lp-hero-cta">
-          <a href="#harga" data-slot="button" data-variant="default" data-size="lg" style="background: #22a076; color: #051b14;">
+          {% if user.is_authenticated %}
+          <a href="{% url 'core:dashboard_alias' %}" data-slot="button" data-variant="default" data-size="lg" class="lp-cta-btn-primary">
+            Masuk ke Dashboard <i data-lucide="arrow-right"></i>
+          </a>
+          {% else %}
+          <a href="#harga" data-slot="button" data-variant="default" data-size="lg" class="lp-cta-btn-primary">
             Pilih Paket Sekarang <i data-lucide="arrow-right"></i>
           </a>
-          <a href="{% url 'core:join_workspace' %}" data-slot="button" data-variant="outline" data-size="lg" style="background: transparent; color: #ffffff; border-color: rgba(255,255,255,0.24);">
+          <a href="{% url 'core:join_workspace' %}" data-slot="button" data-variant="outline" data-size="lg" class="lp-cta-btn-outline">
             Gabung Pakai Kode
           </a>
+          {% endif %}
         </div>
       </div>
     </div>
   </section>
+  </main>
 
   <!-- Minimal Footer -->
   <footer class="lp-footer">
     <div class="lp-wrap lp-footer-inner">
-      <div style="display:inline-flex;align-items:center;gap:10px;">
+      <div style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span class="brand-lockup is-sm">
           <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
           <span class="brand-lockup-text">
@@ -1176,12 +1975,15 @@
             <span class="brand-lockup-tld">.click</span>
           </span>
         </span>
-        <span>· Workspace Perencanaan Pernikahan Indonesia</span>
+        <span>&middot; &copy; 2026 Rangkai.click &middot; <a href="mailto:halo@rangkai.click" style="color:inherit;text-decoration:none;">halo@rangkai.click</a></span>
       </div>
-      <div style="display:inline-flex;align-items:center;gap:16px;">
+      <div style="display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <a href="#harga" style="color:inherit;text-decoration:none;">Paket &amp; Harga</a>
+        <a href="#faq" style="color:inherit;text-decoration:none;">FAQ</a>
+        <a href="{% url 'core:privacy_policy' %}" style="color:inherit;text-decoration:none;">Privasi</a>
+        <a href="{% url 'core:terms' %}" style="color:inherit;text-decoration:none;">Syarat &amp; Ketentuan</a>
+        <a href="{% url 'core:refund_policy' %}" style="color:inherit;text-decoration:none;">Refund</a>
         <a href="{% url 'core:login' %}" style="color:inherit;text-decoration:none;">Masuk</a>
-        <a href="{% url 'core:join_workspace' %}" style="color:inherit;text-decoration:none;">Gabung Workspace</a>
       </div>
     </div>
   </footer>

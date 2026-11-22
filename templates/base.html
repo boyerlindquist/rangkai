@@ -6,8 +6,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  {% block head_meta %}
   <meta name="description"
-    content="Rangkai — Sistem perencanaan pernikahan presisi, anti-drama logistik, dan optimasi cash flow.">
+    content="Rangkai.click | Workspace perencanaan pernikahan terpadu untuk pasangan dan tim WO di Indonesia. Anggaran, kalender fase, tabungan privat, vendor, tamu, dan rundown hari-H dalam satu kendali.">
+  <meta property="og:site_name" content="Rangkai.click">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Rangkai.click | Workspace Perencanaan Pernikahan Terpadu">
+  <meta property="og:description" content="Rangkai persiapan nikahmu tanpa drama spreadsheet. Mulai Rp 149rb sekali bayar, undang pasangan & tim gratis, privasi data terjaga.">
+  <meta name="twitter:card" content="summary_large_image">
+  {% endblock %}
   <title>{% block title %}Rangkai{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=22">
 

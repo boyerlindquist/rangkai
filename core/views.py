@@ -253,6 +253,33 @@ def landing_view(request):
     })
 
 
+def privacy_policy_view(request):
+    """Public Privacy Policy page."""
+    return render(request, 'core/legal_page.html', {
+        'active_doc': 'privacy',
+        'page_title': 'Kebijakan Privasi',
+        'last_updated': 'November 2026',
+    })
+
+
+def terms_view(request):
+    """Public Terms & Conditions page."""
+    return render(request, 'core/legal_page.html', {
+        'active_doc': 'terms',
+        'page_title': 'Syarat & Ketentuan',
+        'last_updated': 'November 2026',
+    })
+
+
+def refund_policy_view(request):
+    """Public Payment & Refund Policy page."""
+    return render(request, 'core/legal_page.html', {
+        'active_doc': 'refund',
+        'page_title': 'Kebijakan Pembayaran & Refund',
+        'last_updated': 'November 2026',
+    })
+
+
 def _get_effective_plans():
     """Return PRICING_PLANS with optional SUMOPOD_TEST_AMOUNT override for local testing."""
     test_amount = getattr(settings, 'SUMOPOD_TEST_AMOUNT', 0) or 0
@@ -1155,26 +1182,75 @@ def admin_console_view(request):
                 target_order, wedding, _ = _fulfill_paid_order(target_order)
                 extra = f' & workspace {wedding} aktif.' if wedding else '.'
                 messages.success(request, f'Order {target_order.order_code} ditandai Lunas secara manual{extra}')
+        elif action == 'activate_user':
+            target_user = get_object_or_404(User, pk=request.POST.get('user_id'))
+            prof = get_or_create_profile(target_user)
+            prof.plan_status = 'active'
+            if prof.account_type == 'wo_manager' and prof.project_quota < 1:
+                prof.project_quota = 10
+            elif prof.account_type == 'couple' and prof.project_quota < 1:
+                prof.project_quota = 1
+            prof.save(update_fields=['plan_status', 'project_quota'])
+
+            created_ws = None
+            if prof.account_type == 'couple' and not WeddingMembership.objects.filter(user=target_user).exists():
+                created_ws = Wedding.objects.create(
+                    groom_name=target_user.username,
+                    bride_name='Pasangan',
+                )
+                WeddingMembership.objects.create(
+                    user=target_user,
+                    wedding=created_ws,
+                    role='owner',
+                )
+                _create_default_data(created_ws)
+                _ensure_default_invitations(created_ws, created_by=target_user, include_owner=False)
+
+            extra = f' & workspace default ({created_ws}) dibuat.' if created_ws else '.'
+            messages.success(request, f'Akun {target_user.username} berhasil diaktifkan secara manual{extra}')
+            return redirect(f"{reverse('core:admin_console')}?tab=activation")
+        elif action == 'deactivate_user':
+            target_user = get_object_or_404(User, pk=request.POST.get('user_id'))
+            prof = get_or_create_profile(target_user)
+            if prof.is_platform_admin:
+                messages.error(request, 'Akun Platform Admin tidak dapat dinonaktifkan dari sini.')
+            else:
+                prof.plan_status = 'pending'
+                prof.save(update_fields=['plan_status'])
+                messages.warning(request, f'Status aktivasi akun {target_user.username} diubah menjadi Menunggu Pembayaran (belum aktif).')
+            return redirect(f"{reverse('core:admin_console')}?tab=activation")
         return redirect('core:admin_console')
 
     weddings = Wedding.objects.all().select_related('managed_by').prefetch_related('memberships__user')
-    users = User.objects.all().select_related('profile').order_by('-date_joined')
+    users = list(User.objects.all().select_related('profile').order_by('-date_joined'))
+    ws_counts = dict(
+        WeddingMembership.objects.values_list('user_id').annotate(c=Count('id'))
+    )
+    pending_users_count = 0
     for u in users:
         if not hasattr(u, 'profile'):
             get_or_create_profile(u)
+        u.workspace_count = ws_counts.get(u.pk, 0)
+        if not u.profile.is_platform_admin and u.profile.plan_status != 'active':
+            pending_users_count += 1
     orders = Order.objects.all().select_related('user')[:50]
 
     total_revenue = Order.objects.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0
+    initial_tab = request.GET.get('tab', 'workspaces')
+    if initial_tab not in ('workspaces', 'users', 'activation', 'orders'):
+        initial_tab = 'workspaces'
 
     return render(request, 'core/admin_console.html', {
         'weddings': weddings,
         'users': users,
         'orders': orders,
         'total_weddings': weddings.count(),
-        'total_users': users.count(),
+        'total_users': len(users),
+        'pending_users_count': pending_users_count,
         'total_wo': AccountProfile.objects.filter(account_type='wo_manager').count(),
         'total_revenue': total_revenue,
         'account_type_choices': AccountProfile.ACCOUNT_TYPE_CHOICES,
+        'initial_tab': initial_tab,
     })
 
 

@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="workspace-canvas" x-data="{ tab: 'workspaces', showNewAccount: false }">
+<div class="workspace-canvas" x-data="{ tab: '{{ initial_tab|default:"workspaces" }}', actFilter: 'all', showNewAccount: false }">
   <div class="page-header" style="margin-bottom: 20px;">
     <div>
       <h1 class="page-title">Platform Admin Console</h1>
@@ -46,6 +46,9 @@
       </button>
       <button type="button" data-slot="button" :data-variant="tab === 'users' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'users'">
         Akun &amp; Role ({{ total_users }})
+      </button>
+      <button type="button" data-slot="button" :data-variant="tab === 'activation' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'activation'">
+        Aktivasi Akun{% if pending_users_count %} ({{ pending_users_count }} pending){% endif %}
       </button>
       <button type="button" data-slot="button" :data-variant="tab === 'orders' ? 'default' : 'ghost'" data-size="sm" @click="tab = 'orders'">
         Order ({{ orders|length }})
@@ -218,7 +221,93 @@
     </div>
   </div>
 
-  <!-- TAB 3: Orders -->
+  <!-- TAB 3: Dedicated Account Activation -->
+  <div x-show="tab === 'activation'" x-cloak hx-boost="false">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="font-size:0.84rem;color:var(--muted-foreground);">
+        Daftar seluruh akun untuk memantau status aktivasi dan mengaktifkan akun secara manual tanpa pembayaran QRIS.
+      </div>
+      <div style="display:inline-flex;gap:4px;padding:3px;border-radius:var(--radius-md);background:var(--muted);border:1px solid var(--border);">
+        <button type="button" data-slot="button" :data-variant="actFilter === 'all' ? 'default' : 'ghost'" data-size="sm" @click="actFilter = 'all'">
+          Semua ({{ total_users }})
+        </button>
+        <button type="button" data-slot="button" :data-variant="actFilter === 'pending' ? 'default' : 'ghost'" data-size="sm" @click="actFilter = 'pending'">
+          Belum Aktif ({{ pending_users_count }})
+        </button>
+        <button type="button" data-slot="button" :data-variant="actFilter === 'active' ? 'default' : 'ghost'" data-size="sm" @click="actFilter = 'active'">
+          Aktif
+        </button>
+      </div>
+    </div>
+
+    <div class="portal-table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>Akun</th>
+            <th>Tipe</th>
+            <th>Terdaftar</th>
+            <th>Workspace</th>
+            <th>Status Aktivasi</th>
+            <th style="text-align:right;">Aksi Aktivasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr x-show="actFilter === 'all' || (actFilter === 'pending' && {{ u.profile.is_platform_admin|yesno:'false,true' }} && '{{ u.profile.plan_status }}' !== 'active') || (actFilter === 'active' && ({{ u.profile.is_platform_admin|yesno:'true,false' }} || '{{ u.profile.plan_status }}' === 'active'))">
+            <td>
+              <strong>{{ u.username }}</strong>
+              <div style="font-size:0.75rem;color:var(--muted-foreground);">{{ u.email|default:"-" }}</div>
+            </td>
+            <td>
+              <span data-slot="badge" data-variant="outline">{{ u.profile.get_account_type_display }}</span>
+            </td>
+            <td style="font-size:0.8rem;color:var(--muted-foreground);" class="font-mono">{{ u.date_joined|date:"d M Y" }}</td>
+            <td class="font-mono" style="font-size:0.8rem;">{{ u.workspace_count }} workspace</td>
+            <td>
+              {% if u.profile.is_platform_admin %}
+              <span data-slot="badge" data-variant="emerald">Aktif (Admin)</span>
+              {% elif u.profile.plan_status == 'active' %}
+              <span data-slot="badge" data-variant="emerald">Aktif</span>
+              {% else %}
+              <span data-slot="badge" data-variant="amber">Belum Aktif ({{ u.profile.get_plan_status_display }})</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              {% if u.profile.is_platform_admin %}
+              <span style="font-size:0.78rem;color:var(--muted-foreground);">Selalu aktif</span>
+              {% elif u.profile.plan_status != 'active' %}
+              <form method="post" action="{% url 'core:admin_console' %}" style="display:inline;" onsubmit="return confirm('Aktifkan akun {{ u.username }} secara manual?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="activate_user" />
+                <input type="hidden" name="user_id" value="{{ u.pk }}" />
+                <button type="submit" data-slot="button" data-variant="default" data-size="sm">
+                  <i data-lucide="check-circle-2"></i> Aktifkan Akun
+                </button>
+              </form>
+              {% else %}
+              <form method="post" action="{% url 'core:admin_console' %}" style="display:inline;" onsubmit="return confirm('Nonaktifkan status paket akun {{ u.username }}?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="deactivate_user" />
+                <input type="hidden" name="user_id" value="{{ u.pk }}" />
+                <button type="submit" data-slot="button" data-variant="outline" data-size="sm">
+                  Nonaktifkan
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" style="text-align:center;color:var(--muted-foreground);padding:24px;">Belum ada akun terdaftar.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: Orders -->
   <div x-show="tab === 'orders'" x-cloak>
     <div class="portal-table-wrap">
       <table class="portal-table">

@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ page_title }} | Rangkai.click{% endblock %}
+
+{% block extra_css %}
+<style>
+  .lg-page {
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lg-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lg-nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    height: 62px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .lg-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lg-main {
+    flex: 1;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  .lg-aside {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lg-aside-title {
+    font-size: 0.75rem;
+    font-weight: 650;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 12px 8px;
+  }
+
+  .lg-aside a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: background 140ms ease, color 140ms ease;
+  }
+
+  .lg-aside a:hover {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .lg-aside a.is-active {
+    background: color-mix(in srgb, var(--primary) 10%, var(--card));
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .lg-aside a svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+
+  .lg-doc {
+    max-width: 70ch;
+  }
+
+  .lg-doc-header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .lg-doc-header h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--foreground);
+  }
+
+  .lg-doc-meta {
+    margin-top: 10px;
+    font-size: 0.84rem;
+    color: var(--muted-foreground);
+    line-height: 1.55;
+  }
+
+  .lg-doc-section {
+    margin-bottom: 28px;
+  }
+
+  .lg-doc-section h2 {
+    margin: 0 0 10px;
+    font-size: 1.08rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    color: var(--foreground);
+  }
+
+  .lg-doc-section p {
+    margin: 0 0 10px;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--muted-foreground);
+  }
+
+  .lg-doc-section ul {
+    margin: 8px 0 12px;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .lg-doc-section li {
+    font-size: 0.91rem;
+    line-height: 1.65;
+    color: var(--muted-foreground);
+  }
+
+  .lg-doc-section li strong {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  .lg-notice {
+    margin-top: 32px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 0.86rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+  }
+
+  .lg-notice strong {
+    color: var(--foreground);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .lg-footer {
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    background: var(--background);
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .lg-footer-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .lg-footer-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .lg-footer-links a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .lg-footer-links a:hover {
+    color: var(--foreground);
+  }
+
+  @media (max-width: 820px) {
+    .lg-main {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      padding: 32px 16px 56px;
+    }
+    .lg-aside {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .lg-aside-title {
+      width: 100%;
+      padding: 0 0 4px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="lg-page" x-data="{
+  isDark: document.documentElement.getAttribute('data-theme') === 'dark',
+  toggleTheme() {
+    this.isDark = !this.isDark;
+    const t = this.isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+  }
+}">
+  <header class="lg-nav">
+    <div class="lg-nav-inner">
+      <a href="{% url 'core:landing' %}" class="brand-lockup">
+        <img src="{% static 'img/logo.svg' %}?v=22" alt="Rangkai.click" class="brand-lockup-icon" />
+        <span class="brand-lockup-text">
+          <span class="brand-lockup-main">Rangkai</span>
+          <span class="brand-lockup-tld">.click</span>
+        </span>
+      </a>
+      <div class="lg-nav-actions">
+        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm" @click="toggleTheme()" aria-label="Ganti tema">
+          <i :data-lucide="isDark ? 'sun' : 'moon'"></i>
+        </button>
+        <a href="{% url 'core:landing' %}" data-slot="button" data-variant="ghost" data-size="sm">
+          <i data-lucide="arrow-left"></i> Kembali ke Beranda
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="lg-main">
+    <aside class="lg-aside" aria-label="Dokumen legal">
+      <div class="lg-aside-title">Dokumen Legal</div>
+      <a href="{% url 'core:privacy_policy' %}" class="{% if active_doc == 'privacy' %}is-active{% endif %}">
+        <i data-lucide="shield-check"></i> Kebijakan Privasi
+      </a>
+      <a href="{% url 'core:terms' %}" class="{% if active_doc == 'terms' %}is-active{% endif %}">
+        <i data-lucide="file-text"></i> Syarat &amp; Ketentuan
+      </a>
+      <a href="{% url 'core:refund_policy' %}" class="{% if active_doc == 'refund' %}is-active{% endif %}">
+        <i data-lucide="receipt"></i> Pembayaran &amp; Refund
+      </a>
+    </aside>
+
+    <article class="lg-doc">
+      <header class="lg-doc-header">
+        <h1>{{ page_title }}</h1>
+        <p class="lg-doc-meta">Terakhir diperbarui: {{ last_updated }} &middot; Berlaku untuk seluruh layanan web Rangkai.click.</p>
+      </header>
+
+      {% if active_doc == 'privacy' %}
+      <section class="lg-doc-section">
+        <h2>1. Ringkasan Komitmen Privasi</h2>
+        <p>Rangkai.click menghargai privasi pasangan calon pengantin, keluarga, serta tim Wedding Organizer (WO). Dokumen ini menjelaskan data apa saja yang kami kumpulkan, bagaimana kami melindungi isolasi antar-workspace, dan kendali yang kamu miliki atas datamu.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>2. Data yang Kami Kumpulkan</h2>
+        <ul>
+          <li><strong>Informasi Akun:</strong> Username, alamat email, kata sandi terenkripsi (hash), dan peran akun (Wedding Owner, Co-Owner, WO Manager, atau Crew Operasional).</li>
+          <li><strong>Data Perencanaan Pernikahan:</strong> Tanggal acara, nama pasangan, fase timeline &amp; tugas, anggaran, transaksi, catatan tabungan, daftar vendor, daftar tamu, serta rundown hari-H yang kamu masukkan ke dalam workspace.</li>
+          <li><strong>Data Transaksi Pembayaran:</strong> Kode pesanan, paket yang dipilih, nominal, dan status pembayaran QRIS. Rangkai.click tidak pernah menyimpan PIN, kata sandi m-banking, maupun kredensial e-wallet kamu.</li>
+        </ul>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>3. Isolasi Data Multi-Tenant &amp; Hak Akses Peran</h2>
+        <p>Setiap workspace pernikahan di Rangkai.click dipisahkan secara ketat di sisi server:</p>
+        <ul>
+          <li><strong>Tabungan Bersama (Privat):</strong> Terkunci permanen khusus untuk Owner dan Co-Owner (pasangan). WO Manager dan Crew Operasional tidak dapat melihat saldo maupun riwayat tabungan pasangan.</li>
+          <li><strong>Anggaran &amp; Kas:</strong> Secara bawaan akses WO Manager terkunci dan hanya dapat dibuka jika pasangan mengizinkannya melalui menu Pengaturan. Crew Operasional tidak memiliki akses ke modul keuangan maupun vendor.</li>
+          <li><strong>Portal WO Multi-Project:</strong> WO Manager hanya dapat mengakses workspace klien yang berada di bawah pengelolaannya dan tidak dapat melihat data workspace lain di luar daftar kliennya.</li>
+        </ul>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>4. Pemrosesan Pembayaran &amp; Pihak Ketiga</h2>
+        <p>Pembayaran QRIS diproses melalui penyedia gerbang pembayaran resmi yang terintegrasi dengan Rangkai.click. Kami hanya menerima notifikasi status pembayaran (lunas, kedaluwarsa, atau gagal) untuk mengaktifkan workspace secara otomatis. Kami tidak menjual atau menyewakan data pribadimu maupun daftar tamumu kepada pihak ketiga mana pun.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>5. Keamanan &amp; Penyimpanan Data</h2>
+        <p>Seluruh akses ke Rangkai.click menggunakan enkripsi HTTPS (TLS), kata sandi disimpan menggunakan algoritma hashing standar industri, dan setiap permintaan data divalidasi berdasarkan sesi login serta keanggotaan workspace di sisi server.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>6. Hak Pengguna atas Data Pribadi</h2>
+        <p>Selaras dengan prinsip perlindungan data pribadi di Indonesia, kamu berhak mengakses, memperbarui, maupun meminta penghapusan akun serta data workspace pernikahanmu kapan saja setelah acara selesai.</p>
+      </section>
+
+      {% elif active_doc == 'terms' %}
+      <section class="lg-doc-section">
+        <h2>1. Penerimaan Syarat &amp; Ketentuan</h2>
+        <p>Dengan mendaftar, mengakses, atau menggunakan Rangkai.click, kamu menyetujui seluruh Syarat &amp; Ketentuan yang tercantum di halaman ini. Jika kamu menggunakan layanan atas nama organisasi atau layanan Wedding Organizer, kamu menyatakan berwenang mewakili pihak tersebut.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>2. Deskripsi Layanan &amp; Paket</h2>
+        <ul>
+          <li><strong>Paket Wedding Owner (Rp 149.000 sekali bayar):</strong> Memberikan akses penuh untuk 1 workspace pernikahan hingga rangkaian acara selesai, termasuk hak mengundang 1 Co-Owner (pasangan) dan Crew Operasional tanpa biaya tambahan.</li>
+          <li><strong>Paket WO Manager (Rp 499.000 per bulan):</strong> Memberikan akses Portal WO untuk mengelola hingga 10 workspace pernikahan klien aktif secara bersamaan, termasuk pembuatan undangan khusus pasangan dan pengelolaan Crew lintas project.</li>
+          <li><strong>Bergabung via Kode Undangan:</strong> Pasangan (Co-Owner) atau Crew yang bergabung menggunakan kode undangan 8 karakter yang valid tidak dikenakan biaya tambahan.</li>
+        </ul>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>3. Tanggung Jawab Akun &amp; Kode Undangan</h2>
+        <ul>
+          <li>Kamu bertanggung jawab menjaga kerahasiaan kata sandi akun serta kode/tautan undangan workspace.</li>
+          <li>Pemilik workspace dapat membuat ulang (regenerate) kode undangan atau mencabut akses anggota kapan saja melalui menu Pengaturan.</li>
+          <li>Dilarang menggunakan Rangkai.click untuk aktivitas melanggar hukum, upaya akses tidak sah ke workspace pihak lain, atau tindakan yang mengganggu kestabilan server.</li>
+        </ul>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>4. Kepemilikan Data</h2>
+        <p>Seluruh data perencanaan pernikahan (daftar tamu, rincian anggaran, catatan vendor, dan rundown) sepenuhnya tetap menjadi milik pengguna. Rangkai.click hanya memproses dan menyimpan data tersebut untuk menjalankan fitur aplikasi bagi akun yang berwenang.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>5. Ketersediaan Layanan &amp; Pembaruan</h2>
+        <p>Kami berupaya menjaga Rangkai.click tetap aktif dan andal setiap saat. Pemeliharaan berkala atau pembaruan fitur dapat dilakukan untuk meningkatkan performa dan keamanan sistem. Ketentuan ini dapat diperbarui sewaktu-waktu dan tanggal pembaruan akan selalu dicantumkan di bagian atas halaman.</p>
+      </section>
+
+      {% elif active_doc == 'refund' %}
+      <section class="lg-doc-section">
+        <h2>1. Metode Pembayaran &amp; Aktivasi Otomatis</h2>
+        <p>Seluruh pembayaran paket di Rangkai.click menggunakan <strong>QRIS Instan</strong> yang mendukung aplikasi m-banking dan e-wallet di Indonesia. Setelah pembayaran terkonfirmasi lunas oleh sistem gerbang pembayaran, status akun dan workspace akan aktif secara otomatis dalam hitungan detik.</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>2. Sifat Produk Digital &amp; Kebijakan Umum Refund</h2>
+        <p>Karena Rangkai.click adalah layanan perangkat lunak (SaaS) digital yang langsung membuka akses penuh seluruh modul segera setelah pembayaran terverifikasi, pembayaran yang sudah berhasil dan aktif pada dasarnya bersifat <strong>non-refundable</strong> (tidak dapat dikembalikan).</p>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>3. Pengecualian Pengembalian Dana &amp; Aktivasi Manual</h2>
+        <p>Kami tetap melindungi pengguna sepenuhnya apabila terjadi kendala teknis di luar kendali pengguna. Pengajuan pengembalian dana penuh atau aktivasi manual dapat diproses untuk kondisi berikut:</p>
+        <ul>
+          <li><strong>Pembayaran Ganda (Double Charge):</strong> Terjadi penagihan dua kali untuk pesanan atau paket yang sama.</li>
+          <li><strong>Gagal Aktivasi Setelah Lunas:</strong> Saldo sudah terpotong dan transaksi QRIS berstatus berhasil, namun workspace belum aktif otomatis setelah melewati batas wajar.</li>
+          <li><strong>Kesalahan Teknis Sistem:</strong> Kegagalan sistem yang menyebabkan layanan inti tidak dapat diakses sama sekali dalam 24 jam pertama sejak aktivasi.</li>
+        </ul>
+      </section>
+
+      <section class="lg-doc-section">
+        <h2>4. Cara Melaporkan Kendala Pembayaran</h2>
+        <p>Jika transaksi QRIS kamu sudah berhasil namun halaman belum berpindah ke Dashboard, simpan tangkapan layar bukti bayar dan kode pesanan (`RNK-...`). Tim kami akan memverifikasi dan mengaktifkan workspace atau memproses pengembalian dana sesuai pengecualian di atas dalam waktu maksimal 1x24 jam kerja.</p>
+      </section>
+      {% endif %}
+
+      <div class="lg-notice">
+        <strong>Kontak Bantuan Resmi</strong>
+        Untuk pertanyaan seputar privasi data, aktivasi akun, atau kendala pembayaran QRIS, kamu dapat menghubungi tim Rangkai melalui email <a href="mailto:halo@rangkai.click" style="color:var(--primary);font-weight:600;text-decoration:none;">halo@rangkai.click</a> dengan menyertakan username atau kode pesanan (`RNK-...`).
+      </div>
+    </article>
+  </main>
+
+  <footer class="lg-footer">
+    <div class="lg-footer-inner">
+      <span>&copy; Rangkai.click &middot; Workspace Perencanaan Pernikahan Indonesia</span>
+      <div class="lg-footer-links">
+        <a href="{% url 'core:landing' %}">Beranda</a>
+        <a href="{% url 'core:privacy_policy' %}">Kebijakan Privasi</a>
+        <a href="{% url 'core:terms' %}">Syarat &amp; Ketentuan</a>
+        <a href="{% url 'core:refund_policy' %}">Pembayaran &amp; Refund</a>
+      </div>
+    </div>
+  </footer>
+</div>
+{% endblock %}
