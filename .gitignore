@@ -95,3 +95,4 @@ htmlcov/
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
+promo_videos/
