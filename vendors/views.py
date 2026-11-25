@@ -6,8 +6,22 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from core.decorators import owner_required
-from vendors.models import VendorCandidate
+from vendors.models import VendorCandidate, VendorWeightConfig
 from vendors.forms import VendorCandidateForm
+
+
+def _get_workspace_weights(wedding):
+    """Return workspace-level VendorWeightConfig, seeding from existing vendor if present."""
+    cfg, created = VendorWeightConfig.objects.get_or_create(wedding=wedding)
+    if created:
+        first_v = VendorCandidate.objects.filter(wedding=wedding).first()
+        if first_v:
+            cfg.weight_price = first_v.weight_price
+            cfg.weight_quality = first_v.weight_quality
+            cfg.weight_facility = first_v.weight_facility
+            cfg.weight_reputation = first_v.weight_reputation
+            cfg.save()
+    return cfg
 
 
 @login_required
@@ -34,14 +48,12 @@ def vendor_compare(request):
     for cat in vendor_groups:
         vendor_groups[cat].sort(key=lambda x: x.weighted_total_score, reverse=True)
 
-    first_vendor = vendors_list[0] if vendors_list else (
-        VendorCandidate.objects.filter(wedding=wedding).first() if category_filter else None
-    )
+    weight_cfg = _get_workspace_weights(wedding)
     weights = {
-        'price': first_vendor.weight_price if first_vendor else 30,
-        'quality': first_vendor.weight_quality if first_vendor else 30,
-        'facility': first_vendor.weight_facility if first_vendor else 20,
-        'reputation': first_vendor.weight_reputation if first_vendor else 20,
+        'price': weight_cfg.weight_price,
+        'quality': weight_cfg.weight_quality,
+        'facility': weight_cfg.weight_facility,
+        'reputation': weight_cfg.weight_reputation,
     }
 
     initial_data = {
@@ -67,19 +79,36 @@ def vendor_compare(request):
 @login_required
 @owner_required
 def update_vendor_weights(request):
-    """Update scoring weights across all vendor candidates in this workspace."""
+    """Update scoring weights at workspace level and sync across all vendor candidates."""
     if request.method == 'POST':
         try:
             w_price = max(0, min(100, int(request.POST.get('weight_price', 30))))
             w_quality = max(0, min(100, int(request.POST.get('weight_quality', 30))))
             w_facility = max(0, min(100, int(request.POST.get('weight_facility', 20))))
             w_reputation = max(0, min(100, int(request.POST.get('weight_reputation', 20))))
-            VendorCandidate.objects.filter(wedding=request.wedding).update(
-                weight_price=w_price,
-                weight_quality=w_quality,
-                weight_facility=w_facility,
-                weight_reputation=w_reputation,
-            )
+
+            cfg = _get_workspace_weights(request.wedding)
+            cfg.weight_price = w_price
+            cfg.weight_quality = w_quality
+            cfg.weight_facility = w_facility
+            cfg.weight_reputation = w_reputation
+            cfg.save()
+
+            # Sync weights & recompute stored weighted score on all existing candidates
+            candidates = list(VendorCandidate.objects.filter(wedding=request.wedding))
+            for cand in candidates:
+                cand.weight_price = w_price
+                cand.weight_quality = w_quality
+                cand.weight_facility = w_facility
+                cand.weight_reputation = w_reputation
+                cand.weighted_total_score_db = cand.weighted_total_score
+            if candidates:
+                VendorCandidate.objects.bulk_update(
+                    candidates,
+                    ['weight_price', 'weight_quality', 'weight_facility', 'weight_reputation', 'weighted_total_score_db'],
+                )
+
+            messages.success(request, f'Bobot evaluasi diperbarui ({w_price}% / {w_quality}% / {w_facility}% / {w_reputation}%).')
             from core.tutorial import emit_tutorial_event
             return emit_tutorial_event(request, redirect('vendors:compare'), 'vendor_saved')
         except (ValueError, TypeError):
@@ -96,6 +125,11 @@ def add_vendor(request):
         if form.is_valid():
             vendor = form.save(commit=False)
             vendor.wedding = request.wedding
+            cfg = _get_workspace_weights(request.wedding)
+            vendor.weight_price = cfg.weight_price
+            vendor.weight_quality = cfg.weight_quality
+            vendor.weight_facility = cfg.weight_facility
+            vendor.weight_reputation = cfg.weight_reputation
             vendor.save()
             messages.success(request, f'Kandidat vendor "{vendor.name}" berhasil ditambahkan.')
             from core.tutorial import emit_tutorial_event

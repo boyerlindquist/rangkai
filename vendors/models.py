@@ -5,6 +5,26 @@ from django.db import models
 from core.models import Wedding
 
 
+class VendorWeightConfig(models.Model):
+    """Workspace-level scoring weights persisted even when no vendor candidates exist yet."""
+    wedding = models.OneToOneField(
+        Wedding,
+        on_delete=models.CASCADE,
+        related_name='vendor_weight_config',
+    )
+    weight_price = models.PositiveIntegerField(default=30)
+    weight_quality = models.PositiveIntegerField(default=30)
+    weight_facility = models.PositiveIntegerField(default=20)
+    weight_reputation = models.PositiveIntegerField(default=20)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Vendor Weight Config'
+
+    def __str__(self):
+        return f"Weights for {self.wedding} ({self.weight_price}/{self.weight_quality}/{self.weight_facility}/{self.weight_reputation})"
+
+
 class VendorCandidate(models.Model):
     """Vendor comparison entry with weighted scoring parameters."""
     CATEGORY_CHOICES = [
