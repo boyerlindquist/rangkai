@@ -316,7 +316,7 @@ def _ensure_wedding_phases(wedding, all_tasks_list=None):
 # CHECKLIST VIEWS (Route: /checklist/)
 # ============================================================
 
-def _build_checklist_context(wedding, assignee_filter=''):
+def _build_checklist_context(wedding, assignee_filter='', include_guide=True, include_form=True):
     """Compute grouped tasks, dynamic phases, progress, and smart task guide in minimal queries."""
     # Single query for all tasks of this wedding (reused for grouping, counts, overdue, and guide matching)
     all_tasks_list = list(TaskMilestone.objects.filter(wedding=wedding))
@@ -388,27 +388,28 @@ def _build_checklist_context(wedding, assignee_filter=''):
     done = sum(1 for t in all_tasks_list if t.status == 'done')
     overall_progress = round((done / max(total, 1)) * 100)
 
-    # Annotate Smart Guide Catalog with whether each task title is already in user's checklist
-    existing_titles_lower = {t.title.lower().strip() for t in all_tasks_list}
+    # Annotate Smart Guide Catalog only when needed (skip on fast checkbox OOB updates)
     guide_catalog = []
-    for topic in TASK_GUIDE_CATALOG:
-        annotated_items = []
-        added_count = 0
-        for idx, item in enumerate(topic['items']):
-            is_added = item['title'].lower().strip() in existing_titles_lower
-            if is_added:
-                added_count += 1
-            annotated_items.append({
-                **item,
-                'idx': idx,
-                'already_added': is_added,
+    if include_guide:
+        existing_titles_lower = {t.title.lower().strip() for t in all_tasks_list}
+        for topic in TASK_GUIDE_CATALOG:
+            annotated_items = []
+            added_count = 0
+            for idx, item in enumerate(topic['items']):
+                is_added = item['title'].lower().strip() in existing_titles_lower
+                if is_added:
+                    added_count += 1
+                annotated_items.append({
+                    **item,
+                    'idx': idx,
+                    'already_added': is_added,
+                })
+            guide_catalog.append({
+                **topic,
+                'items': annotated_items,
+                'added_count': added_count,
+                'total_count': len(annotated_items),
             })
-        guide_catalog.append({
-            **topic,
-            'items': annotated_items,
-            'added_count': added_count,
-            'total_count': len(annotated_items),
-        })
 
     return {
         'grouped_tasks': grouped_tasks,
@@ -420,7 +421,7 @@ def _build_checklist_context(wedding, assignee_filter=''):
         'total_tasks': total,
         'done_tasks': done,
         'assignee_filter': assignee_filter,
-        'task_form': TaskMilestoneForm(wedding=wedding, phases=phase_objs),
+        'task_form': TaskMilestoneForm(wedding=wedding, phases=phase_objs) if include_form else None,
         'days_remaining': days_remaining,
         'current_phase_key': current_phase_key,
         'current_phase_label': dict(phases).get(current_phase_key) if current_phase_key else None,
@@ -467,13 +468,24 @@ def toggle_task_status(request, pk):
     else:
         task.status = 'done' if task.status != 'done' else 'todo'
     task.save(update_fields=['status'])
+    from core.tutorial import emit_tutorial_event
     if request.GET.get('from') == 'dashboard':
-        return redirect('core:dashboard')
+        return emit_tutorial_event(request, redirect('core:dashboard'), 'task_saved')
     if request.htmx:
-        ctx = _build_checklist_context(request.wedding)
+        ctx = _build_checklist_context(request.wedding, include_guide=False, include_form=False)
+        if request.GET.get('oob_only') == '1':
+            return emit_tutorial_event(
+                request,
+                render(request, 'operations/partials/checklist_oob_stats.html', ctx),
+                'task_saved',
+            )
         ctx['task'] = _annotate_single_task(task, ctx)
-        return render(request, 'operations/partials/task_item_with_oob.html', ctx)
-    return redirect('operations-checklist:checklist')
+        return emit_tutorial_event(
+            request,
+            render(request, 'operations/partials/task_item_with_oob.html', ctx),
+            'task_saved',
+        )
+    return emit_tutorial_event(request, redirect('operations-checklist:checklist'), 'task_saved')
 
 
 @login_required
@@ -487,12 +499,18 @@ def add_task(request):
             task.wedding = request.wedding
             task.is_custom = True
             task.save()
+            from core.tutorial import emit_tutorial_event
             if request.htmx:
                 ctx = _build_checklist_context(request.wedding)
                 ctx['task'] = None
                 ctx['oob_phase_list_key'] = task.phase
                 ctx['oob_guide_update'] = True
-                return render(request, 'operations/partials/task_item_with_oob.html', ctx)
+                return emit_tutorial_event(
+                    request,
+                    render(request, 'operations/partials/task_item_with_oob.html', ctx),
+                    'task_saved',
+                )
+            return emit_tutorial_event(request, redirect('operations-checklist:checklist'), 'task_saved')
     return redirect('operations-checklist:checklist')
 
 

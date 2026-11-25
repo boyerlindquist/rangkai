@@ -26,6 +26,7 @@ class BudgetCategory(models.Model):
         decimal_places=0,
         default=0,
     )
+    is_allocation_locked = models.BooleanField('Kunci Pagu', default=False)
     sort_order = models.PositiveIntegerField(default=0)
 
     class Meta:

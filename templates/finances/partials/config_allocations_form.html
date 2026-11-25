@@ -1,199 +1,1011 @@
 {% load humanize %}
-<form novalidate hx-post="{% url 'finances:config_allocations' %}" 
-      hx-target=".main-content" 
+<form novalidate
+      hx-post="{% url 'finances:config_allocations' %}"
+      hx-target=".main-content"
       hx-select=".main-content"
       hx-swap="outerHTML show:none"
-      class="surface-panel fade-in" 
-      style="padding: var(--wp-space-xl); margin-bottom: var(--wp-space-lg); border-color: var(--wp-sage-main);"
+      class="surface-panel fade-in wp-alloc-panel"
       x-data="allocationForm()">
   {% csrf_token %}
   {{ formset.management_form }}
-  
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: var(--wp-space-lg); border-bottom: 1px solid var(--wp-border-light); padding-bottom: var(--wp-space-md);">
-    <div style="flex: 1; min-width: 280px;">
-      <h3 style="margin-top: 0; color: var(--wp-text-main); display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="sliders" style="color: var(--wp-gold-main);"></i> Susun Rencana Anggaran & Pagu per Kategori
+
+  <style>
+    .wp-alloc-panel {
+      padding: 16px 18px;
+      margin-bottom: 0;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .wp-alloc-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wp-alloc-head h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      font-weight: 650;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wp-alloc-head p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted-foreground);
+      line-height: 1.45;
+    }
+
+    .wp-alloc-kpis {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wp-alloc-kpi {
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      text-align: right;
+      min-width: 170px;
+    }
+
+    .wp-alloc-kpi-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted-foreground);
+    }
+
+    .wp-alloc-kpi-val {
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--foreground);
+      margin-top: 2px;
+    }
+
+    .wp-alloc-kpi-sub {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+      margin-top: 1px;
+    }
+
+    .wp-alloc-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wp-alloc-budget-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wp-alloc-budget-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--foreground);
+      white-space: nowrap;
+    }
+
+    .wp-alloc-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .wp-alloc-presets {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .wp-alloc-preset-btn {
+      padding: 5px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--muted-foreground);
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+    }
+
+    .wp-alloc-preset-btn:hover,
+    .wp-alloc-preset-btn.is-active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 9%, var(--card));
+    }
+
+    .wp-alloc-autobalance {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--foreground);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .wp-alloc-autobalance input {
+      accent-color: var(--primary);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    /* Stacked List Header & Rows */
+    .wp-alloc-list-head {
+      display: grid;
+      grid-template-columns: minmax(175px, 1.1fr) minmax(130px, 1.35fr) 86px 146px 32px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 4px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted-foreground);
+    }
+
+    .wp-alloc-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wp-alloc-row {
+      display: grid;
+      grid-template-columns: minmax(175px, 1.1fr) minmax(130px, 1.35fr) 86px 146px 32px;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 4px;
+      border-bottom: 1px solid var(--border);
+      transition: background-color 140ms ease;
+    }
+
+    .wp-alloc-row:last-child {
+      border-bottom: 0;
+    }
+
+    .wp-alloc-row.is-locked {
+      background: color-mix(in srgb, var(--muted) 45%, transparent);
+      border-radius: 8px;
+      padding-left: 8px;
+      padding-right: 8px;
+      margin: 0 -4px;
+    }
+
+    .wp-alloc-cat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .wp-alloc-cat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--primary);
+    }
+
+    .wp-alloc-cat-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .wp-alloc-cat-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wp-alloc-cat-real {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+      margin-top: 1px;
+    }
+
+    .wp-alloc-cat-real.is-over {
+      color: var(--destructive, #dc2626);
+      font-weight: 600;
+    }
+
+    /* Interactive Percentage Slider */
+    .wp-alloc-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wp-alloc-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 7px;
+      border-radius: 9999px;
+      background: var(--muted);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .wp-alloc-slider:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .wp-alloc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background: var(--primary);
+      border: 2px solid var(--card);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+      cursor: pointer;
+      transition: transform 120ms ease;
+    }
+
+    .wp-alloc-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+
+    .wp-alloc-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background: var(--primary);
+      border: 2px solid var(--card);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+      cursor: pointer;
+    }
+
+    .wp-alloc-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .wp-alloc-input-wrap .wp-input {
+      width: 100%;
+      height: 32px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wp-alloc-pct-input {
+      padding-right: 24px !important;
+      text-align: right;
+    }
+
+    .wp-alloc-nom-input {
+      padding-left: 26px !important;
+      text-align: right;
+    }
+
+    .wp-alloc-affix {
+      position: absolute;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      pointer-events: none;
+    }
+
+    .wp-alloc-affix.is-left { left: 8px; }
+    .wp-alloc-affix.is-right { right: 8px; }
+
+    .wp-alloc-lock-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+
+    .wp-alloc-lock-btn:hover {
+      background: var(--muted);
+      color: var(--foreground);
+    }
+
+    .wp-alloc-lock-btn.is-locked {
+      background: color-mix(in srgb, var(--primary) 12%, var(--card));
+      border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+      color: var(--primary);
+    }
+
+    .wp-alloc-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 780px) {
+      .wp-alloc-panel { padding: 16px; }
+      .wp-alloc-list-head { display: none; }
+      .wp-alloc-row {
+        grid-template-columns: 1fr 32px;
+        gap: 8px;
+        padding: 12px 2px;
+      }
+      .wp-alloc-cat { grid-column: 1 / 2; }
+      .wp-alloc-lock-btn { grid-column: 2 / 3; grid-row: 1 / 2; justify-self: end; }
+      .wp-alloc-slider-wrap { grid-column: 1 / 3; }
+      .wp-alloc-num-pair {
+        grid-column: 1 / 3;
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        gap: 8px;
+      }
+    }
+  </style>
+
+  <!-- Header & Live Summary -->
+  <div class="wp-alloc-head">
+    <div style="min-width: 0; flex: 1;">
+      <h3>
+        <i data-lucide="sliders-horizontal" style="width:17px;height:17px;color:var(--primary);"></i>
+        Susun Rencana Anggaran &amp; Pagu Kategori
       </h3>
-      <p class="text-secondary" style="margin-bottom: 12px; font-size: 0.84rem;">
-        Langkah 1: Isi <strong>Target Total Anggaran</strong>. Langkah 2: Isi alokasi tiap kategori menggunakan <strong>Nominal (Rp)</strong> <em>atau</em> <strong>Persentase (%)</strong> — keduanya saling menghitung otomatis!
+      <p>
+        Geser slider, ubah persentase, atau ketik nominal langsung. Saat mode otomatis aktif, kategori lain ikut menyesuaikan agar total selalu pas 100% dari target anggaran.
       </p>
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--wp-bg-surface-subtle); padding: 12px 16px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
-        <label for="config_total_budget" style="font-size: 0.82rem; font-weight: 700; color: var(--wp-text-main); white-space: nowrap; margin: 0;">
-          1. Target Total Anggaran (Rp):
-        </label>
-        <input type="number"
-               id="config_total_budget"
-               name="total_budget"
-               class="wp-input tabular-nums"
-               x-model.number="totalBudget"
-               @input="onTotalBudgetChange()"
-               placeholder="Contoh: 100000000"
-               min="0"
-               step="any"
-               style="width: 200px; font-weight: 700; font-size: 0.95rem;">
-        <button type="button"
-                class="btn btn-secondary btn-sm"
-                @click="syncTotalFromSum()"
-                x-show="totalNominal > 0 && totalNominal !== totalBudget"
-                title="Samakan Target Total Anggaran dengan jumlah nominal seluruh kategori di bawah">
-          Gunakan Jumlah Kategori (Rp <span x-text="formatRpNum(totalNominal)"></span>)
-        </button>
-      </div>
     </div>
 
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
-        <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total Rencana Kategori</div>
-        <div class="tabular-nums" :style="totalPct > 100.5 ? 'color: var(--wp-terracotta-main);' : 'color: var(--wp-sage-main);'" 
-             style="font-size: 1.35rem; font-weight: 700;">
+    <div class="wp-alloc-kpis">
+      <div class="wp-alloc-kpi">
+        <div class="wp-alloc-kpi-label">Total Ter-alokasi</div>
+        <div class="wp-alloc-kpi-val"
+             :style="totalPct > 100.5 ? 'color: var(--destructive, #dc2626);' : 'color: var(--primary);'">
           Rp <span x-text="formatRpNum(totalNominal)"></span>
-          <span style="font-size: 0.88rem; font-weight: 600;">(<span x-text="totalPct"></span>%)</span>
+          <span style="font-size:0.82rem;font-weight:600;">(<span x-text="totalPct"></span>%)</span>
         </div>
-        <div class="tabular-nums text-secondary" style="font-size: 0.76rem;"
-             x-text="totalBudget >= totalNominal ? ('Sisa Belum Dialokasikan: Rp ' + formatRpNum(totalBudget - totalNominal)) : ('Melebihi Target: Rp ' + formatRpNum(totalNominal - totalBudget))"></div>
+        <div class="wp-alloc-kpi-sub"
+             x-text="Math.abs(totalBudget - totalNominal) <= 100 ? 'Pas 100% sesuai target' : (totalBudget > totalNominal ? ('Sisa belum dialokasi: Rp ' + formatRpNum(totalBudget - totalNominal)) : ('Melebihi target: Rp ' + formatRpNum(totalNominal - totalBudget)))"></div>
       </div>
 
-      <div style="text-align: right; background: var(--wp-bg-surface-subtle); padding: 12px 18px; border-radius: var(--wp-radius-md); border: 1px solid var(--wp-hairline);">
-        <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Dana Terkumpul (Tabungan)</div>
-        <div class="tabular-nums" style="font-size: 1.35rem; font-weight: 700; color: var(--wp-gold-main);">
-          Rp {{ total_saved|intcomma }}
-        </div>
-        <div class="tabular-nums text-secondary" style="font-size: 0.76rem;"
-             x-text="Math.max(totalBudget, totalNominal) > {{ total_saved|default:0 }} ? ('Kurang Dana: Rp ' + formatRpNum(Math.max(totalBudget, totalNominal) - {{ total_saved|default:0 }})) : 'Dana Terkumpul Mencukupi'"></div>
+      <div class="wp-alloc-kpi">
+        <div class="wp-alloc-kpi-label">Dana Tabungan Terkumpul</div>
+        <div class="wp-alloc-kpi-val">Rp {{ total_saved|intcomma }}</div>
+        <div class="wp-alloc-kpi-sub"
+             x-text="Math.max(totalBudget, totalNominal) > {{ total_saved|default:0 }} ? ('Kurang: Rp ' + formatRpNum(Math.max(totalBudget, totalNominal) - {{ total_saved|default:0 }})) : 'Dana tabungan mencukupi'"></div>
       </div>
     </div>
   </div>
-  
-  <div class="allocation-categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--wp-space-md);">
-    {% for form in formset %}
-    <div class="form-group" style="margin-bottom: 0; background: var(--wp-bg-surface-subtle); padding: var(--wp-space-md); border-radius: var(--wp-radius-md); border: 1px solid var(--wp-border-light);">
-      {{ form.id }}
-      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: var(--wp-text-main);">
-        <span style="font-size: 1.1rem; background: var(--wp-bg-surface); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--wp-hairline);">{{ form.instance.icon|safe }}</span>
-        <span style="flex: 1;">{{ form.instance.name }}</span>
-      </label>
 
-      <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; align-items: end;">
-        <div>
-          <span style="display: block; font-size: 0.75rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Nominal Pagu (Rp)</span>
-          <input type="number"
-                 name="{{ form.allocated_budget.html_name }}"
-                 id="{{ form.allocated_budget.id_for_label }}"
-                 class="wp-input tabular-nums"
-                 style="font-weight: 600; font-size: 0.86rem;"
-                 min="0"
-                 step="any"
-                 placeholder="0"
-                 x-model.number="nominals['{{ form.instance.pk }}']"
-                 @input="onNominalInput('{{ form.instance.pk }}')">
-        </div>
-        <div>
-          <span style="display: block; font-size: 0.75rem; color: var(--wp-text-secondary); margin-bottom: 3px; font-weight: 600;">Atau Porsi (%)</span>
-          <div style="position: relative;">
-            <input type="number" 
-                   name="{{ form.allocation_percentage.html_name }}" 
-                   id="{{ form.allocation_percentage.id_for_label }}"
-                   class="wp-input tabular-nums" 
-                   style="padding-right: 26px; font-weight: 600; font-size: 0.86rem; text-align: right;"
-                   min="0" max="100" step="any"
-                   x-model.number="pcts['{{ form.instance.pk }}']"
-                   @input="onPctInput('{{ form.instance.pk }}')">
-            <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--wp-text-muted); font-size: 0.78rem; font-weight: 600;">%</span>
+  <!-- Target Budget Input + Quick Presets + Auto-Balance Toggle -->
+  <div class="wp-alloc-toolbar">
+    <div class="wp-alloc-budget-group">
+      <label for="config_total_budget" class="wp-alloc-budget-label">Target Total Anggaran:</label>
+      <div class="wp-alloc-input-wrap" style="width: 196px;">
+        <span class="wp-alloc-affix is-left">Rp</span>
+        <input type="hidden" name="total_budget" :value="Math.round(totalBudget || 0)">
+        <input type="text"
+               inputmode="numeric"
+               id="config_total_budget"
+               class="wp-input wp-alloc-nom-input"
+               :value="focusedField === 'total' ? (totalBudget ? String(Math.round(totalBudget)) : '') : formatRpNum(totalBudget)"
+               @focus="focusedField = 'total'; $nextTick(() => $el.select())"
+               @blur="focusedField = null"
+               @input="totalBudget = parseDigits($event.target.value); onTotalBudgetChange()"
+               placeholder="100.000.000">
+      </div>
+      <button type="button"
+              data-slot="button"
+              data-variant="outline"
+              data-size="sm"
+              @click="syncTotalFromSum()"
+              x-show="!autoBalance && totalNominal > 0 && Math.abs(totalNominal - totalBudget) > 100"
+              x-cloak>
+        Samakan Total (Rp <span x-text="formatRpNum(totalNominal)"></span>)
+      </button>
+    </div>
+
+    <div class="wp-alloc-controls-right">
+      <div class="wp-alloc-presets" role="group" aria-label="Preset alokasi anggaran">
+        <span style="font-size:0.76rem;color:var(--muted-foreground);font-weight:600;margin-right:2px;">Preset:</span>
+        <button type="button" class="wp-alloc-preset-btn" :class="{ 'is-active': activePreset === 'balanced' }" @click="applyPreset('balanced')">Seimbang</button>
+        <button type="button" class="wp-alloc-preset-btn" :class="{ 'is-active': activePreset === 'foodie' }" @click="applyPreset('foodie')">Fokus Kuliner</button>
+        <button type="button" class="wp-alloc-preset-btn" :class="{ 'is-active': activePreset === 'aesthetic' }" @click="applyPreset('aesthetic')">Fokus Estetik</button>
+      </div>
+
+      <label class="wp-alloc-autobalance" title="Saat aktif, mengubah 1 kategori akan otomatis menyeimbangkan kategori lain yang tidak dikunci agar total tetap 100%">
+        <input type="checkbox" x-model="autoBalance" @change="if (autoBalance) rebalanceAllTo100()">
+        <span>Sesuaikan otomatis ke 100%</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Table-like List Column Headers (Desktop) -->
+  <div class="wp-alloc-list-head" aria-hidden="true">
+    <span>Kategori</span>
+    <span>Proporsi Alokasi</span>
+    <span style="text-align:right;">Porsi (%)</span>
+    <span style="text-align:right;">Nominal (Rp)</span>
+    <span style="text-align:center;" title="Kunci kategori agar tidak berubah saat menggeser kategori lain">Kunci</span>
+  </div>
+
+  <!-- Vertical List of Categories -->
+  <div class="wp-alloc-list">
+    {% for form in formset %}
+    <div class="wp-alloc-row" :class="{ 'is-locked': locked['{{ form.instance.pk }}'] }">
+      {{ form.id }}
+
+      <!-- 1. Category Name & Realized Reference -->
+      <div class="wp-alloc-cat">
+        <span class="wp-alloc-cat-icon">{{ form.instance.icon|safe }}</span>
+        <div style="min-width:0;">
+          <div class="wp-alloc-cat-name" title="{{ form.instance.name }}">{{ form.instance.name }}</div>
+          <div class="wp-alloc-cat-real"
+               :class="{ 'is-over': {{ form.instance.total_actual|default:0 }} > 0 && nominals['{{ form.instance.pk }}'] < {{ form.instance.total_actual|default:0 }} }">
+            Realisasi: Rp {{ form.instance.total_actual|intcomma }}
           </div>
         </div>
       </div>
 
-      <div class="tabular-nums text-secondary" style="font-size: 0.75rem; margin-top: 6px; display: flex; justify-content: space-between;">
-        <span>Rencana: <strong>Rp <span x-text="formatRpNum(nominals['{{ form.instance.pk }}'])"></span></strong></span>
-        <span>Realisasi: Rp {{ form.instance.total_actual|intcomma }}</span>
+      <!-- 2. Interactive Visual Slider Bar -->
+      <div class="wp-alloc-slider-wrap">
+        <input type="range"
+               class="wp-alloc-slider"
+               min="0"
+               max="100"
+               step="0.5"
+               :disabled="locked['{{ form.instance.pk }}']"
+               :value="pcts['{{ form.instance.pk }}']"
+               :style="sliderBg(pcts['{{ form.instance.pk }}'], '{{ form.instance.pk }}')"
+               @input="onPctChange('{{ form.instance.pk }}', parseFloat($event.target.value), $event.target)"
+               aria-label="Slider porsi persentase {{ form.instance.name }}">
       </div>
+
+      <!-- 3. Percentage Input -->
+      <div class="wp-alloc-input-wrap">
+        <input type="number"
+               name="{{ form.allocation_percentage.html_name }}"
+               id="{{ form.allocation_percentage.id_for_label }}"
+               class="wp-input wp-alloc-pct-input"
+               min="0"
+               :max="maxPctFor('{{ form.instance.pk }}')"
+               step="any"
+               :readonly="locked['{{ form.instance.pk }}']"
+               x-model.number="pcts['{{ form.instance.pk }}']"
+               @input="onPctChange('{{ form.instance.pk }}', parseFloat($event.target.value), $event.target)">
+        <span class="wp-alloc-affix is-right">%</span>
+      </div>
+
+      <!-- 4. Nominal (Rp) Input (Dot-formatted on display, plain digits on focus) -->
+      <div class="wp-alloc-input-wrap">
+        <span class="wp-alloc-affix is-left">Rp</span>
+        <input type="hidden"
+               name="{{ form.allocated_budget.html_name }}"
+               id="{{ form.allocated_budget.id_for_label }}"
+               :value="Math.round(nominals['{{ form.instance.pk }}'] || 0)">
+        <input type="text"
+               inputmode="numeric"
+               class="wp-input wp-alloc-nom-input"
+               placeholder="0"
+               :readonly="locked['{{ form.instance.pk }}']"
+               :value="focusedField === 'nom_{{ form.instance.pk }}' ? (nominals['{{ form.instance.pk }}'] ? String(Math.round(nominals['{{ form.instance.pk }}'])) : '') : formatRpNum(nominals['{{ form.instance.pk }}'])"
+               @focus="if (!locked['{{ form.instance.pk }}']) { focusedField = 'nom_{{ form.instance.pk }}'; $nextTick(() => $el.select()); }"
+               @blur="if (focusedField === 'nom_{{ form.instance.pk }}') focusedField = null"
+               @input="onNominalChange('{{ form.instance.pk }}', parseDigits($event.target.value))"
+               aria-label="Nominal pagu {{ form.instance.name }}">
+      </div>
+
+      <!-- 5. Row Lock Toggle -->
+      <input type="hidden" name="{{ form.is_allocation_locked.html_name }}" :value="locked['{{ form.instance.pk }}'] ? 'on' : ''">
+      <button type="button"
+              class="wp-alloc-lock-btn"
+              :class="{ 'is-locked': locked['{{ form.instance.pk }}'] }"
+              @click="toggleLock('{{ form.instance.pk }}')"
+              :title="locked['{{ form.instance.pk }}'] ? 'Buka kunci kategori ini' : 'Kunci kategori ini agar nilainya tetap saat kategori lain digeser'"
+              :aria-label="locked['{{ form.instance.pk }}'] ? 'Buka kunci {{ form.instance.name }}' : 'Kunci {{ form.instance.name }}'">
+        <svg x-show="locked['{{ form.instance.pk }}']" x-cloak viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <svg x-show="!locked['{{ form.instance.pk }}']" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+      </button>
     </div>
     {% endfor %}
+
+    <!-- Newly Added Unsaved Categories (Live in Slider & Auto-Rebalance) -->
+    <template x-for="nc in newCategories" :key="nc.key">
+      <div class="wp-alloc-row" :class="{ 'is-locked': locked[nc.key] }">
+        <input type="hidden" name="new_cat_name[]" :value="nc.name">
+
+        <!-- 1. Category Name -->
+        <div class="wp-alloc-cat">
+          <span class="wp-alloc-cat-icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+          </span>
+          <div style="min-width:0;">
+            <div class="wp-alloc-cat-name" x-text="nc.name"></div>
+            <div class="wp-alloc-cat-real" style="color: var(--primary);">Kategori baru (belum disimpan)</div>
+          </div>
+        </div>
+
+        <!-- 2. Slider -->
+        <div class="wp-alloc-slider-wrap">
+          <input type="range"
+                 class="wp-alloc-slider"
+                 min="0"
+                 max="100"
+                 step="0.5"
+                 :disabled="locked[nc.key]"
+                 :value="pcts[nc.key]"
+                 :style="sliderBg(pcts[nc.key], nc.key)"
+                 @input="onPctChange(nc.key, parseFloat($event.target.value), $event.target)"
+                 :aria-label="'Slider porsi persentase ' + nc.name">
+        </div>
+
+        <!-- 3. Percentage Input -->
+        <div class="wp-alloc-input-wrap">
+          <input type="number"
+                 name="new_cat_pct[]"
+                 class="wp-input wp-alloc-pct-input"
+                 min="0"
+                 :max="maxPctFor(nc.key)"
+                 step="any"
+                 :readonly="locked[nc.key]"
+                 x-model.number="pcts[nc.key]"
+                 @input="onPctChange(nc.key, parseFloat($event.target.value), $event.target)">
+          <span class="wp-alloc-affix is-right">%</span>
+        </div>
+
+        <!-- 4. Nominal (Rp) Input -->
+        <div class="wp-alloc-input-wrap">
+          <span class="wp-alloc-affix is-left">Rp</span>
+          <input type="hidden" name="new_cat_nominal[]" :value="Math.round(nominals[nc.key] || 0)">
+          <input type="text"
+                 inputmode="numeric"
+                 class="wp-input wp-alloc-nom-input"
+                 placeholder="0"
+                 :readonly="locked[nc.key]"
+                 :value="focusedField === 'nom_' + nc.key ? (nominals[nc.key] ? String(Math.round(nominals[nc.key])) : '') : formatRpNum(nominals[nc.key])"
+                 @focus="if (!locked[nc.key]) { focusedField = 'nom_' + nc.key; $nextTick(() => $el.select()); }"
+                 @blur="if (focusedField === 'nom_' + nc.key) focusedField = null"
+                 @input="onNominalChange(nc.key, parseDigits($event.target.value))"
+                 :aria-label="'Nominal pagu ' + nc.name">
+        </div>
+
+        <!-- 5. Remove Unsaved Category -->
+        <button type="button"
+                class="wp-alloc-lock-btn"
+                @click="removeNewCategory(nc.key)"
+                title="Hapus kategori baru ini"
+                :aria-label="'Hapus kategori ' + nc.name"
+                style="color: var(--destructive, #dc2626);">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </template>
   </div>
-  
-  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: var(--wp-space-xl); padding-top: var(--wp-space-md); border-top: 1px solid var(--wp-border-light);">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('allocation-container').innerHTML = ''">Batal</button>
-    <button type="submit" class="btn btn-gold btn-sm">
-      <i data-lucide="save"></i> Simpan Rencana Anggaran
-    </button>
+
+  <!-- Inline Add New Category Bar -->
+  <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border);">
+    <div x-show="!addingCategory">
+      <button type="button"
+              data-slot="button"
+              data-variant="outline"
+              data-size="sm"
+              @click="addingCategory = true; $nextTick(() => $refs.newCatInput && $refs.newCatInput.focus())">
+        <i data-lucide="folder-plus"></i> Tambah Kategori Baru
+      </button>
+    </div>
+    <div x-show="addingCategory" x-cloak style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input type="text"
+             x-ref="newCatInput"
+             x-model="newCatName"
+             @keydown.enter.prevent="addNewCategory()"
+             @keydown.escape.prevent="addingCategory = false; newCatName = ''"
+             class="wp-input"
+             placeholder="Nama kategori baru (misal: Souvenir & Undangan)"
+             maxlength="100"
+             style="flex: 1; min-width: 220px; height: 32px; font-size: 0.84rem;">
+      <div class="wp-alloc-input-wrap" style="width: 90px;">
+        <input type="number"
+               x-model.number="newCatPct"
+               @keydown.enter.prevent="addNewCategory()"
+               class="wp-input wp-alloc-pct-input"
+               min="0" max="100" step="0.5"
+               placeholder="5"
+               aria-label="Porsi awal persen">
+        <span class="wp-alloc-affix is-right">%</span>
+      </div>
+      <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="addNewCategory()">
+        Tambahkan
+      </button>
+      <button type="button" data-slot="button" data-variant="ghost" data-size="sm" @click="addingCategory = false; newCatName = ''">
+        Batal
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="wp-alloc-foot">
+    <span style="font-size:0.78rem;color:var(--muted-foreground);">
+      Tips: Klik ikon gembok di kanan jika ada kategori yang pagunya sudah fix, lalu geser kategori lain.
+    </span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button type="button" data-slot="button" data-variant="outline" data-size="sm"
+              onclick="document.getElementById('allocation-container').innerHTML = ''; window.dispatchEvent(new CustomEvent('close-allocations'));">
+        Batal
+      </button>
+      <button type="submit" data-slot="button" data-variant="default" data-size="sm">
+        <i data-lucide="save"></i> Simpan Rencana Anggaran
+      </button>
+    </div>
   </div>
 </form>
 
 <script>
 function allocationForm() {
+    var PRESETS = {
+        balanced: {
+            'catering': 38, 'venue': 12, 'dekor': 10, 'attire': 12, 'mua': 12,
+            'dokumentasi': 10, 'entertainment': 5, 'admin': 5, 'legal': 5,
+            'seserahan': 3, 'cincin': 3, 'buffer': 5, 'darurat': 5
+        },
+        foodie: {
+            'catering': 45, 'venue': 10, 'dekor': 10, 'attire': 10, 'mua': 10,
+            'dokumentasi': 10, 'entertainment': 3, 'admin': 5, 'legal': 5,
+            'seserahan': 2, 'cincin': 2, 'buffer': 5, 'darurat': 5
+        },
+        aesthetic: {
+            'catering': 30, 'venue': 20, 'dekor': 15, 'attire': 15, 'mua': 15,
+            'dokumentasi': 10, 'entertainment': 3, 'admin': 3, 'legal': 3,
+            'seserahan': 2, 'cincin': 2, 'buffer': 2, 'darurat': 2
+        }
+    };
+
     return {
         totalBudget: {{ total_budget|default:0 }},
+        autoBalance: true,
+        activePreset: '',
+        focusedField: null,
+        addingCategory: false,
+        newCatName: '',
+        newCatPct: 5,
+        newCatSeq: 0,
+        newCategories: [],
+        parseDigits(raw) {
+            var cleaned = String(raw || '').replace(/\D/g, '');
+            return cleaned ? parseInt(cleaned, 10) : 0;
+        },
+        addNewCategory() {
+            var name = (this.newCatName || '').trim();
+            if (!name) return;
+            this.newCatSeq += 1;
+            var key = 'new_' + this.newCatSeq;
+            var initialPct = isNaN(parseFloat(this.newCatPct)) ? 0 : Math.max(0, Math.min(100, parseFloat(this.newCatPct)));
+            this.keys.push(key);
+            this.names[key] = name;
+            this.pcts[key] = 0;
+            this.nominals[key] = 0;
+            this.locked[key] = false;
+            this.newCategories.push({ key: key, name: name });
+            this.newCatName = '';
+            this.newCatPct = 5;
+            this.addingCategory = false;
+            if (initialPct > 0) {
+                this.onPctChange(key, initialPct);
+            } else {
+                this.recalculateTotals();
+            }
+        },
+        removeNewCategory(key) {
+            this.newCategories = this.newCategories.filter(function (c) { return c.key !== key; });
+            this.keys = this.keys.filter(function (k) { return k !== key; });
+            delete this.names[key];
+            delete this.pcts[key];
+            delete this.nominals[key];
+            delete this.locked[key];
+            if (this.autoBalance) {
+                this.rebalanceAllTo100();
+            } else {
+                this.recalculateTotals();
+            }
+        },
+        keys: [
+            {% for form in formset %}'{{ form.instance.pk }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+        ],
+        names: {
+            {% for form in formset %}'{{ form.instance.pk }}': '{{ form.instance.name|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+        },
         pcts: {
-            {% for form in formset %}
-            '{{ form.instance.pk }}': parseFloat('{{ form.instance.allocation_percentage|default:"0" }}') || 0,
-            {% endfor %}
+            {% for form in formset %}'{{ form.instance.pk }}': parseFloat('{{ form.instance.allocation_percentage|default:"0" }}') || 0{% if not forloop.last %}, {% endif %}{% endfor %}
         },
         nominals: {
-            {% for form in formset %}
-            '{{ form.instance.pk }}': parseInt('{{ form.instance.allocated_amount|floatformat:0|default:"0" }}') || 0,
-            {% endfor %}
+            {% for form in formset %}'{{ form.instance.pk }}': parseInt('{{ form.instance.allocated_amount|floatformat:0|default:"0" }}') || 0{% if not forloop.last %}, {% endif %}{% endfor %}
+        },
+        locked: {
+            {% for form in formset %}'{{ form.instance.pk }}': {{ form.instance.is_allocation_locked|yesno:'true,false' }}{% if not forloop.last %}, {% endif %}{% endfor %}
         },
         totalPct: 0,
         totalNominal: 0,
+
         init() {
-            for (let key in this.pcts) {
-                if (this.nominals[key] === 0 && this.pcts[key] > 0 && this.totalBudget > 0) {
-                    this.nominals[key] = Math.round((this.pcts[key] / 100) * this.totalBudget);
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                if (this.nominals[k] === 0 && this.pcts[k] > 0 && this.totalBudget > 0) {
+                    this.nominals[k] = Math.round((this.pcts[k] / 100) * this.totalBudget);
+                } else if (this.pcts[k] === 0 && this.nominals[k] > 0 && this.totalBudget > 0) {
+                    this.pcts[k] = Math.round((this.nominals[k] / this.totalBudget) * 1000) / 10;
                 }
             }
             this.recalculateTotals();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         },
-        onTotalBudgetChange() {
-            let tb = parseFloat(this.totalBudget) || 0;
-            if (tb > 0) {
-                for (let key in this.pcts) {
-                    let p = parseFloat(this.pcts[key]) || 0;
-                    this.nominals[key] = Math.round((p / 100) * tb);
+
+        maxPctFor(key) {
+            var lockedSum = 0;
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                if (k !== key && this.locked[k]) {
+                    lockedSum += (parseFloat(this.pcts[k]) || 0);
                 }
             }
-            this.recalculateTotals();
+            return Math.max(0, Math.round((100 - lockedSum) * 10) / 10);
         },
-        onNominalInput(key) {
-            let nom = parseFloat(this.nominals[key]) || 0;
-            let tb = parseFloat(this.totalBudget) || 0;
-            if (tb > 0) {
-                this.pcts[key] = Math.min(100, Math.round((nom / tb) * 10000) / 100);
+
+        sliderBg(pct, key) {
+            var p = Math.max(0, Math.min(100, parseFloat(pct) || 0));
+            var maxP = key ? this.maxPctFor(key) : 100;
+            if (maxP < 100) {
+                return 'background: linear-gradient(to right, var(--primary) 0%, var(--primary) ' + p + '%, var(--muted) ' + p + '%, var(--muted) ' + maxP + '%, color-mix(in srgb, var(--border) 90%, var(--foreground) 10%) ' + maxP + '%, color-mix(in srgb, var(--border) 90%, var(--foreground) 10%) 100%);';
+            }
+            return 'background: linear-gradient(to right, var(--primary) 0%, var(--primary) ' + p + '%, var(--muted) ' + p + '%, var(--muted) 100%);';
+        },
+
+        toggleLock(key) {
+            this.locked[key] = !this.locked[key];
+        },
+
+        syncNominalsFromPcts() {
+            var tb = Math.max(0, parseFloat(this.totalBudget) || 0);
+            if (tb <= 0) {
+                this.recalculateTotals();
+                return;
+            }
+            var running = 0;
+            var nonZeroKeys = [];
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                var p = Math.max(0, parseFloat(this.pcts[k]) || 0);
+                var nom = Math.round((p / 100) * tb);
+                this.nominals[k] = nom;
+                running += nom;
+                if (p > 0) nonZeroKeys.push(k);
+            }
+            // Fix tiny rounding diff when sum(pcts) is ~100%
+            var sumPct = this.keys.reduce((acc, k) => acc + (parseFloat(this.pcts[k]) || 0), 0);
+            if (Math.abs(sumPct - 100) < 0.15 && nonZeroKeys.length > 0 && running !== tb) {
+                var lastKey = nonZeroKeys[nonZeroKeys.length - 1];
+                this.nominals[lastKey] = Math.max(0, this.nominals[lastKey] + (tb - running));
             }
             this.recalculateTotals();
         },
-        onPctInput(key) {
-            let p = parseFloat(this.pcts[key]) || 0;
-            let tb = parseFloat(this.totalBudget) || 0;
-            if (tb > 0) {
-                this.nominals[key] = Math.round((p / 100) * tb);
-            }
-            this.recalculateTotals();
+
+        onTotalBudgetChange() {
+            this.syncNominalsFromPcts();
         },
+
+        rebalanceOthers(changedKey, desiredPct) {
+            var lockedSum = 0;
+            var unlockedOthers = [];
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                if (k === changedKey) continue;
+                if (this.locked[k]) {
+                    lockedSum += (parseFloat(this.pcts[k]) || 0);
+                } else {
+                    unlockedOthers.push(k);
+                }
+            }
+
+            var maxAllowed = Math.max(0, Math.round((100 - lockedSum) * 10) / 10);
+            var clamped = Math.max(0, Math.min(maxAllowed, isNaN(desiredPct) ? 0 : desiredPct));
+            clamped = Math.round(clamped * 10) / 10;
+            this.pcts[changedKey] = clamped;
+
+            if (unlockedOthers.length > 0) {
+                var remaining = Math.max(0, 100 - lockedSum - clamped);
+                var othersSum = unlockedOthers.reduce((acc, k) => acc + (parseFloat(this.pcts[k]) || 0), 0);
+                var distributed = 0;
+                for (var j = 0; j < unlockedOthers.length; j++) {
+                    var ok = unlockedOthers[j];
+                    var raw = othersSum > 0
+                        ? ((parseFloat(this.pcts[ok]) || 0) / othersSum) * remaining
+                        : (remaining / unlockedOthers.length);
+                    var rounded = Math.round(raw * 10) / 10;
+                    this.pcts[ok] = rounded;
+                    distributed += rounded;
+                }
+                var diff = Math.round((remaining - distributed) * 10) / 10;
+                if (Math.abs(diff) >= 0.1) {
+                    // Absorb rounding remainder into the largest unlocked other
+                    var targetKey = unlockedOthers[0];
+                    for (var m = 1; m < unlockedOthers.length; m++) {
+                        if ((this.pcts[unlockedOthers[m]] || 0) > (this.pcts[targetKey] || 0)) {
+                            targetKey = unlockedOthers[m];
+                        }
+                    }
+                    this.pcts[targetKey] = Math.max(0, Math.round(((this.pcts[targetKey] || 0) + diff) * 10) / 10);
+                }
+            }
+        },
+
+        onPctChange(key, rawVal, inputEl) {
+            if (this.locked[key]) return;
+            this.activePreset = '';
+            var maxAllowed = this.maxPctFor(key);
+            var val = isNaN(rawVal) ? 0 : Math.max(0, Math.min(maxAllowed, rawVal));
+            if (this.autoBalance) {
+                this.rebalanceOthers(key, val);
+                this.syncNominalsFromPcts();
+            } else {
+                this.pcts[key] = Math.round(val * 10) / 10;
+                var tb = parseFloat(this.totalBudget) || 0;
+                if (tb > 0) {
+                    this.nominals[key] = Math.round((this.pcts[key] / 100) * tb);
+                }
+                this.recalculateTotals();
+            }
+            // Force native slider/number DOM element to snap & stop at maxAllowed (never slide past 100% total)
+            if (inputEl && parseFloat(inputEl.value) !== this.pcts[key]) {
+                inputEl.value = this.pcts[key];
+            }
+        },
+
+        onNominalChange(key, rawVal) {
+            if (this.locked[key]) return;
+            this.activePreset = '';
+            var nom = isNaN(rawVal) ? 0 : Math.max(0, rawVal);
+            var tb = parseFloat(this.totalBudget) || 0;
+            if (tb > 0) {
+                var desiredPct = (nom / tb) * 100;
+                if (this.autoBalance) {
+                    this.rebalanceOthers(key, desiredPct);
+                    this.syncNominalsFromPcts();
+                    // Keep the exact nominal typed if within bounds
+                    if (nom <= tb) {
+                        var lockedSumNom = this.keys.reduce((acc, k) => acc + (k !== key && this.locked[k] ? (this.nominals[k] || 0) : 0), 0);
+                        if (nom <= tb - lockedSumNom) {
+                            this.nominals[key] = Math.round(nom);
+                        }
+                    }
+                    this.recalculateTotals();
+                } else {
+                    this.nominals[key] = Math.round(nom);
+                    this.pcts[key] = Math.min(100, Math.round(desiredPct * 10) / 10);
+                    this.recalculateTotals();
+                }
+            } else {
+                this.nominals[key] = Math.round(nom);
+                this.recalculateTotals();
+            }
+        },
+
+        rebalanceAllTo100() {
+            var lockedSum = 0;
+            var unlocked = [];
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                if (this.locked[k]) lockedSum += (parseFloat(this.pcts[k]) || 0);
+                else unlocked.push(k);
+            }
+            if (!unlocked.length) return;
+            var target = Math.max(0, 100 - lockedSum);
+            var cur = unlocked.reduce((acc, k) => acc + (parseFloat(this.pcts[k]) || 0), 0);
+            var dist = 0;
+            for (var j = 0; j < unlocked.length; j++) {
+                var ok = unlocked[j];
+                var r = cur > 0 ? ((this.pcts[ok] || 0) / cur) * target : (target / unlocked.length);
+                this.pcts[ok] = Math.round(r * 10) / 10;
+                dist += this.pcts[ok];
+            }
+            var diff = Math.round((target - dist) * 10) / 10;
+            if (Math.abs(diff) >= 0.1) {
+                this.pcts[unlocked[0]] = Math.max(0, Math.round((this.pcts[unlocked[0]] + diff) * 10) / 10);
+            }
+            this.syncNominalsFromPcts();
+        },
+
+        applyPreset(presetName) {
+            var map = PRESETS[presetName];
+            if (!map) return;
+            this.activePreset = presetName;
+            // Unlock all so preset applies cleanly
+            for (var i = 0; i < this.keys.length; i++) {
+                this.locked[this.keys[i]] = false;
+            }
+            for (var j = 0; j < this.keys.length; j++) {
+                var k = this.keys[j];
+                var lower = (this.names[k] || '').toLowerCase();
+                var matched = null;
+                for (var token in map) {
+                    if (lower.indexOf(token) !== -1) {
+                        matched = map[token];
+                        break;
+                    }
+                }
+                this.pcts[k] = matched !== null ? matched : 0;
+            }
+            this.rebalanceAllTo100();
+        },
+
         syncTotalFromSum() {
             this.totalBudget = this.totalNominal;
             if (this.totalBudget > 0) {
-                for (let key in this.nominals) {
-                    let nom = parseFloat(this.nominals[key]) || 0;
-                    this.pcts[key] = Math.min(100, Math.round((nom / this.totalBudget) * 10000) / 100);
+                for (var i = 0; i < this.keys.length; i++) {
+                    var k = this.keys[i];
+                    var nom = parseFloat(this.nominals[k]) || 0;
+                    this.pcts[k] = Math.min(100, Math.round((nom / this.totalBudget) * 1000) / 10);
                 }
             }
             this.recalculateTotals();
         },
+
         recalculateTotals() {
-            let sumPct = 0;
-            let sumNom = 0;
-            for (let key in this.pcts) {
-                sumPct += (parseFloat(this.pcts[key]) || 0);
-                sumNom += (parseInt(this.nominals[key]) || 0);
+            var sumPct = 0;
+            var sumNom = 0;
+            for (var i = 0; i < this.keys.length; i++) {
+                var k = this.keys[i];
+                sumPct += (parseFloat(this.pcts[k]) || 0);
+                sumNom += (parseInt(this.nominals[k]) || 0);
             }
             this.totalPct = Math.round(sumPct * 10) / 10;
             this.totalNominal = sumNom;
         },
+
         formatRpNum(val) {
-            let n = Math.round(parseFloat(val) || 0);
+            var n = Math.round(parseFloat(val) || 0);
             return n.toLocaleString('id-ID');
         }
-    }
+    };
 }
 </script>

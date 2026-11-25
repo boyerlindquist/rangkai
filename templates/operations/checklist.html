@@ -670,5 +670,161 @@
 
   </div>
 
+  <style>
+    .task-checkbox {
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+    }
+    .task-checkbox:active {
+      transform: scale(0.86);
+    }
+    .task-checkbox.wp-check-pop {
+      animation: wpCheckPop 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes wpCheckPop {
+      0% { transform: scale(0.82); }
+      55% { transform: scale(1.14); }
+      100% { transform: scale(1); }
+    }
+    .task-title {
+      transition: color 0.16s ease, opacity 0.16s ease;
+    }
+  </style>
+
+  <script>
+    (function () {
+      var CHECK_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      var CLOCK_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+      var STATUS_META = {
+        todo: { label: 'Belum Selesai', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
+        in_progress: { label: 'Dalam Proses', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
+        done: { label: 'Selesai', pillClass: 'status-done', dot: 'var(--wp-sage-main)' }
+      };
+
+      function applyStatusToRow(row, nextStatus, animate) {
+        if (!row) return;
+        row.dataset.taskStatus = nextStatus;
+
+        var cb = row.querySelector('.task-checkbox');
+        if (cb) {
+          cb.classList.remove('done', 'in-progress', 'wp-check-pop');
+          if (nextStatus === 'done') {
+            cb.classList.add('done');
+            cb.innerHTML = CHECK_SVG;
+          } else if (nextStatus === 'in_progress') {
+            cb.classList.add('in-progress');
+            cb.innerHTML = CLOCK_SVG;
+          } else {
+            cb.innerHTML = '';
+          }
+          if (animate) {
+            void cb.offsetWidth;
+            cb.classList.add('wp-check-pop');
+          }
+        }
+
+        var title = row.querySelector('.task-title');
+        if (title) {
+          title.classList.toggle('done', nextStatus === 'done');
+        }
+
+        // Sync overdue warning badge visibility immediately
+        var overdueBtn = row.querySelector('[data-slot="icon-badge"][data-variant="destructive"]');
+        if (overdueBtn) {
+          overdueBtn.style.display = nextStatus === 'done' ? 'none' : '';
+        }
+
+        // Sync Alpine customSelect value & pill appearance on the same row
+        var dropdown = row.querySelector('.wp-dropdown');
+        if (dropdown && window.Alpine && typeof window.Alpine.$data === 'function') {
+          try {
+            var data = window.Alpine.$data(dropdown);
+            if (data && data.value !== nextStatus) {
+              data.value = nextStatus;
+            }
+          } catch (e) {}
+        } else if (dropdown) {
+          var meta = STATUS_META[nextStatus];
+          var trigger = dropdown.querySelector('.wp-dropdown-pill');
+          if (meta && trigger) {
+            trigger.classList.remove('status-danger', 'status-warning', 'status-done');
+            trigger.classList.add(meta.pillClass);
+            var dot = trigger.querySelector('.wp-dropdown-dot');
+            if (dot) dot.style.background = meta.dot;
+          }
+        }
+      }
+
+      function nudgeMetricsOptimistically(deltaDone) {
+        if (!deltaDone) return;
+        var strip = document.getElementById('checklist-metrics');
+        if (!strip) return;
+        var sub = strip.querySelector('.metric-sub');
+        var val = strip.querySelector('.metric-value');
+        if (!sub || !val) return;
+        var m = sub.textContent.match(/(\d+)\s+dari\s+(\d+)/);
+        if (!m) return;
+        var done = Math.max(0, Math.min(parseInt(m[2], 10), parseInt(m[1], 10) + deltaDone));
+        var total = Math.max(1, parseInt(m[2], 10));
+        var pct = Math.round((done / total) * 100);
+        val.textContent = pct + '%';
+        sub.textContent = done + ' dari ' + m[2] + ' tugas tuntas';
+      }
+
+      window.optimisticSetTaskStatus = function (row, nextStatus, btnEl) {
+        if (!row) return;
+        var prevStatus = row.dataset.taskStatus || (row.querySelector('.task-checkbox.done') ? 'done' : 'todo');
+        row.dataset.prevStatus = prevStatus;
+        if (btnEl) {
+          btnEl.dataset.targetStatus = nextStatus;
+          btnEl.dataset.prevStatus = prevStatus;
+        }
+        var taskId = row.dataset.taskId;
+        var matchingRows = taskId ? document.querySelectorAll('.task-item[data-task-id="' + taskId + '"]') : [row];
+        matchingRows.forEach(function (r) {
+          applyStatusToRow(r, nextStatus, r === row);
+        });
+        var wasDone = prevStatus === 'done';
+        var isNowDone = nextStatus === 'done';
+        if (wasDone !== isNowDone) {
+          nudgeMetricsOptimistically(isNowDone ? 1 : -1);
+        }
+      };
+
+      window.optimisticToggleTask = function (btn) {
+        var row = btn && btn.closest ? btn.closest('.task-item') : null;
+        if (!row) return;
+        var isDone = btn.classList.contains('done');
+        var nextStatus = isDone ? 'todo' : 'done';
+        window.optimisticSetTaskStatus(row, nextStatus, btn);
+      };
+
+      // Attach desired optimistic status to HTMX POST params & roll back on network/server error
+      if (!window._wpChecklistErrorBound) {
+        window._wpChecklistErrorBound = true;
+        document.body.addEventListener('htmx:configRequest', function (evt) {
+          var elt = evt.detail && evt.detail.elt;
+          if (elt && elt.classList && elt.classList.contains('task-checkbox') && elt.dataset && elt.dataset.targetStatus) {
+            evt.detail.parameters['status'] = elt.dataset.targetStatus;
+          }
+        });
+        function handleTaskError(evt) {
+          var elt = evt.detail && evt.detail.elt;
+          var row = elt && elt.closest ? elt.closest('.task-item') : null;
+          if (!row || !row.dataset.prevStatus) return;
+          var prev = row.dataset.prevStatus;
+          var cur = row.dataset.taskStatus;
+          var taskId = row.dataset.taskId;
+          var matchingRows = taskId ? document.querySelectorAll('.task-item[data-task-id="' + taskId + '"]') : [row];
+          matchingRows.forEach(function (r) { applyStatusToRow(r, prev, false); });
+          if ((cur === 'done') !== (prev === 'done')) {
+            nudgeMetricsOptimistically(prev === 'done' ? 1 : -1);
+          }
+        }
+        document.body.addEventListener('htmx:responseError', handleTaskError);
+        document.body.addEventListener('htmx:sendError', handleTaskError);
+      }
+    })();
+  </script>
+
 </div>
 {% endblock %}

@@ -18,7 +18,7 @@ class BudgetCategoryConfigForm(forms.ModelForm):
 
     class Meta:
         model = BudgetCategory
-        fields = ['allocation_percentage', 'allocated_budget']
+        fields = ['allocation_percentage', 'allocated_budget', 'is_allocation_locked']
 
     def clean_allocation_percentage(self):
         return self.cleaned_data.get('allocation_percentage') or 0

@@ -1,0 +1,187 @@
+{% load humanize %}
+<div style="padding: 16px 18px;">
+  <!-- Stacked Visual Progress Bar: Paid + Free Cash vs Shortfall -->
+  {% widthratio total_paid effective_total_need 100 as bar_paid_pct %}
+  {% widthratio available_cash_positive effective_total_need 100 as bar_free_pct %}
+  <div style="margin-bottom: 18px; background: var(--wp-bg-surface-subtle); padding: 14px 16px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-size: 0.82rem;">
+      <div>
+        <strong>Posisi Dana Terkumpul (Rp {{ total_saved|intcomma }})</strong> terhadap Total Rencana Kebutuhan (<strong>Rp {{ effective_total_need|intcomma }}</strong>)
+      </div>
+      <div class="tabular-nums" style="font-weight: 700; color: var(--wp-sage-main); white-space: nowrap;">
+        {{ saved_vs_need_pct }}% Terkumpul
+      </div>
+    </div>
+    <div style="height: 10px; width: 100%; background: var(--wp-border-light); border-radius: var(--wp-radius-pill); overflow: hidden; display: flex;">
+      <div style="width: {{ bar_paid_pct|default:0 }}%; background: var(--wp-sage-main); transition: width 0.4s;" title="Sudah Dibayarkan ke Vendor: Rp {{ total_paid|intcomma }}"></div>
+      <div style="width: {{ bar_free_pct|default:0 }}%; background: var(--wp-gold-main); transition: width 0.4s;" title="Sisa Kas Tabungan Siap Pakai: Rp {{ available_cash_positive|intcomma }}"></div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-size: 0.78rem; color: var(--wp-text-secondary);">
+      <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-sage-main); display: inline-block; flex-shrink: 0;"></span>
+        Sudah Terpakai: <strong class="tabular-nums">Rp {{ total_paid|intcomma }}</strong>
+      </span>
+      <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-gold-main); display: inline-block; flex-shrink: 0;"></span>
+        Kas Siap Pakai: <strong class="tabular-nums">Rp {{ available_cash_positive|intcomma }}</strong>
+      </span>
+      <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-border-hover); display: inline-block; flex-shrink: 0;"></span>
+        Masih Kurang: <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ shortfall_from_saved|intcomma }}</strong>
+        {% if months_needed > 0 %}
+          (<strong>~{{ months_needed }} bln</strong> @ Rp {{ monthly_saving_rate|intcomma }}/bln)
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- 2-Column Split: Realisasi Kas Terpakai & Realisasi per Kategori -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; align-items: start;">
+    <!-- Left Column: Realisasi Kas Terpakai -->
+    <div style="border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); overflow: hidden;">
+      <div style="padding: 11px 14px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline); display: flex; justify-content: space-between; align-items: center;">
+        <strong style="font-size: 0.84rem; display: flex; align-items: center; gap: 7px; color: var(--wp-text-main); white-space: nowrap;">
+          <i data-lucide="receipt" style="width: 15px; height: 15px; color: var(--wp-sage-main); flex-shrink: 0;"></i>
+          Realisasi Pemakaian Kas
+        </strong>
+        <span class="status-pill" style="white-space: nowrap;">{{ paid_items|length }} pembayaran</span>
+      </div>
+
+      <div class="rg-3to1" style="padding: 10px 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-bottom: 1px solid var(--wp-hairline); background: var(--wp-bg-surface);">
+        <div style="background: var(--wp-bg-surface-subtle); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
+          <div style="font-size: 0.75rem; color: var(--wp-text-secondary); white-space: nowrap;">Tabungan</div>
+          <div class="tabular-nums" style="font-weight: 700; font-size: 0.86rem; margin-top: 2px; white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
+        </div>
+        <div style="background: var(--wp-bg-surface-subtle); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
+          <div style="font-size: 0.75rem; color: var(--wp-text-secondary); white-space: nowrap;">Terpakai</div>
+          <div class="tabular-nums" style="font-weight: 700; font-size: 0.86rem; color: var(--wp-sage-main); margin-top: 2px; white-space: nowrap;">-Rp {{ total_paid|intcomma }}</div>
+        </div>
+        <div style="background: var(--wp-bg-surface-subtle); padding: 8px 10px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
+          <div style="font-size: 0.75rem; color: var(--wp-text-secondary); white-space: nowrap;">Kas Bebas</div>
+          <div class="tabular-nums" style="font-weight: 700; font-size: 0.86rem; color: {% if is_cash_deficit %}var(--wp-terracotta-main){% else %}var(--wp-gold-main){% endif %}; margin-top: 2px; white-space: nowrap;">
+            Rp {{ available_cash|intcomma }}
+          </div>
+        </div>
+      </div>
+
+      {% if paid_items %}
+      <div class="sheet-table-wrap" style="max-height: 260px; overflow-y: auto;">
+        <table class="sheet-table" style="font-size: 0.8rem;">
+          <thead>
+            <tr>
+              <th style="padding-left: 14px; min-width: 120px;">Item / Vendor</th>
+              <th style="min-width: 90px;">Kategori</th>
+              <th class="num" style="padding-right: 14px; min-width: 100px; white-space: nowrap;">Terpakai</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p_item in paid_items %}
+            <tr>
+              <td style="padding-left: 14px;">
+                <strong>{{ p_item.name }}</strong>
+                {% if p_item.vendor_name %}<div class="text-muted" style="font-size: 0.75rem;">{{ p_item.vendor_name }}</div>{% endif %}
+              </td>
+              <td><span class="status-pill" style="font-size: 0.75rem; white-space: nowrap;">{{ p_item.category.name }}</span></td>
+              <td class="num tabular-nums" style="padding-right: 14px; font-weight: 700; color: var(--wp-sage-main); white-space: nowrap;">
+                Rp {{ p_item.paid_amount|intcomma }}
+                {% if p_item.remaining > 0 %}
+                  <div style="font-size: 0.75rem; color: var(--wp-terracotta-main); font-weight: 500; white-space: nowrap;">Kurang Rp {{ p_item.remaining|intcomma }}</div>
+                {% else %}
+                  <div style="font-size: 0.75rem; color: var(--wp-text-muted); font-weight: 500; white-space: nowrap;">Lunas</div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding: 22px 14px; text-align: center; color: var(--wp-text-muted); font-size: 0.82rem;">
+        Belum ada dana tabungan yang dibayarkan ke vendor (Rp 0 terpakai). Seluruh <strong>Rp {{ total_saved|intcomma }}</strong> masih utuh sebagai kas siap pakai.
+      </div>
+      {% endif %}
+
+      {% if unpaid_items %}
+      <div style="padding: 10px 14px; background: var(--wp-bg-surface-subtle); border-top: 1px solid var(--wp-hairline); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center;">
+        <span style="white-space: nowrap;">Tagihan vendor belum lunas ({{ unpaid_items|length }} item):</span>
+        <strong class="tabular-nums" style="color: var(--wp-terracotta-main); white-space: nowrap;">Rp {{ total_remaining|intcomma }}</strong>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column: Realisasi & Pemakaian per Kategori -->
+    <div style="border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); overflow: hidden;">
+      <div style="padding: 11px 14px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline); display: flex; justify-content: space-between; align-items: center;">
+        <strong style="font-size: 0.84rem; display: flex; align-items: center; gap: 7px; color: var(--wp-text-main); white-space: nowrap;">
+          <i data-lucide="check-check" style="width: 15px; height: 15px; color: var(--wp-gold-main); flex-shrink: 0;"></i>
+          Pemakaian Pagu per Kategori
+        </strong>
+        <button type="button" class="btn btn-ghost btn-sm" style="padding: 2px 8px; font-size: 0.75rem; color: var(--wp-gold-main); white-space: nowrap;"
+                @click="openConfigAllocations()"
+                hx-get="{% url 'finances:config_allocations' %}" hx-target="#allocation-container" hx-swap="innerHTML">
+          Atur Pagu
+        </button>
+      </div>
+
+      <div class="sheet-table-wrap" style="max-height: 300px; overflow-y: auto;">
+        <table class="sheet-table" style="font-size: 0.8rem;">
+          <thead>
+            <tr>
+              <th style="padding-left: 14px; min-width: 120px;">Kategori</th>
+              <th class="num" style="min-width: 95px; white-space: nowrap;">Pagu</th>
+              <th class="num" style="min-width: 105px; white-space: nowrap;">Deal / Terbayar</th>
+              <th class="num" style="padding-right: 14px; min-width: 110px; white-space: nowrap;">Pemakaian</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat in categories %}
+            <tr>
+              <td style="padding-left: 14px;">
+                <strong style="white-space: nowrap;">{{ cat.name }}</strong>
+                <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">{{ cat.allocation_percentage|floatformat:"-1" }}% dari target</div>
+              </td>
+              <td class="num tabular-nums" style="font-weight: 600; white-space: nowrap;">
+                Rp {{ cat.cat_planned|intcomma }}
+              </td>
+              <td class="num tabular-nums" style="color: var(--wp-sage-main); font-weight: 600; white-space: nowrap;">
+                Rp {{ cat.cat_actual|intcomma }}
+                {% if cat.cat_paid > 0 %}
+                  <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">(Terbayar Rp {{ cat.cat_paid|intcomma }})</div>
+                {% endif %}
+              </td>
+              <td class="num" style="padding-right: 14px; white-space: nowrap;">
+                {% if cat.realization_status == 'overbudget' %}
+                  <span class="status-pill status-danger tabular-nums" style="font-size: 0.75rem;">Overbudget ({{ cat.cat_used_pct }}%)</span>
+                {% elif cat.realization_status == 'near_limit' %}
+                  <span class="status-pill status-warning tabular-nums" style="font-size: 0.75rem;">{{ cat.cat_used_pct }}% terpakai</span>
+                {% elif cat.realization_status == 'used' %}
+                  <span class="status-pill status-done tabular-nums" style="font-size: 0.75rem;">{{ cat.cat_used_pct }}% terpakai</span>
+                {% else %}
+                  <span class="text-muted tabular-nums" style="font-size: 0.75rem; white-space: nowrap;">0% terpakai</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding: 10px 14px; background: var(--wp-bg-surface-subtle); border-top: 1px solid var(--wp-hairline); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        {% if shortfall_from_saved > 0 %}
+          <span style="white-space: nowrap;">Total Kekurangan: <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ shortfall_from_saved|intcomma }}</strong></span>
+          <span style="white-space: nowrap;">
+            {% if months_needed > 0 %}
+              Perlu <strong>{{ months_needed }} bulan lagi</strong> (selesai {{ estimated_finish_date|date:"d M Y" }})
+            {% else %}
+              Isi kesanggupan nabung/bln di menu Tabungan
+            {% endif %}
+          </span>
+        {% else %}
+          <span style="color: var(--wp-sage-main); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+            <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Seluruh rencana anggaran sudah ter-cover oleh Dana Terkumpul
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

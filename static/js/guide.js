@@ -179,11 +179,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Global Start Function for the Guide page
+  // Global Start Function for the Guide page (delegates to interactive Tur Praktik)
   window.startComprehensiveTour = function() {
+    if (window.RangkaiTutorial && typeof window.RangkaiTutorial.restart === 'function') {
+      window.RangkaiTutorial.restart();
+      return;
+    }
     localStorage.setItem('tour_active', 'true');
     localStorage.setItem('tour_step', '0');
-    window.location.href = '/'; // Always start at dashboard
+    window.location.href = '/';
   };
 });
 

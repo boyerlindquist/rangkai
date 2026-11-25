@@ -1,15 +1,19 @@
 <div class="task-item"
+     data-task-id="{{ task.pk }}"
+     data-task-status="{{ task.status }}"
      data-assignee="{{ task.assignee }}"
      x-show="!selectedAssignee || selectedAssignee === '{{ task.assignee }}'">
   <button
+    type="button"
     class="task-checkbox {% if task.status == 'done' %}done{% elif task.status == 'in_progress' %}in-progress{% endif %}"
-    hx-post="{% url 'operations-checklist:toggle_task' task.pk %}"
-    hx-target="closest .task-item"
-    hx-swap="outerHTML"
+    onclick="window.optimisticToggleTask && window.optimisticToggleTask(this)"
+    hx-post="{% url 'operations-checklist:toggle_task' task.pk %}?oob_only=1"
+    hx-swap="none"
+    hx-sync="closest .task-item:replace"
     title="Klik sekali untuk menandai Selesai / Belum Selesai"
     aria-label="Ubah status tugas {{ task.title }}"
   >
-    {% if task.status == 'done' %}<i data-lucide="check" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% elif task.status == 'in_progress' %}<i data-lucide="clock" style="width: 13px; height: 13px; stroke-width: 2.5;"></i>{% endif %}
+    {% if task.status == 'done' %}<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>{% elif task.status == 'in_progress' %}<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>{% endif %}
   </button>
 
   <div class="task-title {% if task.status == 'done' %}done{% endif %}" style="flex: 1;">
@@ -79,10 +83,10 @@
       <div class="wp-dropdown"
            x-data="customSelect({
              value: '{{ task.status }}',
-             postUrl: '{% url 'operations-checklist:toggle_task' task.pk %}',
+             postUrl: '{% url 'operations-checklist:toggle_task' task.pk %}?oob_only=1',
              paramName: 'status',
              target: 'closest .task-item',
-             swap: 'outerHTML',
+             swap: 'none',
              options: [
                { value: 'todo', label: 'Belum Selesai', pillClass: 'status-danger', dot: 'var(--wp-terracotta-main)' },
                { value: 'in_progress', label: 'Dalam Proses', pillClass: 'status-warning', dot: 'var(--wp-gold-main)' },
@@ -116,7 +120,7 @@
           <template x-for="opt in options" :key="opt.value">
             <div class="wp-dropdown-item"
                  :class="{ 'is-selected': value === opt.value }"
-                 @click="select(opt)">
+                 @click="window.optimisticSetTaskStatus && window.optimisticSetTaskStatus($el.closest('.task-item'), opt.value); select(opt)">
               <span style="display: inline-flex; align-items: center; gap: 8px;">
                 <span class="wp-dropdown-dot" :style="'background:' + opt.dot"></span>
                 <span x-text="opt.label"></span>

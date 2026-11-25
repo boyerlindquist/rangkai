@@ -200,222 +200,6 @@
     </div>
   </div>
 
-  <!-- Config Allocations Container (Loaded via HTMX when clicking "Susun Rencana Anggaran") -->
-  <div id="allocation-container" style="scroll-margin-top: 24px;"></div>
-
-  <!-- 2. Breakdown Alur Dana Terkumpul & Kesiapan Anggaran (Toggled via Icon in Main Workspace Header) -->
-  <div class="surface-panel" x-show="showCashBreakdown" x-transition x-cloak>
-    <div class="surface-panel-header" style="flex-wrap: wrap; gap: 12px;">
-      <div class="reconciliation-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <h3><i data-lucide="compass" style="color: var(--wp-gold-main);"></i> Kesiapan Anggaran & Penggunaan Kas Tabungan</h3>
-        <span class="status-pill status-done" style="white-space: nowrap;">{{ ready_categories_count }}/{{ categories|length }} Siap Dana</span>
-      </div>
-      <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showCashBreakdown = false" title="Tutup">
-        <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-      </button>
-    </div>
-
-    <div class="surface-panel-body">
-      <!-- Stacked Visual Progress Bar: Paid + Free Cash vs Shortfall -->
-      {% widthratio total_paid effective_total_need 100 as bar_paid_pct %}
-      {% widthratio available_cash_positive effective_total_need 100 as bar_free_pct %}
-      <div style="margin-bottom: 20px; background: var(--wp-bg-surface-subtle); padding: 14px 18px; border-radius: var(--wp-radius-sm); border: 1px solid var(--wp-hairline);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-size: 0.82rem;">
-          <div>
-            <strong>Posisi Dana Terkumpul (Rp {{ total_saved|intcomma }})</strong> terhadap Total Rencana Kebutuhan (<strong>Rp {{ effective_total_need|intcomma }}</strong>)
-          </div>
-          <div class="tabular-nums" style="font-weight: 700; color: var(--wp-sage-main); white-space: nowrap;">
-            {{ saved_vs_need_pct }}% Terkumpul
-          </div>
-        </div>
-        <div style="height: 10px; width: 100%; background: var(--wp-border-light); border-radius: var(--wp-radius-pill); overflow: hidden; display: flex;">
-          <div style="width: {{ bar_paid_pct|default:0 }}%; background: var(--wp-sage-main); transition: width 0.4s;" title="Sudah Dibayarkan ke Vendor: Rp {{ total_paid|intcomma }}"></div>
-          <div style="width: {{ bar_free_pct|default:0 }}%; background: var(--wp-gold-main); transition: width 0.4s;" title="Sisa Kas Tabungan Siap Pakai: Rp {{ available_cash_positive|intcomma }}"></div>
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 18px; margin-top: 10px; font-size: 0.78rem; color: var(--wp-text-secondary);">
-          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
-            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-sage-main); display: inline-block; flex-shrink: 0;"></span>
-            Sudah Terpakai: <strong class="tabular-nums">Rp {{ total_paid|intcomma }}</strong>
-          </span>
-          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
-            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-gold-main); display: inline-block; flex-shrink: 0;"></span>
-            Kas Siap Pakai: <strong class="tabular-nums">Rp {{ available_cash_positive|intcomma }}</strong>
-          </span>
-          <span class="legend-item" style="display: inline-flex; align-items: baseline; gap: 6px;">
-            <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--wp-border-hover); display: inline-block; flex-shrink: 0;"></span>
-            Masih Kurang: <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ shortfall_from_saved|intcomma }}</strong>
-            {% if months_needed > 0 %}
-              (<strong>~{{ months_needed }} bln</strong> @ Rp {{ monthly_saving_rate|intcomma }}/bln)
-            {% endif %}
-          </span>
-        </div>
-      </div>
-
-      <!-- 2-Column Split: (Left) Realisasi Kas Terpakai | (Right) Kesiapan Kas per Kategori -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 20px; align-items: start;">
-        <!-- Left Column: Realisasi Kas Terpakai -->
-        <div style="border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); overflow: hidden;">
-          <div style="padding: 12px 16px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline); display: flex; justify-content: space-between; align-items: center;">
-            <strong style="font-size: 0.85rem; display: flex; align-items: center; gap: 7px; color: var(--wp-text-main); white-space: nowrap;">
-              <i data-lucide="receipt" style="width: 15px; height: 15px; color: var(--wp-sage-main); flex-shrink: 0;"></i>
-              Realisasi Pemakaian Kas Tabungan
-            </strong>
-            <span class="status-pill" style="white-space: nowrap;">{{ paid_items|length }} pembayaran</span>
-          </div>
-
-          <div class="rg-3to1" style="padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-bottom: 1px solid var(--wp-hairline); background: var(--wp-bg-surface);">
-            <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Dana Tabungan</div>
-              <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; margin-top: 2px; white-space: nowrap;">Rp {{ total_saved|intcomma }}</div>
-            </div>
-            <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sudah Terpakai</div>
-              <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; color: var(--wp-sage-main); margin-top: 2px; white-space: nowrap;">-Rp {{ total_paid|intcomma }}</div>
-            </div>
-            <div style="background: var(--wp-bg-surface-subtle); padding: 8px 12px; border-radius: var(--wp-radius-xs); border: 1px solid var(--wp-hairline);">
-              <div style="font-size: 0.75rem; color: var(--wp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;">Sisa Kas Bebas</div>
-              <div class="tabular-nums" style="font-weight: 700; font-size: 0.92rem; color: {% if is_cash_deficit %}var(--wp-terracotta-main){% else %}var(--wp-gold-main){% endif %}; margin-top: 2px; white-space: nowrap;">
-                Rp {{ available_cash|intcomma }}
-              </div>
-            </div>
-          </div>
-
-          {% if paid_items %}
-          <div class="sheet-table-wrap" style="max-height: 260px; overflow-y: auto;">
-            <table class="sheet-table" style="font-size: 0.82rem;">
-              <thead>
-                <tr>
-                  <th style="padding-left: 16px; min-width: 140px;">Item / Vendor</th>
-                  <th style="min-width: 100px;">Kategori</th>
-                  <th class="num" style="padding-right: 16px; min-width: 110px; white-space: nowrap;">Dana Terpakai</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for p_item in paid_items %}
-                <tr>
-                  <td style="padding-left: 16px;">
-                    <strong>{{ p_item.name }}</strong>
-                    {% if p_item.vendor_name %}<div class="text-muted" style="font-size: 0.75rem;">{{ p_item.vendor_name }}</div>{% endif %}
-                  </td>
-                  <td><span class="status-pill" style="font-size: 0.75rem; white-space: nowrap;">{{ p_item.category.name }}</span></td>
-                  <td class="num tabular-nums" style="padding-right: 16px; font-weight: 700; color: var(--wp-sage-main); white-space: nowrap;">
-                    Rp {{ p_item.paid_amount|intcomma }}
-                    {% if p_item.remaining > 0 %}
-                      <div style="font-size: 0.75rem; color: var(--wp-terracotta-main); font-weight: 500; white-space: nowrap;">Kurang Rp {{ p_item.remaining|intcomma }}</div>
-                    {% else %}
-                      <div style="font-size: 0.75rem; color: var(--wp-text-muted); font-weight: 500; white-space: nowrap;">Lunas</div>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% else %}
-          <div style="padding: 24px 16px; text-align: center; color: var(--wp-text-muted); font-size: 0.82rem;">
-            Belum ada dana tabungan yang dibayarkan ke vendor (Rp 0 terpakai). Seluruh <strong>Rp {{ total_saved|intcomma }}</strong> masih utuh sebagai kas siap pakai.
-          </div>
-          {% endif %}
-
-          {% if unpaid_items %}
-          <div style="padding: 10px 16px; background: var(--wp-bg-surface-subtle); border-top: 1px solid var(--wp-hairline); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center;">
-            <span style="white-space: nowrap;">Tagihan vendor belum lunas ({{ unpaid_items|length }} item):</span>
-            <strong class="tabular-nums" style="color: var(--wp-terracotta-main); white-space: nowrap;">Rp {{ total_remaining|intcomma }}</strong>
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- Right Column: Kesiapan Kas per Kategori Anggaran -->
-        <div style="border: 1px solid var(--wp-hairline); border-radius: var(--wp-radius-sm); overflow: hidden;">
-          <div style="padding: 12px 16px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline); display: flex; justify-content: space-between; align-items: center;">
-            <strong style="font-size: 0.85rem; display: flex; align-items: center; gap: 7px; color: var(--wp-text-main); white-space: nowrap;">
-              <i data-lucide="check-check" style="width: 15px; height: 15px; color: var(--wp-gold-main); flex-shrink: 0;"></i>
-              Kesiapan Kas per Kategori
-            </strong>
-            <button type="button" class="btn btn-ghost btn-sm" style="padding: 2px 8px; font-size: 0.75rem; color: var(--wp-gold-main); white-space: nowrap;"
-                    hx-get="{% url 'finances:config_allocations' %}" hx-target="#allocation-container" hx-swap="innerHTML show:#allocation-container:top">
-              Atur Pagu
-            </button>
-          </div>
-
-          <div class="sheet-table-wrap" style="max-height: 315px; overflow-y: auto;">
-            <table class="sheet-table" style="font-size: 0.8rem;">
-              <thead>
-                <tr>
-                  <th style="padding-left: 14px; min-width: 130px;">Kategori</th>
-                  <th class="num" style="min-width: 105px; white-space: nowrap;">Rencana Pagu</th>
-                  <th class="num" style="min-width: 115px; white-space: nowrap;">Kas Tersedia</th>
-                  <th class="num" style="padding-right: 14px; min-width: 130px; white-space: nowrap;">Kesiapan Dana</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for cat in categories %}
-                <tr>
-                  <td style="padding-left: 14px;">
-                    <strong style="white-space: nowrap;">{{ cat.name }}</strong>
-                    <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">{{ cat.allocation_percentage|floatformat:"-1" }}% dari target</div>
-                  </td>
-                  <td class="num tabular-nums" style="font-weight: 600; white-space: nowrap;">
-                    Rp {{ cat.cat_need|intcomma }}
-                  </td>
-                  <td class="num tabular-nums" style="color: var(--wp-sage-main); font-weight: 600; white-space: nowrap;">
-                    Rp {{ cat.cat_total_covered|intcomma }}
-                    {% if cat.cat_paid > 0 %}
-                      <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">(Dibayar Rp {{ cat.cat_paid|intcomma }})</div>
-                    {% endif %}
-                  </td>
-                  <td class="num" style="padding-right: 14px; white-space: nowrap;">
-                    {% if cat.coverage_status == 'settled' %}
-                      <span class="status-pill status-done" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                        <i data-lucide="check-check" style="width: 12px; height: 12px;"></i> Lunas
-                      </span>
-                    {% elif cat.coverage_status == 'ready' %}
-                      <span class="status-pill status-done" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                        <i data-lucide="check" style="width: 12px; height: 12px;"></i> Dana Siap
-                      </span>
-                    {% elif cat.coverage_status == 'partial' %}
-                      <div class="tabular-nums" style="color: var(--wp-gold-dark); font-weight: 700; font-size: 0.76rem; white-space: nowrap;">
-                        Kurang Rp {{ cat.cat_shortfall|intcomma }}
-                      </div>
-                      <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">Ter-cover {{ cat.cat_coverage_pct }}%{% if cat.cat_months_needed %} · ~{{ cat.cat_months_needed }} bln{% endif %}</div>
-                    {% elif cat.coverage_status == 'shortfall' %}
-                      <div class="tabular-nums" style="color: var(--wp-terracotta-main); font-weight: 700; font-size: 0.76rem; white-space: nowrap;">
-                        Kurang Rp {{ cat.cat_shortfall|intcomma }}
-                      </div>
-                      {% if cat.cat_months_needed %}
-                        <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">~{{ cat.cat_months_needed }} bln menabung</div>
-                      {% endif %}
-                    {% else %}
-                      <span class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">Belum diatur</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-
-          <div style="padding: 10px 14px; background: var(--wp-bg-surface-subtle); border-top: 1px solid var(--wp-hairline); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            {% if shortfall_from_saved > 0 %}
-              <span style="white-space: nowrap;">Total Kekurangan: <strong class="tabular-nums" style="color: var(--wp-terracotta-main);">Rp {{ shortfall_from_saved|intcomma }}</strong></span>
-              <span style="white-space: nowrap;">
-                {% if months_needed > 0 %}
-                  Perlu <strong>{{ months_needed }} bulan lagi</strong> (selesai {{ estimated_finish_date|date:"d M Y" }})
-                {% else %}
-                  Isi kesanggupan nabung/bln di menu Tabungan
-                {% endif %}
-              </span>
-            {% else %}
-              <span style="color: var(--wp-sage-main); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Seluruh rencana anggaran sudah ter-cover oleh Dana Terkumpul
-              </span>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <style>
     .sankey-tooltip-card {
       position: fixed !important;
@@ -453,6 +237,26 @@
     .sankey-link {
       cursor: pointer;
     }
+    /* Symmetrical equal-height Master-Detail panes on desktop */
+    @media (min-width: 901px) {
+      #guide-budget-sankey .cat-md {
+        height: clamp(540px, 74vh, 760px);
+        min-height: 540px;
+        align-items: stretch;
+      }
+      #guide-budget-sankey .cat-list {
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow-y: auto;
+        min-height: 0;
+      }
+      #guide-budget-sankey #budget-right-stage {
+        height: 100%;
+        max-height: 100%;
+        overflow-y: auto;
+        min-height: 0;
+      }
+    }
   </style>
 
   <!-- Reconciliation Alert: Shown when Category Plans exceed Target Budget (Over-Allocated) -->
@@ -487,9 +291,10 @@
       </form>
       <button type="button"
               data-slot="button" data-variant="outline" data-size="sm"
+              @click="$dispatch('open-config-allocations')"
               hx-get="{% url 'finances:config_allocations' %}"
               hx-target="#allocation-container"
-              hx-swap="innerHTML show:#allocation-container:top"
+              hx-swap="innerHTML"
               title="Sesuaikan dan pangkas nominal kategori lain agar total kembali pas">
         <i data-lucide="sliders"></i>
         Susun Ulang Pagu
@@ -503,7 +308,7 @@
   window.__sankeyMeta = {{ sankey_meta_json|safe }};
   window.sankeyStudio = function() {
     const meta = window.__sankeyMeta || { target_budget: 0, unused_amount: 0, categories: [], items: [] };
-    const serverActiveCatPk = {{ active_cat_pk|default:"null" }};
+    const serverActiveCatPk = {{ explicit_cat_pk|default:"null" }};
     let initialCat = null;
     if (serverActiveCatPk) {
       initialCat = meta.categories.find(c => c.pk === serverActiveCatPk);
@@ -513,9 +318,9 @@
     }
     return {
       meta: meta,
-      mode: initialCat ? 'category' : (meta.unused_amount > 0 ? 'unused' : 'target'),
-      selectedCat: initialCat ? initialCat.pk : null,
-      activeCat: initialCat,
+      mode: serverActiveCatPk ? 'category' : 'sankey',
+      selectedCat: serverActiveCatPk ? (initialCat ? initialCat.pk : null) : null,
+      activeCat: serverActiveCatPk ? initialCat : null,
       activeItem: null,
       showCatEdit: false,
       showCatAddItem: false,
@@ -534,43 +339,16 @@
             return;
           }
         }
-        try {
-          const raw = sessionStorage.getItem('wp_sankey_studio_state');
-          if (raw) {
-            const st = JSON.parse(raw);
-            if (st.mode === 'category' && st.pk) {
-              const foundCat = this.meta.categories.find(c => c.pk === st.pk);
-              if (foundCat) {
-                this.selectCategoryObj(foundCat, false);
-                return;
-              } else if (this.meta.unused_amount > 0) {
-                this.openUnused(false);
-                return;
-              }
-            } else if (st.mode === 'item' && st.pk) {
-              const foundItem = this.meta.items.find(i => i.pk === st.pk);
-              if (foundItem) {
-                this.selectItemObj(foundItem, false);
-                return;
-              } else if (st.catPk) {
-                const parentCat = this.meta.categories.find(c => c.pk === st.catPk);
-                if (parentCat) {
-                  this.selectCategoryObj(parentCat, false);
-                  return;
-                }
-              }
-            } else if (st.mode === 'unused' && this.meta.unused_amount > 0) {
-              this.openUnused(false);
-              return;
-            } else if (st.mode === 'target') {
-              this.openTarget(false);
-              return;
+        this.mode = 'sankey';
+        this.selectedCat = null;
+        this.activeCat = null;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if (typeof window.renderBudgetSankey === 'function') {
+              window.renderBudgetSankey();
             }
-          }
-        } catch (e) {}
-        if (this.activeCat) {
-          this.setHighlightNode(this.activeCat.name);
-        }
+          }, 80);
+        });
       },
 
       saveState(stateObj) {
@@ -610,15 +388,40 @@
         }
       },
 
-      backToCategoryOrDefault() {
-        if (this.activeCat) {
-          this.selectCategoryObj(this.activeCat, false);
-        } else if (this.meta.categories.length > 0) {
-          this.selectCategoryObj(this.meta.categories[0], false);
-        } else {
-          this.mode = null;
-          this.setHighlightNode(null);
+      openSankey() {
+        this.mode = 'sankey';
+        this.selectedCat = null;
+        this.activeItem = null;
+        this.saveState({ mode: 'sankey' });
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if (typeof window.renderBudgetSankey === 'function') {
+              window.renderBudgetSankey();
+            }
+          }, 50);
+        });
+      },
+
+      openConfigAllocations() {
+        this.mode = 'config_allocations';
+        this.selectedCat = null;
+        this.activeItem = null;
+        this.scrollToDock();
+      },
+
+      openCashBreakdown() {
+        if (this.mode === 'cash_breakdown') {
+          this.openSankey();
+          return;
         }
+        this.mode = 'cash_breakdown';
+        this.selectedCat = null;
+        this.activeItem = null;
+        this.scrollToDock();
+      },
+
+      backToCategoryOrDefault() {
+        this.openSankey();
       },
 
       openTarget(scroll = true) {
@@ -747,10 +550,11 @@
       },
 
       scrollToDock() {
+        if (window.innerWidth > 900) return;
         this.$nextTick(() => {
-          const dock = document.getElementById('guide-categories');
-          if (dock) {
-            dock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          const stage = document.getElementById('budget-right-stage');
+          if (stage) {
+            stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         });
       },
@@ -827,7 +631,9 @@
        id="guide-budget-sankey"
        style="margin-bottom: 24px;"
        x-data="sankeyStudio()"
-       @sankey-node-selected.window="onNodeSelected($event.detail)">
+       @sankey-node-selected.window="onNodeSelected($event.detail)"
+       @open-config-allocations.window="openConfigAllocations()"
+       @close-allocations.window="openSankey()">
     <!-- ── UNIFIED HEADER ── -->
     <div class="surface-panel-header" style="flex-wrap: wrap; gap: 10px;">
       <div class="reconciliation-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -921,18 +727,11 @@
       <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <button type="button"
                 class="btn btn-sm"
-                :class="showCashBreakdown ? 'btn-gold' : 'btn-secondary'"
-                @click="showCashBreakdown = !showCashBreakdown"
-                title="Rincian Realisasi & Kesiapan Kas Tabungan"
-                style="padding: 4px 10px;">
-          <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
-          <span>Rincian Kas</span>
-        </button>
-        <button type="button"
-                class="btn btn-secondary btn-sm"
+                :class="mode === 'config_allocations' ? 'btn-gold' : 'btn-primary'"
+                @click="openConfigAllocations()"
                 hx-get="{% url 'finances:config_allocations' %}"
                 hx-target="#allocation-container"
-                hx-swap="innerHTML show:#allocation-container:top"
+                hx-swap="innerHTML"
                 title="Susun Massal Pagu Kategori (Rp / %)"
                 style="padding: 4px 10px;">
           <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
@@ -940,12 +739,12 @@
         </button>
         <button type="button"
                 class="btn btn-sm"
-                :class="mode === 'target' ? 'btn-gold' : 'btn-secondary'"
-                @click="openTarget()"
-                title="Ubah Target Total Anggaran"
+                :class="mode === 'cash_breakdown' ? 'btn-gold' : 'btn-secondary'"
+                @click="openCashBreakdown()"
+                title="Rincian Realisasi & Pemakaian Kas Tabungan"
                 style="padding: 4px 10px;">
-          <i data-lucide="target" style="width: 14px; height: 14px;"></i>
-          <span>Target</span>
+          <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+          <span>Rincian Kas</span>
         </button>
         <button type="button"
                 class="btn btn-sm"
@@ -955,15 +754,6 @@
                 style="padding: 4px 10px;">
           <i data-lucide="folder-plus" style="width: 14px; height: 14px;"></i>
           <span>Kategori</span>
-        </button>
-        <button type="button"
-                class="btn btn-sm"
-                :class="mode === 'add_item' ? 'btn-gold' : 'btn-primary'"
-                @click="openAddItem()"
-                title="Tambah Item Pengeluaran Baru"
-                style="padding: 4px 10px;">
-          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-          <span>Item</span>
         </button>
       </div>
     </div>
@@ -1019,14 +809,14 @@
           <span class="cat-card-top">
             <span class="cat-card-icon">{{ cat.icon|safe }}</span>
             <span class="cat-card-name">{{ cat.name }}</span>
-            {% if cat.coverage_status == 'settled' %}
-              <span class="status-pill status-done cat-card-pill">Lunas</span>
-            {% elif cat.coverage_status == 'ready' %}
-              <span class="status-pill status-done cat-card-pill">Dana Siap</span>
-            {% elif cat.coverage_status == 'partial' %}
-              <span class="status-pill cat-card-pill">{{ cat.cat_coverage_pct }}% Siap</span>
-            {% elif cat.coverage_status == 'shortfall' %}
-              <span class="status-pill status-danger cat-card-pill">Kurang Dana</span>
+            {% if cat.realization_status == 'overbudget' %}
+              <span class="status-pill status-danger cat-card-pill tabular-nums">Overbudget</span>
+            {% elif cat.realization_status == 'near_limit' %}
+              <span class="status-pill status-warning cat-card-pill tabular-nums">{{ cat.cat_used_pct }}% terpakai</span>
+            {% elif cat.realization_status == 'used' %}
+              <span class="status-pill status-done cat-card-pill tabular-nums">{{ cat.cat_used_pct }}% terpakai</span>
+            {% else %}
+              <span class="status-pill cat-card-pill tabular-nums">0% terpakai</span>
             {% endif %}
           </span>
           <span class="cat-card-bar" aria-hidden="true">
@@ -1044,8 +834,24 @@
         {% endfor %}
       </aside>
 
-      <!-- RIGHT COLUMN: 3-Layer Sankey Diagram (Full Size on Desktop, Horizontal Scroll on Mobile) -->
-      <div class="sankey-outer-wrapper" style="padding: 14px 18px; position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; height: 100%;">
+      <!-- RIGHT COLUMN: Master-Detail Stage (Sankey Overview OR Drill-Down Detail / Atur Pagu / Rincian Kas / Add Category) -->
+      <div id="budget-right-stage" style="min-width: 0; display: flex; flex-direction: column; background: var(--wp-bg-surface);">
+        <!-- Persistent Sticky Back-to-Sankey Bar whenever viewing any drill-down panel -->
+        <div x-show="mode !== 'sankey'" x-cloak
+             style="position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--wp-hairline); background: var(--wp-bg-surface-subtle);">
+          <button type="button" class="btn btn-ghost btn-sm" @click="openSankey()" style="padding: 4px 8px; gap: 6px;">
+            <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+            <span>Kembali ke Diagram Sankey</span>
+          </button>
+          <span class="text-muted" style="font-size: 0.76rem; font-weight: 500;"
+                x-text="mode === 'config_allocations' ? 'Atur Pagu Massal' : (mode === 'cash_breakdown' ? 'Rincian Realisasi & Kas' : (mode === 'add_category' ? 'Tambah Kategori Baru' : (mode === 'target' ? 'Target Total Anggaran' : (mode === 'unused' ? 'Alokasi Sisa Pagu' : (activeCat ? activeCat.name : 'Detail Kategori')))))"></span>
+        </div>
+
+        <!-- View 1: 3-Layer Sankey Diagram (Default Overview) -->
+        <div class="sankey-outer-wrapper"
+             x-show="mode === 'sankey'"
+             :style="mode === 'sankey' ? 'display: flex;' : 'display: none;'"
+             style="padding: 14px 18px; position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; flex: 1;">
         <!-- Mobile scroll hint -->
         <div class="sankey-mobile-hint text-muted" style="display: none; align-items: center; gap: 5px; font-size: 0.75rem; padding: 2px 4px 8px 4px; border-bottom: 1px dashed var(--wp-hairline); margin-bottom: 6px; flex-shrink: 0;">
           <i data-lucide="chevrons-right" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i>
@@ -1081,11 +887,33 @@
             </div>
           </div>
         {% endif %}
-      </div>
-    </div>
+        </div>
 
-    <!-- ── BOTTOM FULL-WIDTH DETAIL SECTION (Contextual Panel + Full Category Spreadsheet Table) ── -->
-    <div id="guide-categories" style="border-top: 1px solid var(--wp-hairline);">
+        <!-- View 2: Atur Pagu Massal (Loaded via HTMX) -->
+        <div id="allocation-container"
+             x-show="mode === 'config_allocations'"
+             :style="mode === 'config_allocations' ? 'display: block; flex: 1;' : 'display: none;'"
+             x-cloak
+             style="display: none; flex: 1;">
+          <div style="padding: 36px 20px; text-align: center; color: var(--wp-text-muted); font-size: 0.84rem;">
+            Memuat pengaturan pagu kategori...
+          </div>
+        </div>
+
+        <!-- View 3: Rincian Kas & Pemakaian Pagu -->
+        <div x-show="mode === 'cash_breakdown'"
+             :style="mode === 'cash_breakdown' ? 'display: block; flex: 1;' : 'display: none;'"
+             x-cloak
+             style="display: none; flex: 1;">
+          {% include 'finances/partials/cash_breakdown_panel.html' %}
+        </div>
+
+        <!-- View 4: Contextual Drill-Down Detail (Category Spreadsheet, Item Editor, Target, Unused, Add Category) -->
+        <div id="guide-categories"
+             x-show="mode !== 'sankey' && mode !== 'config_allocations' && mode !== 'cash_breakdown'"
+             :style="(mode !== 'sankey' && mode !== 'config_allocations' && mode !== 'cash_breakdown') ? 'display: block; flex: 1;' : 'display: none;'"
+             x-cloak
+             style="display: none; flex: 1;">
       <!-- 1. MODE: TARGET TABUNGAN EDITOR -->
       <template x-if="mode === 'target'">
         <div class="fade-in" style="background: var(--wp-bg-surface-subtle); padding: 16px 20px;">
@@ -1539,8 +1367,10 @@
         </div>
         {% endfor %}
       </section>
-    </div>
-  </div>
+        </div><!-- /#guide-categories -->
+      </div><!-- /#budget-right-stage -->
+    </div><!-- /.cat-md -->
+  </div><!-- /#guide-budget-sankey -->
 
   <!-- 4. Unified Split-Bill & Monthly Cash-Out Panel -->
   {% if payer_breakdown or cash_out_data %}
@@ -2163,21 +1993,16 @@
   </script>
   {% endif %}
   <script>
-  // Auto-scroll, highlight, and autofocus whenever #allocation-container is swapped into view (bound once)
+  // Autofocus target budget input when #allocation-container is swapped into the right pane
   if (!window.__wpAllocSwapBound) {
     window.__wpAllocSwapBound = true;
     document.body.addEventListener('htmx:afterSwap', function(evt) {
       if (evt.detail.target && evt.detail.target.id === 'allocation-container') {
         const el = evt.detail.target;
         setTimeout(function() {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          el.classList.add('highlight-pulse');
-          setTimeout(function() { el.classList.remove('highlight-pulse'); }, 2000);
           const firstInput = el.querySelector('#config_total_budget') || el.querySelector('input:not([type="hidden"])');
-          if (firstInput) {
-            setTimeout(function() { firstInput.focus(); }, 450);
-          }
-        }, 60);
+          if (firstInput) firstInput.focus();
+        }, 120);
       }
     });
   }

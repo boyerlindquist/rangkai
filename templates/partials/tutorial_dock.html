@@ -1,0 +1,170 @@
+{% if tutorial_ctx %}
+{{ tutorial_ctx|json_script:"wp-tutorial-initial-data" }}
+<div id="wp-tutorial-dock-wrap"
+     class="wp-tut-dock-wrap"
+     data-csrf="{{ csrf_token }}"
+     x-data="rangkaiTutorialComponent(JSON.parse(document.getElementById('wp-tutorial-initial-data').textContent))"
+     x-show="isActive"
+     x-cloak>
+
+  <!-- Minimized Pill -->
+  <button type="button"
+          class="wp-tut-pill"
+          x-show="minimized"
+          @click="toggleMinimize()"
+          aria-label="Buka panel Tur Praktik">
+    <span class="wp-tut-pill-dot" aria-hidden="true"></span>
+    <span>Tur Praktik</span>
+    <span class="tabular-nums" x-text="(stepIndex + 1) + '/' + missions.length"></span>
+  </button>
+
+  <!-- Expanded Floating Dock -->
+  <div class="wp-tut-dock" x-show="!minimized" x-transition.opacity.duration.150ms role="region" aria-label="Tur Praktik Rangkai">
+    <!-- Header -->
+    <div class="wp-tut-dock-header" :class="{ 'is-impact': phase === 'impact' }">
+      <div class="wp-tut-badge-row">
+        <span class="wp-tut-phase-pill" :class="{ 'is-impact': phase === 'impact' }">
+          <template x-if="phase === 'action'"><span>1 · Praktik Isi Data</span></template>
+          <template x-if="phase === 'impact'"><span>2 · Lihat Efeknya</span></template>
+          <template x-if="phase === 'summary'"><span>Tur Selesai</span></template>
+          <template x-if="phase === 'confirm_exit'"><span>Akhiri Tur</span></template>
+        </span>
+        <span class="wp-tut-step-counter tabular-nums"
+              x-show="phase === 'action' || phase === 'impact'"
+              x-text="'Misi ' + (stepIndex + 1) + '/' + missions.length"></span>
+      </div>
+      <div class="wp-tut-header-btns">
+        <button type="button" class="wp-tut-icon-btn" @click="toggleMinimize()" title="Perkecil" aria-label="Perkecil panel tutorial">
+          <i data-lucide="minus" style="width:14px;height:14px;"></i>
+        </button>
+        <button type="button" class="wp-tut-icon-btn" @click="requestExit()" title="Akhiri tur" aria-label="Akhiri tur praktik">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Segmented Progress Bar -->
+    <div class="wp-tut-progress-bars" x-show="phase === 'action' || phase === 'impact'">
+      <template x-for="(m, idx) in missions" :key="m.key">
+        <div class="wp-tut-progress-seg"
+             :class="{
+               'is-done': idx < stepIndex || completedMissions.includes(m.key),
+               'is-active': idx === stepIndex,
+               'is-impact': idx === stepIndex && phase === 'impact'
+             }"></div>
+      </template>
+    </div>
+
+    <!-- Body: Phase ACTION -->
+    <div class="wp-tut-body" x-show="phase === 'action' && currentMission">
+      <div class="wp-tut-module-kicker" x-text="currentMission ? currentMission.moduleLabel : ''"></div>
+      <h4 class="wp-tut-title" x-text="currentMission ? currentMission.actionTitle : ''"></h4>
+      <p class="wp-tut-desc" x-text="currentMission ? currentMission.actionDesc : ''"></p>
+
+      <div class="wp-tut-actions">
+        <template x-if="!onExpectedRoute">
+          <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="goToCurrentTarget()">
+            <i data-lucide="arrow-right"></i>
+            <span x-text="'Buka ' + (currentMission ? currentMission.moduleLabel : '')"></span>
+          </button>
+        </template>
+        <button type="button"
+                data-slot="button"
+                :data-variant="onExpectedRoute ? 'default' : 'outline'"
+                data-size="sm"
+                :disabled="loadingSample"
+                @click="useSampleData()">
+          <i data-lucide="sparkles"></i>
+          <span x-text="loadingSample ? 'Menyiapkan...' : (currentMission ? currentMission.sampleLabel : 'Pakai Data Contoh')"></span>
+        </button>
+      </div>
+
+      <div class="wp-tut-actions-split">
+        <span style="font-size:0.8rem;color:var(--muted-foreground);">Atau isi langsung di form halaman ini</span>
+        <button type="button" class="wp-tut-link-btn" @click="skipCurrentMission()">Lewati →</button>
+      </div>
+    </div>
+
+    <!-- Body: Phase IMPACT (Ripple Effect) -->
+    <div class="wp-tut-body" x-show="phase === 'impact' && currentImpact">
+      <div class="wp-tut-module-kicker is-impact"
+           x-text="(currentMission ? currentMission.moduleLabel : '') + (currentMission && currentMission.impacts.length > 1 ? ' · Dampak ' + (impactIndex + 1) + '/' + currentMission.impacts.length : '')"></div>
+      <h4 class="wp-tut-title" x-text="currentImpact ? currentImpact.title : ''"></h4>
+      <p class="wp-tut-desc" x-text="currentImpact ? currentImpact.desc : ''"></p>
+
+      <div class="wp-tut-impact-callout" x-show="currentImpact && currentImpact.callout">
+        <i data-lucide="lightbulb" style="width:15px;height:15px;flex-shrink:0;margin-top:1px;color:#d97706;"></i>
+        <span x-text="currentImpact ? currentImpact.callout : ''"></span>
+      </div>
+
+      <div class="wp-tut-actions">
+        <template x-if="impactIndex > 0">
+          <button type="button" data-slot="button" data-variant="ghost" data-size="sm" @click="prevImpact()">
+            ← Kembali
+          </button>
+        </template>
+        <template x-if="!onExpectedRoute">
+          <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="goToCurrentTarget()">
+            <i data-lucide="eye"></i>
+            <span>Lihat Sorotan</span>
+          </button>
+        </template>
+        <button type="button" data-slot="button" data-variant="default" data-size="sm" @click="nextImpactOrMission()">
+          <span x-text="nextImpactLabel"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body: Phase SUMMARY -->
+    <div class="wp-tut-body" x-show="phase === 'summary'">
+      <h4 class="wp-tut-title">Mantap! Tur Praktik Selesai</h4>
+      <p class="wp-tut-desc">
+        Sekarang kamu sudah melihat langsung bagaimana Tabungan, Anggaran, Vendor, Tamu, dan Daftar Tugas saling terhubung otomatis di Rangkai.
+      </p>
+
+      <template x-if="hasSampleData">
+        <div class="wp-tut-impact-callout">
+          <i data-lucide="eraser" style="width:15px;height:15px;flex-shrink:0;margin-top:1px;color:#d97706;"></i>
+          <span>Ada data contoh yang dibuat selama tur. Kamu bisa menghapus semuanya dalam 1 klik tanpa menyentuh data aslimu.</span>
+        </div>
+      </template>
+
+      <div class="wp-tut-actions">
+        <template x-if="hasSampleData">
+          <button type="button" data-slot="button" data-variant="default" data-size="sm" :disabled="loadingCleanup" @click="cleanupAndFinish(true)">
+            <i data-lucide="trash-2"></i>
+            <span x-text="loadingCleanup ? 'Membersihkan...' : 'Hapus Data Contoh & Mulai Bersih'"></span>
+          </button>
+        </template>
+        <button type="button"
+                data-slot="button"
+                :data-variant="hasSampleData ? 'outline' : 'default'"
+                data-size="sm"
+                :disabled="loadingCleanup"
+                @click="finishTour(true)">
+          <span x-text="hasSampleData ? 'Simpan Data Contoh' : 'Selesai & Kembali ke Ringkasan'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body: Phase CONFIRM EXIT (when sample data exists) -->
+    <div class="wp-tut-body" x-show="phase === 'confirm_exit'">
+      <h4 class="wp-tut-title">Akhiri Tur Praktik?</h4>
+      <p class="wp-tut-desc">
+        Kamu memakai data contoh selama tur. Mau hapus data contohnya dulu sebelum keluar? Kamu bisa mengulang tur kapan saja dari menu <strong>Panduan</strong> atau <strong>Pengaturan</strong>.
+      </p>
+      <div class="wp-tut-actions">
+        <button type="button" data-slot="button" data-variant="default" data-size="sm" :disabled="loadingCleanup" @click="cleanupAndFinish(false)">
+          <span x-text="loadingCleanup ? 'Membersihkan...' : 'Hapus Contoh & Keluar'"></span>
+        </button>
+        <button type="button" data-slot="button" data-variant="outline" data-size="sm" :disabled="loadingCleanup" @click="finishTour(false)">
+          Biarkan &amp; Keluar
+        </button>
+      </div>
+      <div class="wp-tut-actions-split">
+        <button type="button" class="wp-tut-link-btn" @click="cancelExit()">← Lanjutkan tur</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

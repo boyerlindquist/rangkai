@@ -77,4 +77,9 @@ urlpatterns = [
     path('settings/invitations/<int:pk>/revoke/', views.revoke_invitation_view, name='revoke_invitation'),
     path('settings/wo-privacy/', views.toggle_wo_privacy_view, name='toggle_wo_privacy'),
     path('settings/member/<int:pk>/', views.manage_member_view, name='manage_member'),
+
+    # Interactive Guided Tutorial ("Tur Praktik") API
+    path('tutorial/state/', views.tutorial_state_api, name='tutorial_state'),
+    path('tutorial/sample/', views.tutorial_sample_api, name='tutorial_sample'),
+    path('tutorial/cleanup/', views.tutorial_cleanup_api, name='tutorial_cleanup'),
 ]

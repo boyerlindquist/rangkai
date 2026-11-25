@@ -68,9 +68,11 @@ class WorkspaceMiddleware:
     def __call__(self, request):
         request.wedding = None
         request.wedding_role = None
+        request.active_membership = None
         request.account_profile = None
         request.is_platform_admin = False
         request.user_memberships = []
+        request.tutorial_pending_event = None
 
         if request.user.is_authenticated:
             profile = get_or_create_profile(request.user)
@@ -128,12 +130,26 @@ class WorkspaceMiddleware:
                 if membership:
                     request.wedding = membership.wedding
                     request.wedding_role = membership.role
+                    request.active_membership = membership
                 elif not is_exempt:
                     if profile.is_wo_account:
                         return redirect(reverse('core:wo_portal'))
                     return redirect(reverse('core:onboarding'))
 
+            # Pop any pending cross-redirect tutorial event on GET page loads
+            if request.method == 'GET' and request.wedding and request.session.get('tutorial_pending_event'):
+                request.tutorial_pending_event = request.session.pop('tutorial_pending_event', None)
+
         response = self.get_response(request)
+
+        # If a pending tutorial event was popped on an HTMX GET (post-redirect), emit HX-Trigger
+        if (
+            getattr(request, 'tutorial_pending_event', None)
+            and response.status_code == 200
+            and request.headers.get('HX-Request') == 'true'
+        ):
+            from core.tutorial import _merge_hx_trigger
+            _merge_hx_trigger(response, 'tutorialEvent', {'action': request.tutorial_pending_event})
 
         # Prevent browser Back-Forward Cache (bfcache) on authenticated pages
         # so pressing Back after logout cannot display stale private workspace screens.

@@ -147,7 +147,8 @@ def add_guest(request):
             guest = form.save(commit=False)
             guest.wedding = request.wedding
             guest.save()
-            return redirect('guests:list')
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect('guests:list'), 'guest_saved')
     return redirect('guests:list')
 
 

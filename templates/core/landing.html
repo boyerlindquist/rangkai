@@ -1490,6 +1490,213 @@
     .lp-br-desktop { display: none; }
     .lp-section { padding: 50px 0; }
   }
+
+  /* Interactive Budget & Catering Mini-Calculator */
+  .lp-calc-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+    gap: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .lp-calc-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .lp-calc-field-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .lp-calc-label {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .lp-calc-value {
+    font-family: var(--font-mono);
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lp-calc-range {
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--muted);
+    outline: none;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .lp-calc-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .lp-calc-chip {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+  }
+
+  .lp-calc-chip:hover,
+  .lp-calc-chip.is-active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  }
+
+  .lp-calc-styles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .lp-calc-style-btn {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 140ms ease, background-color 140ms ease;
+  }
+
+  .lp-calc-style-btn strong {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .lp-calc-style-btn span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .lp-calc-style-btn.is-active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  }
+
+  .lp-calc-results {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px;
+    border-radius: 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+  }
+
+  .lp-calc-alloc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lp-calc-alloc-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .lp-calc-alloc-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+
+  .lp-calc-alloc-name {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .lp-calc-alloc-num {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lp-calc-bar-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--muted);
+    overflow: hidden;
+  }
+
+  .lp-calc-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--primary);
+    transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .lp-calc-catering-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .lp-calc-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .lp-calc-stat span {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .lp-calc-stat strong {
+    font-family: var(--font-mono);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 860px) {
+    .lp-calc-shell {
+      grid-template-columns: 1fr;
+      padding: 18px;
+    }
+    .lp-calc-styles,
+    .lp-calc-catering-strip {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -1502,6 +1709,50 @@
   shotIdx: 0,
   shotCount: 6,
   touchStartX: 0,
+  calcBudget: 100,
+  calcInvites: 300,
+  calcStyle: 'balanced',
+  get calcGuests() { return this.calcInvites * 2; },
+  get calcBuffet() { return Math.round(this.calcGuests * 0.85 * 1.15); },
+  get calcStalls() { return Math.round(this.calcGuests * 0.85 * 3.5); },
+  get calcPerPax() {
+    const total = this.calcBudget * 1000000;
+    return Math.round(total / Math.max(this.calcGuests, 1));
+  },
+  get calcAllocations() {
+    const weights = this.calcStyle === 'foodie'
+      ? [
+          { name: 'Katering & Konsumsi', pct: 46 },
+          { name: 'Venue & Gedung', pct: 18 },
+          { name: 'Dekorasi & Busana', pct: 14 },
+          { name: 'Dokumentasi & Hiburan', pct: 10 },
+          { name: 'Operasional & Dana Darurat', pct: 12 }
+        ]
+      : this.calcStyle === 'aesthetic'
+      ? [
+          { name: 'Katering & Konsumsi', pct: 34 },
+          { name: 'Venue & Gedung', pct: 20 },
+          { name: 'Dekorasi, MUA & Busana', pct: 24 },
+          { name: 'Dokumentasi & Hiburan', pct: 12 },
+          { name: 'Operasional & Dana Darurat', pct: 10 }
+        ]
+      : [
+          { name: 'Katering & Konsumsi', pct: 40 },
+          { name: 'Venue & Gedung', pct: 20 },
+          { name: 'Dekorasi, MUA & Busana', pct: 18 },
+          { name: 'Dokumentasi & Hiburan', pct: 10 },
+          { name: 'Operasional & Dana Darurat', pct: 12 }
+        ];
+    const total = this.calcBudget * 1000000;
+    return weights.map(w => ({
+      name: w.name,
+      pct: w.pct,
+      amount: Math.round((total * w.pct) / 100)
+    }));
+  },
+  fmtRp(n) {
+    return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+  },
   shotTitles: ['Ringkasan Persiapan', 'Anggaran & Diagram Sankey', 'Kalender & Deadline', 'Catatan & Notulensi', 'Tamu & Katering', 'Evaluasi Vendor'],
   shotCaptions: [
     'Pantau hitung mundur, fase aktif, sisa ruang anggaran, dan fokus tugas dalam 1 layar.',
@@ -1578,6 +1829,7 @@
 
       <nav class="lp-links" aria-label="Navigasi landing page">
         <a href="#fitur">Fitur</a>
+        <a href="#simulasi">Simulasi</a>
         <a href="#untuk-siapa">Peran</a>
         <a href="#cara-mulai">Cara Mulai</a>
         <a href="#harga">Harga</a>
@@ -1604,6 +1856,7 @@
 
     <nav class="lp-mobile-menu" x-show="mobileNav" x-transition x-cloak aria-label="Navigasi mobile">
       <a href="#fitur" @click="mobileNav = false">Fitur Lengkap</a>
+      <a href="#simulasi" @click="mobileNav = false">Simulasi Budget</a>
       <a href="#untuk-siapa" @click="mobileNav = false">3 Peran &amp; Privasi</a>
       <a href="#cara-mulai" @click="mobileNav = false">Cara Mulai</a>
       <a href="#harga" @click="mobileNav = false">Paket &amp; Harga</a>
@@ -1947,6 +2200,103 @@
             <div>
               <h3>Logistik &amp; Operasional Hari-H</h3>
               <p>Susun rundown menit-ke-menit, catat PIC pembawa aset kritis (cincin, mahar, buku nikah), serta hitung meter kain seragam keluarga dan bridesmaid.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Mini-Tool: Kalkulator Estimasi Budget & Porsi Katering -->
+      <div id="simulasi" style="margin-top: 64px; padding-top: 56px; border-top: 1px solid var(--border);">
+        <div class="lp-section-head">
+          <h2>Hitung kasar dulu sebelum deal vendor</h2>
+          <p>Coba langsung simulasi alokasi anggaran dan estimasi porsi katering di bawah ini tanpa perlu login. Geser angka sesuai rencanamu.</p>
+        </div>
+
+        <div class="lp-calc-shell">
+          <!-- Left: Interactive Controls -->
+          <div class="lp-calc-controls">
+            <div>
+              <div class="lp-calc-field-head">
+                <label for="lp-calc-budget" class="lp-calc-label">Total Target Budget</label>
+                <span class="lp-calc-value" x-text="fmtRp(calcBudget * 1000000)">Rp 100.000.000</span>
+              </div>
+              <input id="lp-calc-budget" type="range" class="lp-calc-range" min="30" max="500" step="5" x-model.number="calcBudget" aria-label="Total Target Budget dalam juta rupiah" />
+              <div class="lp-calc-presets">
+                <button type="button" class="lp-calc-chip" :class="{ 'is-active': calcBudget === 75 }" @click="calcBudget = 75">Rp 75 jt</button>
+                <button type="button" class="lp-calc-chip" :class="{ 'is-active': calcBudget === 100 }" @click="calcBudget = 100">Rp 100 jt</button>
+                <button type="button" class="lp-calc-chip" :class="{ 'is-active': calcBudget === 150 }" @click="calcBudget = 150">Rp 150 jt</button>
+                <button type="button" class="lp-calc-chip" :class="{ 'is-active': calcBudget === 250 }" @click="calcBudget = 250">Rp 250 jt</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="lp-calc-field-head">
+                <label for="lp-calc-invites" class="lp-calc-label">Jumlah Undangan (Estimasi Tamu)</label>
+                <span class="lp-calc-value" x-text="calcInvites + ' undangan (' + calcGuests + ' pax)'">300 undangan (600 pax)</span>
+              </div>
+              <input id="lp-calc-invites" type="range" class="lp-calc-range" min="50" max="1000" step="25" x-model.number="calcInvites" aria-label="Jumlah undangan" />
+            </div>
+
+            <div>
+              <div class="lp-calc-field-head">
+                <span class="lp-calc-label">Gaya Prioritas Anggaran</span>
+              </div>
+              <div class="lp-calc-styles" role="radiogroup" aria-label="Gaya prioritas anggaran">
+                <button type="button" class="lp-calc-style-btn" :class="{ 'is-active': calcStyle === 'balanced' }" @click="calcStyle = 'balanced'">
+                  <strong>Seimbang</strong>
+                  <span>Gedung / Hotel</span>
+                </button>
+                <button type="button" class="lp-calc-style-btn" :class="{ 'is-active': calcStyle === 'foodie' }" @click="calcStyle = 'foodie'">
+                  <strong>Fokus Kuliner</strong>
+                  <span>Porsi katering lega</span>
+                </button>
+                <button type="button" class="lp-calc-style-btn" :class="{ 'is-active': calcStyle === 'aesthetic' }" @click="calcStyle = 'aesthetic'">
+                  <strong>Fokus Estetik</strong>
+                  <span>Dekor &amp; dokumentasi</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Live Calculated Breakdown -->
+          <div class="lp-calc-results">
+            <div>
+              <div style="font-size:0.84rem;font-weight:650;color:var(--foreground);margin-bottom:12px;">Rekomendasi Pembagian Anggaran</div>
+              <div class="lp-calc-alloc-list">
+                <template x-for="row in calcAllocations" :key="row.name">
+                  <div class="lp-calc-alloc-row">
+                    <div class="lp-calc-alloc-meta">
+                      <span class="lp-calc-alloc-name" x-text="row.name"></span>
+                      <span class="lp-calc-alloc-num" x-text="fmtRp(row.amount) + ' (' + row.pct + '%)'"></span>
+                    </div>
+                    <div class="lp-calc-bar-track">
+                      <div class="lp-calc-bar-fill" :style="'width:' + row.pct + '%'"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="lp-calc-catering-strip">
+              <div class="lp-calc-stat">
+                <span>Rekomendasi Prasmanan</span>
+                <strong x-text="calcBuffet.toLocaleString('id-ID') + ' porsi'">587 porsi</strong>
+              </div>
+              <div class="lp-calc-stat">
+                <span>Rekomendasi Gubukan</span>
+                <strong x-text="calcStalls.toLocaleString('id-ID') + ' porsi'">1.785 porsi</strong>
+              </div>
+              <div class="lp-calc-stat">
+                <span>Rata-rata Budget / Pax</span>
+                <strong x-text="fmtRp(calcPerPax)">Rp 166.667</strong>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);">
+              <span style="font-size:0.78rem;color:var(--muted-foreground);">Asumsi hadir 85% + safety buffer 15%. Di dalam Rangkai bisa diatur per kategori &amp; vendor.</span>
+              <a href="#harga" data-slot="button" data-variant="default" data-size="sm">
+                Kelola di Workspace Rangkai <i data-lucide="arrow-right"></i>
+              </a>
             </div>
           </div>
         </div>

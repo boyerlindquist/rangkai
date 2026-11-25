@@ -2,6 +2,7 @@
 Context processor to inject workspace, role, privacy flags, and switcher data into all templates.
 """
 from core.models import Wedding, WeddingMembership
+from core.tutorial import get_tutorial_context
 
 
 def workspace_context(request):
@@ -67,4 +68,8 @@ def workspace_context(request):
     }
     if wedding:
         ctx['days_remaining'] = wedding.days_remaining
+        tutorial_ctx = get_tutorial_context(request)
+        ctx['tutorial_ctx'] = tutorial_ctx
+    else:
+        ctx['tutorial_ctx'] = None
     return ctx

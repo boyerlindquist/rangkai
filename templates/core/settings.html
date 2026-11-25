@@ -226,6 +226,41 @@
           </div>
         </div>
       </div>
+
+      <!-- Tur Praktik Interaktif -->
+      <div class="surface-panel" style="margin-top: 16px;">
+        <div class="surface-panel-header">
+          <h3><i data-lucide="compass" style="color: var(--wp-sage-main);"></i> Tur Praktik Interaktif</h3>
+          {% if tutorial_ctx and tutorial_ctx.status == 'completed' %}
+          <span class="status-pill status-done"><span class="dot"></span> Selesai</span>
+          {% elif tutorial_ctx and tutorial_ctx.status == 'in_progress' %}
+          <span class="status-pill status-warning"><span class="dot"></span> Berjalan</span>
+          {% else %}
+          <span class="status-pill">Siap Dicoba</span>
+          {% endif %}
+        </div>
+        <div class="surface-panel-body" style="padding: 14px 20px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--wp-text-main);">Pelajari alur terhubung Rangkai lewat praktik langsung</div>
+            <p class="text-muted" style="font-size: 0.8rem; margin: 4px 0 0; line-height: 1.5;">
+              Isi data asli atau gunakan data contoh sekali klik untuk melihat langsung efeknya ke Ringkasan, Anggaran, Katering, dan Tugas. Data contoh bisa dihapus otomatis kapan saja.
+            </p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            {% if tutorial_ctx and tutorial_ctx.has_sample_data %}
+            <button type="button" data-slot="button" data-variant="outline" data-size="sm"
+                    onclick="window.RangkaiTutorial && window.RangkaiTutorial.cleanupOnly()">
+              <i data-lucide="trash-2"></i> Hapus Data Contoh
+            </button>
+            {% endif %}
+            <button type="button" data-slot="button" data-variant="outline" data-size="sm"
+                    onclick="window.RangkaiTutorial && window.RangkaiTutorial.restart()">
+              <i data-lucide="play-circle"></i>
+              {% if tutorial_ctx and tutorial_ctx.status == 'completed' %}Ulangi Tur Praktik{% else %}Mulai Tur Praktik{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

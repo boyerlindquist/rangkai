@@ -1,0 +1,320 @@
+/* ==========================================================================
+   Rangkai Interactive Guided Tutorial ("Tur Praktik")
+   Non-blocking spotlight ring + Floating bottom-right dock (Light & Dark)
+   ========================================================================== */
+
+/* Non-blocking spotlight highlight ring on target elements */
+.wp-tut-highlight {
+  position: relative !important;
+  z-index: 25 !important;
+  outline: 2.5px solid var(--primary, #10b981) !important;
+  outline-offset: 4px !important;
+  border-radius: var(--radius-md, 10px);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--primary, #10b981) 18%, transparent),
+    0 10px 28px -8px color-mix(in srgb, var(--primary, #10b981) 35%, transparent) !important;
+  animation: wpTutPulse 2.2s ease-in-out infinite;
+  transition: box-shadow 0.25s ease, outline-color 0.25s ease;
+}
+
+.wp-tut-highlight-impact {
+  outline-color: #d97706 !important;
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, #f59e0b 22%, transparent),
+    0 10px 28px -8px color-mix(in srgb, #f59e0b 38%, transparent) !important;
+  animation: wpTutPulseImpact 2.2s ease-in-out infinite;
+}
+
+@keyframes wpTutPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--primary, #10b981) 16%, transparent),
+      0 10px 26px -8px color-mix(in srgb, var(--primary, #10b981) 30%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9px color-mix(in srgb, var(--primary, #10b981) 24%, transparent),
+      0 12px 32px -6px color-mix(in srgb, var(--primary, #10b981) 42%, transparent);
+  }
+}
+
+@keyframes wpTutPulseImpact {
+  0%, 100% {
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, #f59e0b 18%, transparent),
+      0 10px 26px -8px color-mix(in srgb, #f59e0b 32%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9px color-mix(in srgb, #f59e0b 28%, transparent),
+      0 12px 32px -6px color-mix(in srgb, #f59e0b 45%, transparent);
+  }
+}
+
+/* Floating Tutorial Dock */
+.wp-tut-dock-wrap {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 950;
+  max-width: 390px;
+  width: calc(100vw - 32px);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  pointer-events: auto;
+}
+
+.wp-tut-dock {
+  background: var(--card, #ffffff);
+  color: var(--foreground, #0f172a);
+  border: 1px solid color-mix(in srgb, var(--primary, #10b981) 38%, var(--border, #e2e8f0));
+  border-radius: 14px;
+  box-shadow:
+    0 20px 44px -14px rgba(15, 23, 42, 0.24),
+    0 4px 14px -4px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+[data-theme="dark"] .wp-tut-dock {
+  box-shadow:
+    0 22px 48px -12px rgba(0, 0, 0, 0.65),
+    0 0 0 1px color-mix(in srgb, var(--primary, #10b981) 28%, transparent);
+}
+
+.wp-tut-dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--primary, #10b981) 9%, var(--card, #ffffff));
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.wp-tut-dock-header.is-impact {
+  background: color-mix(in srgb, #f59e0b 11%, var(--card, #ffffff));
+}
+
+.wp-tut-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wp-tut-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: var(--primary, #059669);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.wp-tut-phase-pill.is-impact {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.wp-tut-step-counter {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground, #64748b);
+  white-space: nowrap;
+}
+
+.wp-tut-header-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wp-tut-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground, #64748b);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wp-tut-icon-btn:hover {
+  background: var(--muted, rgba(148, 163, 184, 0.16));
+  color: var(--foreground, #0f172a);
+}
+
+/* Segmented progress bar */
+.wp-tut-progress-bars {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px 0;
+}
+
+.wp-tut-progress-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--muted, #e2e8f0);
+  transition: background 0.25s ease;
+}
+
+.wp-tut-progress-seg.is-done {
+  background: var(--primary, #059669);
+}
+
+.wp-tut-progress-seg.is-active {
+  background: color-mix(in srgb, var(--primary, #059669) 55%, var(--muted, #e2e8f0));
+}
+
+.wp-tut-progress-seg.is-active.is-impact {
+  background: #f59e0b;
+}
+
+.wp-tut-body {
+  padding: 12px 14px 14px;
+}
+
+.wp-tut-module-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary, #059669);
+  margin-bottom: 3px;
+}
+
+.wp-tut-module-kicker.is-impact {
+  color: #d97706;
+}
+
+.wp-tut-title {
+  margin: 0 0 5px;
+  font-size: 0.94rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--foreground, #0f172a);
+}
+
+.wp-tut-desc {
+  margin: 0 0 12px;
+  font-size: 0.81rem;
+  line-height: 1.5;
+  color: var(--muted-foreground, #475569);
+}
+
+.wp-tut-impact-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--muted, #f8fafc));
+  border: 1px solid color-mix(in srgb, #f59e0b 28%, var(--border, #e2e8f0));
+  font-size: 0.77rem;
+  line-height: 1.45;
+  color: var(--foreground, #0f172a);
+}
+
+.wp-tut-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.wp-tut-actions-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.wp-tut-link-btn {
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground, #64748b);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.wp-tut-link-btn:hover {
+  color: var(--foreground, #0f172a);
+  text-decoration: underline;
+}
+
+/* Minimized Floating Pill */
+.wp-tut-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 9999px;
+  background: var(--primary, #059669);
+  color: #ffffff;
+  border: 1px solid color-mix(in srgb, #ffffff 22%, transparent);
+  box-shadow: 0 12px 28px -8px rgba(5, 150, 105, 0.55);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  float: right;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wp-tut-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px -8px rgba(5, 150, 105, 0.65);
+}
+
+.wp-tut-pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #fde68a;
+  box-shadow: 0 0 0 3px rgba(253, 230, 138, 0.35);
+}
+
+/* Sidebar progress chip when tutorial is in_progress */
+.wp-sidebar-tut-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--primary, #10b981) 16%, transparent);
+  color: var(--primary, #059669);
+  margin-left: auto;
+}
+
+/* Responsive mobile positioning */
+@media (max-width: 640px) {
+  .wp-tut-dock-wrap {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
+  }
+  .wp-tut-dock-header {
+    padding: 9px 12px;
+  }
+  .wp-tut-body {
+    padding: 10px 12px 12px;
+  }
+}

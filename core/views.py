@@ -1530,3 +1530,126 @@ def manage_member_view(request, pk):
 @workspace_required
 def guide_view(request):
     return render(request, 'core/guide.html')
+
+
+@login_required
+@workspace_required
+def tutorial_state_api(request):
+    """JSON endpoint to read or update the user's interactive tutorial state."""
+    from core.tutorial import get_tutorial_context, get_tutorial_membership, save_tutorial_membership_state
+
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
+        except (ValueError, UnicodeDecodeError):
+            payload = request.POST.dict()
+
+        valid_statuses = dict(WeddingMembership.TUTORIAL_STATUS_CHOICES)
+        new_status = payload.get('status')
+        if new_status not in valid_statuses:
+            new_status = None
+
+        new_step = payload.get('step')
+        if new_step is not None:
+            try:
+                new_step = max(0, int(new_step))
+            except (TypeError, ValueError):
+                new_step = None
+
+        membership = get_tutorial_membership(request)
+        if membership:
+            current_state = dict(membership.tutorial_state or {})
+        else:
+            sess = request.session.get(f'admin_tutorial_{request.wedding.pk}') or {}
+            current_state = dict(sess.get('state') or {})
+
+        state_changed = False
+        if payload.get('reset'):
+            current_state['completed_missions'] = []
+            state_changed = True
+            new_status = 'in_progress'
+            new_step = 0
+
+        if 'completed_mission' in payload and payload['completed_mission']:
+            completed = list(current_state.get('completed_missions') or [])
+            mk = str(payload['completed_mission'])
+            if mk not in completed:
+                completed.append(mk)
+                current_state['completed_missions'] = completed
+                state_changed = True
+
+        if 'phase' in payload:
+            current_state['phase'] = str(payload['phase'])
+            state_changed = True
+
+        save_tutorial_membership_state(
+            request,
+            status=new_status,
+            step=new_step,
+            state=current_state if state_changed else None,
+        )
+
+    return JsonResponse({'ok': True, 'tutorial': get_tutorial_context(request)})
+
+
+@login_required
+@workspace_required
+def tutorial_sample_api(request):
+    """JSON endpoint to insert safe, clearly-labeled sample data for a tutorial mission."""
+    from core.tutorial import create_sample_data_for_mission, get_tutorial_context
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        payload = request.POST.dict()
+
+    mission_key = str(payload.get('mission') or '').strip()
+    ok, msg = create_sample_data_for_mission(request, mission_key)
+    status_code = 200 if ok else 400
+    return JsonResponse({
+        'ok': ok,
+        'mission': mission_key,
+        'message': msg,
+        'tutorial': get_tutorial_context(request),
+    }, status=status_code)
+
+
+@login_required
+@workspace_required
+def tutorial_cleanup_api(request):
+    """
+    JSON endpoint to surgically delete/revert all sample data created during the tutorial.
+    Optionally accepts `finish_status` ('completed' or 'dismissed') to finalize the tour atomically.
+    """
+    from core.tutorial import cleanup_sample_data, get_tutorial_context, get_tutorial_membership, save_tutorial_membership_state
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'Method not allowed'}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        payload = request.POST.dict()
+
+    deleted_count = cleanup_sample_data(request)
+
+    finish_status = payload.get('finish_status')
+    if finish_status in ('completed', 'dismissed'):
+        membership = get_tutorial_membership(request)
+        if membership:
+            state = dict(membership.tutorial_state or {})
+        else:
+            sess = request.session.get(f'admin_tutorial_{request.wedding.pk}') or {}
+            state = dict(sess.get('state') or {})
+        state['phase'] = 'action'
+        save_tutorial_membership_state(request, status=finish_status, step=0, state=state)
+
+    return JsonResponse({
+        'ok': True,
+        'deleted_count': deleted_count,
+        'message': 'Semua data contoh Tur Praktik telah dibersihkan — workspace kamu siap dipakai!',
+        'tutorial': get_tutorial_context(request),
+    })

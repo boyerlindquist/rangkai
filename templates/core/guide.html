@@ -4,8 +4,9 @@
 {% block breadcrumb %}Panduan{% endblock %}
 
 {% block header_actions %}
-<button type="button" data-slot="button" data-variant="default" data-size="sm" onclick="startComprehensiveTour()">
-  <i data-lucide="play-circle"></i> Mulai Tur Interaktif
+<button type="button" data-slot="button" data-variant="default" data-size="sm"
+        onclick="window.RangkaiTutorial ? window.RangkaiTutorial.restart() : startComprehensiveTour()">
+  <i data-lucide="play-circle"></i> Mulai Tur Praktik
 </button>
 {% endblock %}
 

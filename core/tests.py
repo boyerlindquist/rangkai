@@ -971,3 +971,186 @@ class WeddingNotesPrivacyTests(TestCase):
         self.assertEqual(r_wo_note.status_code, 201)
         self.assertTrue(r_wo_note.json()['note']['is_shared_with_team'])
         self.assertContains(c_owner.get(reverse('notes')), 'Notulensi TM Venue')
+
+
+class InteractiveTutorialTests(TestCase):
+    """End-to-end tests for Tur Praktik Rangkai (state, sample data, cleanup, HX-Trigger, role isolation)."""
+
+    def setUp(self):
+        from finances.models import BudgetCategory, BudgetItem, SavingsGoal
+        from guests.models import Guest
+        from vendors.models import VendorCandidate
+        from operations.models import TaskMilestone
+
+        self.owner = User.objects.create_user(username='tut_owner', password='password123')
+        AccountProfile.objects.create(user=self.owner, account_type='couple', project_quota=1)
+        self.wedding = Wedding.objects.create(groom_name='Bima', bride_name='Sari')
+        self.membership = WeddingMembership.objects.create(
+            user=self.owner, wedding=self.wedding, role='owner',
+        )
+        self.cat = BudgetCategory.objects.create(
+            wedding=self.wedding, name='Venue & Gedung', allocation_percentage=30, sort_order=1,
+        )
+        SavingsGoal.objects.create(wedding=self.wedding, target_amount=0, monthly_deposit=0)
+
+        # Real user records that MUST NEVER be touched by tutorial cleanup
+        self.real_item = BudgetItem.objects.create(
+            wedding=self.wedding, category=self.cat, name='Catering Asli', actual_cost=5000000,
+        )
+        self.real_guest = Guest.objects.create(
+            wedding=self.wedding, name='Tamu Asli', relation_side='bride_family', pax_allocation=2,
+        )
+        self.real_vendor = VendorCandidate.objects.create(
+            wedding=self.wedding, name='Vendor Asli', category='venue', price_estimate=20000000,
+        )
+        self.task = TaskMilestone.objects.create(
+            wedding=self.wedding, title='Survey Venue', phase='d360', status='todo',
+        )
+
+        # Crew user in same workspace (limited permissions)
+        self.crew = User.objects.create_user(username='tut_crew', password='password123')
+        AccountProfile.objects.create(user=self.crew, account_type='crew', project_quota=1)
+        WeddingMembership.objects.create(user=self.crew, wedding=self.wedding, role='crew')
+
+        self.client = Client()
+        self.client.login(username='tut_owner', password='password123')
+
+    def test_first_run_banner_and_state_transitions(self):
+        import json
+
+        # Initially not_started -> welcome card is shown on dashboard
+        r_dash = self.client.get(reverse('core:dashboard'))
+        self.assertEqual(r_dash.status_code, 200)
+        self.assertContains(r_dash, 'wp-tutorial-welcome-card')
+        self.assertContains(r_dash, 'Mulai Tur Praktik')
+
+        # Guide and Settings also expose Tur Praktik buttons
+        self.assertContains(self.client.get(reverse('core:guide')), 'Mulai Tur Praktik')
+        self.assertContains(self.client.get(reverse('core:settings')), 'Mulai Tur Praktik')
+
+        # Start tutorial via state API
+        r_start = self.client.post(
+            reverse('core:tutorial_state'),
+            data=json.dumps({'status': 'in_progress', 'step': 1, 'phase': 'impact', 'completed_mission': 'savings'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_start.status_code, 200)
+        tut = r_start.json()['tutorial']
+        self.assertEqual(tut['status'], 'in_progress')
+        self.assertEqual(tut['step'], 1)
+        self.assertEqual(tut['phase'], 'impact')
+        self.assertIn('savings', tut['completed_missions'])
+
+        # Welcome card should no longer appear once started
+        self.assertNotContains(self.client.get(reverse('core:dashboard')), 'wp-tutorial-welcome-card')
+
+        # Dismiss / complete
+        r_done = self.client.post(
+            reverse('core:tutorial_state'),
+            data=json.dumps({'status': 'completed'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_done.json()['tutorial']['status'], 'completed')
+        self.assertContains(self.client.get(reverse('core:settings')), 'Ulangi Tur Praktik')
+
+    def test_sample_data_creation_and_surgical_cleanup(self):
+        import json
+        from finances.models import BudgetItem, SavingsDeposit, SavingsGoal
+        from guests.models import Guest
+        from vendors.models import VendorCandidate
+
+        for mission in ('savings', 'budget', 'vendors', 'guests', 'tasks'):
+            r = self.client.post(
+                reverse('core:tutorial_sample'),
+                data=json.dumps({'mission': mission}),
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, 200, f'Mission {mission} failed: {r.content}')
+            self.assertTrue(r.json()['ok'])
+            self.assertTrue(r.json()['tutorial']['has_sample_data'])
+
+        self.wedding.refresh_from_db()
+        self.assertEqual(int(self.wedding.total_budget), 150000000)
+        self.assertEqual(SavingsDeposit.objects.filter(goal__wedding=self.wedding).count(), 1)
+        self.assertEqual(BudgetItem.objects.filter(wedding=self.wedding).count(), 2)
+        self.assertEqual(VendorCandidate.objects.filter(wedding=self.wedding).count(), 2)
+        self.assertEqual(Guest.objects.filter(wedding=self.wedding).count(), 2)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, 'done')
+
+        # Surgical cleanup deletes ONLY sample records and reverts sample task & budget
+        # Also supports atomic finish_status='completed' in the same POST
+        r_clean = self.client.post(
+            reverse('core:tutorial_cleanup'),
+            data=json.dumps({'finish_status': 'completed'}),
+            content_type='application/json',
+        )
+        self.assertEqual(r_clean.status_code, 200)
+        self.assertFalse(r_clean.json()['tutorial']['has_sample_data'])
+        self.assertEqual(r_clean.json()['tutorial']['status'], 'completed')
+        self.assertEqual(r_clean.json()['tutorial']['phase'], 'action')
+
+        self.wedding.refresh_from_db()
+        self.assertEqual(int(self.wedding.total_budget), 0)
+        goal = SavingsGoal.objects.get(wedding=self.wedding)
+        self.assertEqual(int(goal.target_amount), 0)
+        self.assertEqual(SavingsDeposit.objects.filter(goal__wedding=self.wedding).count(), 0)
+        # Real records remain untouched!
+        self.assertEqual(list(BudgetItem.objects.filter(wedding=self.wedding).values_list('pk', flat=True)), [self.real_item.pk])
+        self.assertEqual(list(VendorCandidate.objects.filter(wedding=self.wedding).values_list('pk', flat=True)), [self.real_vendor.pk])
+        self.assertEqual(list(Guest.objects.filter(wedding=self.wedding).values_list('pk', flat=True)), [self.real_guest.pk])
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, 'todo')
+
+    def test_crew_sample_data_respects_role_permissions(self):
+        import json
+
+        c_crew = Client()
+        c_crew.login(username='tut_crew', password='password123')
+
+        for forbidden_mission in ('savings', 'budget', 'vendors'):
+            r = c_crew.post(
+                reverse('core:tutorial_sample'),
+                data=json.dumps({'mission': forbidden_mission}),
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, 400)
+            self.assertFalse(r.json()['ok'])
+
+        for allowed_mission in ('guests', 'tasks'):
+            r = c_crew.post(
+                reverse('core:tutorial_sample'),
+                data=json.dumps({'mission': allowed_mission}),
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.json()['ok'])
+
+    def test_action_views_emit_tutorial_events(self):
+        import json
+
+        # 1. Redirecting view (add_guest) sets session pending event -> emitted on next HTMX GET
+        r_post = self.client.post(reverse('guests:add'), {
+            'name': 'Pak Joko',
+            'relation_side': 'groom_family',
+            'category': 'regular',
+            'pax_allocation': 2,
+            'rsvp_status': 'attending',
+        })
+        self.assertEqual(r_post.status_code, 302)
+        self.assertEqual(self.client.session.get('tutorial_pending_event'), 'guest_saved')
+
+        r_get = self.client.get(reverse('guests:list'), HTTP_HX_REQUEST='true')
+        self.assertEqual(r_get.status_code, 200)
+        hx_trigger = json.loads(r_get.headers.get('HX-Trigger', '{}'))
+        self.assertEqual(hx_trigger.get('tutorialEvent'), {'action': 'guest_saved'})
+
+        # 2. Direct HTMX 200 view (toggle_task_status) emits HX-Trigger immediately
+        r_toggle = self.client.post(
+            reverse('operations-checklist:toggle_task', args=[self.task.pk]),
+            HTTP_HX_REQUEST='true',
+        )
+        self.assertEqual(r_toggle.status_code, 200)
+        hx_trigger_task = json.loads(r_toggle.headers.get('HX-Trigger', '{}'))
+        self.assertEqual(hx_trigger_task.get('tutorialEvent'), {'action': 'task_saved'})
+

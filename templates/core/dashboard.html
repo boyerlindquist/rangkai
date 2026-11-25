@@ -74,34 +74,31 @@
       </div>
     </div>
 
-    {% if is_couple and wedding.total_budget == 0 and task_stats.done == 0 %}
-    <!-- First-Run Quick-Start Guide for Brand-New Couples -->
-    <div data-slot="card" style="padding: 16px 20px; border-color: var(--primary-border); background: color-mix(in srgb, var(--primary) 5%, var(--card));"
-         x-data="{ dismissed: sessionStorage.getItem('wp_quickstart_dismissed') === '1' }"
-         x-show="!dismissed" x-transition>
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
-        <div>
-          <strong style="font-size:0.9rem;color:var(--foreground);">Baru mulai? 3 langkah cepat menyiapkan workspace Anda</strong>
-          <div style="font-size:0.8rem;color:var(--muted-foreground);margin-top:2px;">Lakukan urutan ini agar anggaran, tabungan, dan kolaborasi langsung sinkron.</div>
+    {% if tutorial_ctx and tutorial_ctx.status == 'not_started' %}
+    <!-- First-Run Interactive Guided Tutorial Welcome Banner -->
+    <div id="wp-tutorial-welcome-card" data-slot="card" style="padding: 16px 20px; border-color: var(--primary-border); background: color-mix(in srgb, var(--primary) 6%, var(--card));">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display:inline-flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span data-slot="badge" data-variant="emerald">Tur Praktik · 3 Menit</span>
+          </div>
+          <div style="font-size:0.95rem;font-weight:650;color:var(--foreground);">Baru pertama kali di Rangkai? Coba isi data &amp; lihat efeknya langsung!</div>
+          <div style="font-size:0.81rem;color:var(--muted-foreground);margin-top:3px;line-height:1.5;">
+            Kamu bisa langsung isi data asli <strong>atau</strong> pakai data contoh (bisa dihapus otomatis di akhir tur) untuk melihat bagaimana
+            {% if can_access_savings %}Tabungan, Anggaran, Vendor, Tamu, dan Tugas{% elif can_access_vendors %}Vendor, Tamu, dan Tugas{% else %}Tamu dan Tugas{% endif %}
+            saling terhubung otomatis.
+          </div>
         </div>
-        <button type="button" data-slot="button" data-variant="ghost" data-size="icon-sm"
-                @click="dismissed = true; sessionStorage.setItem('wp_quickstart_dismissed', '1')" aria-label="Tutup panduan cepat">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
-        <a href="{% url 'finances:savings_tracker' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
-          <span data-slot="badge" data-variant="emerald">1</span>
-          <span>Atur Target Tabungan &amp; Budget</span>
-        </a>
-        <a href="{% url 'core:settings' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
-          <span data-slot="badge" data-variant="emerald">2</span>
-          <span>Undang Pasangan (Co-Owner)</span>
-        </a>
-        <a href="{% url 'operations-checklist:checklist' %}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);background:var(--card);border:1px solid var(--border);text-decoration:none;color:var(--foreground);font-size:0.82rem;font-weight:500;">
-          <span data-slot="badge" data-variant="emerald">3</span>
-          <span>Centang Tugas Fase Aktif</span>
-        </a>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;align-self:center;">
+          <button type="button" data-slot="button" data-variant="default" data-size="sm"
+                  onclick="window.RangkaiTutorial && window.RangkaiTutorial.start()">
+            <i data-lucide="play-circle"></i> Mulai Tur Praktik
+          </button>
+          <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                  onclick="window.RangkaiTutorial && window.RangkaiTutorial.dismiss()">
+            Nanti saja
+          </button>
+        </div>
       </div>
     </div>
     {% endif %}
@@ -264,6 +261,7 @@
                 <button type="button"
                         data-slot="checkbox"
                         data-state="{% if task.status == 'in_progress' %}indeterminate{% else %}unchecked{% endif %}"
+                        onclick="this.setAttribute('data-state','checked'); this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'13\' height=\'13\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'20 6 9 17 4 12\'></polyline></svg>'; var row=this.closest('.dash-row'); if(row){ row.style.opacity='0.5'; var t=row.querySelector('.dash-row-title'); if(t) t.style.textDecoration='line-through'; }"
                         hx-post="{% url 'operations-checklist:toggle_task' task.pk %}?from=dashboard"
                         hx-target=".main-content"
                         hx-select=".main-content"

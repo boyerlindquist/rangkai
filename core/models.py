@@ -226,6 +226,12 @@ class WeddingMembership(models.Model):
         ('wo_manager', 'WO Manager'),
         ('crew', 'Crew / Operasional'),
     ]
+    TUTORIAL_STATUS_CHOICES = [
+        ('not_started', 'Belum Dimulai'),
+        ('in_progress', 'Sedang Berjalan'),
+        ('completed', 'Selesai'),
+        ('dismissed', 'Dilewati'),
+    ]
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -241,6 +247,21 @@ class WeddingMembership(models.Model):
         max_length=15,
         choices=ROLE_CHOICES,
         default='owner',
+    )
+    tutorial_status = models.CharField(
+        'Status Tur Praktik',
+        max_length=20,
+        choices=TUTORIAL_STATUS_CHOICES,
+        default='not_started',
+    )
+    tutorial_step = models.PositiveSmallIntegerField(
+        'Langkah Tur Praktik',
+        default=0,
+    )
+    tutorial_state = models.JSONField(
+        'State Tur Praktik',
+        default=dict,
+        blank=True,
     )
     joined_at = models.DateTimeField(auto_now_add=True)
 

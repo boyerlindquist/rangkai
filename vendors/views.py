@@ -80,6 +80,8 @@ def update_vendor_weights(request):
                 weight_facility=w_facility,
                 weight_reputation=w_reputation,
             )
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect('vendors:compare'), 'vendor_saved')
         except (ValueError, TypeError):
             pass
     return redirect('vendors:compare')
@@ -96,7 +98,8 @@ def add_vendor(request):
             vendor.wedding = request.wedding
             vendor.save()
             messages.success(request, f'Kandidat vendor "{vendor.name}" berhasil ditambahkan.')
-            return redirect('vendors:compare')
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect('vendors:compare'), 'vendor_saved')
         if request.htmx:
             weights = {
                 'price': int(request.POST.get('weight_price') or 30),

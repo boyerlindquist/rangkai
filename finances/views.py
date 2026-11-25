@@ -143,6 +143,28 @@ def _compute_financial_state(wedding):
         cat.cat_months_needed = cat_months_needed
         cat.coverage_status = coverage_status
 
+        # Honest category-level budget utilization vs planned pagu
+        cat_paid_pct = min(100, round((cat_paid / cat_actual) * 100)) if cat_actual > 0 else 0
+        if cat_planned > 0:
+            cat_used_pct = round((cat_actual / cat_planned) * 100)
+        elif cat_actual > 0:
+            cat_used_pct = 100
+        else:
+            cat_used_pct = 0
+
+        if cat_planned > 0 and cat_actual > cat_planned:
+            realization_status = 'overbudget'
+        elif cat_used_pct >= 90 and cat_actual > 0:
+            realization_status = 'near_limit'
+        elif cat_actual > 0:
+            realization_status = 'used'
+        else:
+            realization_status = 'empty'
+
+        cat.cat_paid_pct = cat_paid_pct
+        cat.cat_used_pct = cat_used_pct
+        cat.realization_status = realization_status
+
     paid_items = sorted([i for i in items if (i.paid_amount or 0) > 0], key=lambda x: x.paid_amount, reverse=True)
     unpaid_items = sorted([i for i in items if (x_rem := (x.actual_cost if (x := i) else 0) - (i.paid_amount or 0)) > 0], key=lambda x: (x.due_date or datetime.date.max))
 
@@ -335,12 +357,14 @@ def budget_dashboard(request):
     sankey_data_json = json.dumps(sankey_raw_data)
 
     active_cat_pk = None
+    explicit_cat_pk = None
     raw_cat = request.GET.get('cat')
     if raw_cat:
         try:
             val = int(raw_cat)
             if any(c.pk == val for c in categories):
                 active_cat_pk = val
+                explicit_cat_pk = val
         except (ValueError, TypeError):
             pass
     if not active_cat_pk and categories:
@@ -426,6 +450,7 @@ def budget_dashboard(request):
         'form': BudgetItemForm(wedding=wedding),
         'category_forms': category_forms,
         'active_cat_pk': active_cat_pk,
+        'explicit_cat_pk': explicit_cat_pk,
     }
     return render(request, 'finances/budget_dashboard.html', context)
 
@@ -441,10 +466,11 @@ def add_budget_item(request):
             item = form.save(commit=False)
             item.wedding = wedding
             item.save()
+            from core.tutorial import emit_tutorial_event
             cat_pk = item.category.pk if item.category else None
             if cat_pk:
-                return redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}")
-            return redirect('finances:dashboard')
+                return emit_tutorial_event(request, redirect(f"{reverse('finances:dashboard')}?cat={cat_pk}"), 'budget_saved')
+            return emit_tutorial_event(request, redirect('finances:dashboard'), 'budget_saved')
         else:
             return render(request, 'finances/partials/budget_item_form.html', {
                 'form': form,
@@ -464,7 +490,8 @@ def add_item_to_category(request, category_pk):
             item = form.save(commit=False)
             item.wedding = wedding
             item.save()
-            return redirect(f"{reverse('finances:dashboard')}?cat={category.pk}")
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect(f"{reverse('finances:dashboard')}?cat={category.pk}"), 'budget_saved')
         # On validation error, re-render the inline form
         return render(request, 'finances/partials/inline_item_form.html', {
             'form': form,
@@ -708,6 +735,42 @@ def config_allocations(request):
                 elif nom == 0 and pct > 0 and total_b > 0:
                     inst.allocated_budget = int(round((total_b * pct) / 100))
                 inst.save()
+
+            # Create any inline newly-added categories from the Atur Pagu panel
+            new_names = request.POST.getlist('new_cat_name[]')
+            new_pcts = request.POST.getlist('new_cat_pct[]')
+            new_noms = request.POST.getlist('new_cat_nominal[]')
+            if new_names:
+                from django.db.models import Max
+                max_order = (
+                    BudgetCategory.objects.filter(wedding=request.wedding)
+                    .aggregate(m=Max('sort_order'))['m'] or 0
+                )
+                for idx, raw_name in enumerate(new_names):
+                    cname = (raw_name or '').strip()
+                    if not cname:
+                        continue
+                    try:
+                        pct = max(0.0, min(100.0, float(new_pcts[idx] or 0))) if idx < len(new_pcts) else 0.0
+                    except (ValueError, TypeError):
+                        pct = 0.0
+                    try:
+                        nom = max(0, int(float(str(new_noms[idx] or '0').replace('.', '').replace(',', '')))) if idx < len(new_noms) else 0
+                    except (ValueError, TypeError):
+                        nom = 0
+                    if nom > 0 and total_b > 0:
+                        pct = min(100.0, round((nom / total_b) * 100, 2))
+                    elif nom == 0 and pct > 0 and total_b > 0:
+                        nom = int(round((total_b * pct) / 100))
+                    max_order += 1
+                    BudgetCategory.objects.create(
+                        wedding=request.wedding,
+                        name=cname[:100],
+                        allocation_percentage=pct,
+                        allocated_budget=nom,
+                        sort_order=max_order,
+                    )
+
             if total_b == 0:
                 sum_nom = sum(int(c.allocated_budget or 0) for c in BudgetCategory.objects.filter(wedding=request.wedding))
                 if sum_nom > 0:
@@ -843,7 +906,8 @@ def update_savings_goal(request):
                 if wedding.total_budget != int(goal.target_amount):
                     wedding.total_budget = int(goal.target_amount)
                     wedding.save(update_fields=['total_budget'])
-            return redirect('finances:savings_tracker')
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect('finances:savings_tracker'), 'savings_saved')
     return redirect('finances:savings_tracker')
 
 
@@ -859,7 +923,8 @@ def add_savings_deposit(request):
             deposit = form.save(commit=False)
             deposit.goal = goal
             deposit.save()
-            return redirect('finances:savings_tracker')
+            from core.tutorial import emit_tutorial_event
+            return emit_tutorial_event(request, redirect('finances:savings_tracker'), 'savings_saved')
     return redirect('finances:savings_tracker')
 
 
