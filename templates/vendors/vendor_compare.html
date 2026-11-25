@@ -585,6 +585,231 @@
       height: 38px;
     }
   }
+
+  /* Unified Interactive Vendor Weights Slider Panel (Matching Atur Pagu UX) */
+  .vw-panel {
+    padding: 16px 20px 20px;
+    background: var(--wp-bg-surface);
+  }
+  .vw-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 9px 18px;
+    border-bottom: 1px solid var(--wp-hairline);
+    background: var(--wp-bg-surface-subtle);
+  }
+  .vw-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .vw-head h3 {
+    margin: 0 0 4px;
+    font-size: 0.98rem;
+    font-weight: 650;
+    color: var(--foreground);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .vw-head p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+    line-height: 1.45;
+  }
+  .vw-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .vw-preset-btn {
+    padding: 5px 10px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--muted-foreground);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+  }
+  .vw-preset-btn:hover,
+  .vw-preset-btn.is-active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 9%, var(--card));
+  }
+  .vw-list-head {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.1fr) minmax(140px, 1.5fr) 92px 32px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 4px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+  }
+  .vw-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.1fr) minmax(140px, 1.5fr) 92px 32px;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 140ms ease;
+  }
+  .vw-row:last-child { border-bottom: 0; }
+  .vw-row.is-locked {
+    background: color-mix(in srgb, var(--muted) 45%, transparent);
+    border-radius: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 0 -4px;
+  }
+  .vw-crit-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .vw-crit-sub {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    margin-top: 2px;
+  }
+  .vw-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--muted);
+    outline: none;
+    cursor: pointer;
+  }
+  .vw-slider:disabled { opacity: 0.45; cursor: not-allowed; }
+  .vw-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--primary);
+    border: 2px solid var(--card);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+    cursor: pointer;
+  }
+  .vw-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--primary);
+    border: 2px solid var(--card);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+    cursor: pointer;
+  }
+  .vw-input-wrap {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+  }
+  .vw-input-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+  .vw-input-wrap input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 100% !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 8px !important;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+    outline: none !important;
+    -moz-appearance: textfield;
+  }
+  .vw-input-wrap input::-webkit-outer-spin-button,
+  .vw-input-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .vw-affix {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 100%;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    background: color-mix(in srgb, var(--muted) 65%, transparent);
+    border-left: 1px solid var(--border);
+    user-select: none;
+  }
+  .vw-lock-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted-foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .vw-lock-btn:hover { background: var(--muted); color: var(--foreground); }
+  .vw-lock-btn.is-locked {
+    background: color-mix(in srgb, var(--primary) 12%, var(--card));
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+    color: var(--primary);
+  }
+  .vw-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 720px) {
+    .vw-panel { padding: 14px 12px 18px; }
+    .vw-list-head { display: none; }
+    .vw-row {
+      grid-template-columns: 1fr 92px 32px;
+      gap: 8px;
+      padding: 12px 2px;
+    }
+    .vw-crit { grid-column: 1 / 3; grid-row: 1 / 2; }
+    .vw-lock-btn { grid-column: 3 / 4; grid-row: 1 / 2; justify-self: end; }
+    .vw-slider-wrap { grid-column: 1 / 2; grid-row: 2 / 3; }
+    .vw-input-wrap { grid-column: 2 / 4; grid-row: 2 / 3; }
+  }
 </style>
 
 <div class="workspace-canvas"
@@ -632,7 +857,7 @@
   <div id="vendor-list-section" class="surface-panel">
     <!-- 1. Unified Toolbar: Left Category Filter | Right Compact Icon Action Cluster -->
     <div class="surface-panel-header" id="guide-vendor-cards" style="flex-wrap: wrap; gap: 10px;">
-      <div class="filter-segmented" hx-boost="true" hx-target="#vendor-list-section" hx-select="#vendor-list-section" hx-swap="outerHTML show:none">
+      <div class="filter-segmented" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:none">
         <a href="{% url 'vendors:compare' %}" class="{% if not category_filter %}active{% endif %}">Semua</a>
         {% for key, label in categories %}
         <a href="?category={{ key }}" class="{% if category_filter == key %}active{% endif %}">{{ label }}</a>
@@ -662,62 +887,256 @@
       {% endif %}
     </div>
 
-    <!-- 2. Inline Collapsible Drawer: Scoring Weights Config (Inside the same card) -->
-    <div x-show="showWeights" x-transition x-cloak id="weights-panel"
-         style="padding: 14px 18px; background: var(--wp-bg-surface-subtle); border-bottom: 1px solid var(--wp-hairline);"
-         x-data="{ wPrice: {{ weights.price|default:30 }}, wQuality: {{ weights.quality|default:30 }}, wFacility: {{ weights.facility|default:20 }}, wReputation: {{ weights.reputation|default:20 }}, get totalW() { return (parseInt(this.wPrice)||0) + (parseInt(this.wQuality)||0) + (parseInt(this.wFacility)||0) + (parseInt(this.wReputation)||0); } }">
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <strong style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="sliders" style="width: 14px; height: 14px; color: var(--wp-gold-main);"></i> Bobot Prioritas Evaluasi
-          </strong>
-          <span class="status-pill" :class="totalW === 100 ? 'status-done' : 'status-danger'">
-            Total: <strong class="tabular-nums" x-text="totalW + '%'"></strong>
-          </span>
-          <span x-show="totalW !== 100" x-cloak style="font-size: 0.78rem; color: var(--wp-terracotta-main); font-weight: 500;"
-                x-text="totalW < 100 ? 'Kurang ' + (100 - totalW) + '% agar pas 100%' : 'Kelebihan ' + (totalW - 100) + '% dari 100%'"></span>
-        </div>
-        <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=30; wQuality=30; wFacility=20; wReputation=20;" style="padding: 3px 8px; font-size: 0.75rem;">Seimbang</button>
-          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=45; wQuality=25; wFacility=15; wReputation=15;" style="padding: 3px 8px; font-size: 0.75rem;">Hemat Biaya</button>
-          <button type="button" class="btn btn-secondary btn-sm" @click="wPrice=15; wQuality=45; wFacility=20; wReputation=20;" style="padding: 3px 8px; font-size: 0.75rem;">Prioritas Kualitas</button>
-          <button type="button" class="btn btn-ghost btn-icon btn-sm" @click="showWeights = false" aria-label="Tutup panel bobot" title="Tutup">
-            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-          </button>
-        </div>
+    <!-- 2. Unified Interactive Weights Panel (Replaces Vendor List Body when clicking "Atur Bobot") -->
+    <div id="weights-panel"
+         x-show="showWeights"
+         :style="showWeights ? 'display: block;' : 'display: none;'"
+         x-cloak
+         style="display: none;"
+         x-data="{
+           keys: ['price', 'quality', 'facility', 'reputation'],
+           vals: {
+             price: {{ weights.price|default:30 }},
+             quality: {{ weights.quality|default:30 }},
+             facility: {{ weights.facility|default:20 }},
+             reputation: {{ weights.reputation|default:20 }}
+           },
+           locked: { price: false, quality: false, facility: false, reputation: false },
+           activePreset: '',
+           get totalW() {
+             return this.keys.reduce((s, k) => s + (parseInt(this.vals[k], 10) || 0), 0);
+           },
+           maxFor(key) {
+             let lockedSum = 0;
+             for (const k of this.keys) {
+               if (k !== key && this.locked[k]) lockedSum += (parseInt(this.vals[k], 10) || 0);
+             }
+             return Math.max(0, 100 - lockedSum);
+           },
+           sliderBg(key) {
+             const p = Math.max(0, Math.min(100, parseInt(this.vals[key], 10) || 0));
+             const maxP = this.maxFor(key);
+             if (maxP < 100) {
+               return 'background: linear-gradient(to right, var(--primary) 0%, var(--primary) ' + p + '%, var(--muted) ' + p + '%, var(--muted) ' + maxP + '%, color-mix(in srgb, var(--border) 90%, var(--foreground) 10%) ' + maxP + '%, color-mix(in srgb, var(--border) 90%, var(--foreground) 10%) 100%);';
+             }
+             return 'background: linear-gradient(to right, var(--primary) 0%, var(--primary) ' + p + '%, var(--muted) ' + p + '%, var(--muted) 100%);';
+           },
+           toggleLock(key) {
+             this.locked[key] = !this.locked[key];
+           },
+           onWeightChange(key, rawVal, inputEl) {
+             if (this.locked[key]) return;
+             this.activePreset = '';
+             const maxAllowed = this.maxFor(key);
+             const clamped = Math.max(0, Math.min(maxAllowed, isNaN(rawVal) ? 0 : Math.round(rawVal)));
+             this.vals[key] = clamped;
+
+             const unlockedOthers = this.keys.filter(k => k !== key && !this.locked[k]);
+             if (unlockedOthers.length > 0) {
+               const lockedSum = this.keys.reduce((s, k) => s + (k !== key && this.locked[k] ? (parseInt(this.vals[k], 10) || 0) : 0), 0);
+               const remaining = Math.max(0, 100 - lockedSum - clamped);
+               const othersSum = unlockedOthers.reduce((s, k) => s + (parseInt(this.vals[k], 10) || 0), 0);
+               let dist = 0;
+               for (const ok of unlockedOthers) {
+                 const raw = othersSum > 0
+                   ? ((parseInt(this.vals[ok], 10) || 0) / othersSum) * remaining
+                   : (remaining / unlockedOthers.length);
+                 const r = Math.round(raw);
+                 this.vals[ok] = r;
+                 dist += r;
+               }
+               const diff = remaining - dist;
+               if (diff !== 0) {
+                 let targetKey = unlockedOthers[0];
+                 for (const ok of unlockedOthers) {
+                   if (this.vals[ok] > this.vals[targetKey]) targetKey = ok;
+                 }
+                 this.vals[targetKey] = Math.max(0, this.vals[targetKey] + diff);
+               }
+             }
+             if (inputEl && parseInt(inputEl.value, 10) !== this.vals[key]) {
+               inputEl.value = this.vals[key];
+             }
+           },
+           applyPreset(name, p, q, f, r) {
+             this.activePreset = name;
+             this.locked = { price: false, quality: false, facility: false, reputation: false };
+             this.vals = { price: p, quality: q, facility: f, reputation: r };
+           }
+         }">
+      <div class="vw-topbar">
+        <button type="button" class="btn btn-ghost btn-sm" @click="showWeights = false" style="padding: 4px 8px; gap: 6px;">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+          <span>Kembali ke Daftar Vendor</span>
+        </button>
+        <span class="status-pill tabular-nums" :class="totalW === 100 ? 'status-done' : 'status-danger'">
+          Total Bobot: <strong x-text="totalW + '%'"></strong>
+        </span>
       </div>
-      <form method="post" action="{% url 'vendors:update_weights' %}"
-            hx-post="{% url 'vendors:update_weights' %}"
-            hx-target=".main-content"
-            hx-select=".main-content"
-            hx-swap="outerHTML show:none"
-            @submit="if(totalW !== 100) $event.preventDefault()"
-            class="vendor-weight-form">
-        {% csrf_token %}
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="id_weight_price">Harga (%)</label>
-          <input id="id_weight_price" type="number" name="weight_price" class="wp-input tabular-nums" x-model.number="wPrice" min="0" max="100" required>
+
+      <div class="vw-panel">
+        <div class="vw-head">
+          <div>
+            <h3>
+              <i data-lucide="sliders" style="width: 16px; height: 16px; color: var(--primary);"></i>
+              Atur Bobot Prioritas Evaluasi Vendor
+            </h3>
+            <p>
+              Geser slider sesuai prioritasmu. Bobot ini berlaku merata untuk seluruh kategori vendor sehingga ranking rekomendasi otomatis menyesuaikan.
+            </p>
+          </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="id_weight_quality">Kualitas (%)</label>
-          <input id="id_weight_quality" type="number" name="weight_quality" class="wp-input tabular-nums" x-model.number="wQuality" min="0" max="100" required>
+
+        <div class="vw-presets" role="group" aria-label="Preset bobot vendor">
+          <span style="font-size: 0.76rem; color: var(--muted-foreground); font-weight: 600; margin-right: 2px;">Preset:</span>
+          <button type="button" class="vw-preset-btn" :class="{ 'is-active': activePreset === 'balanced' }" @click="applyPreset('balanced', 30, 30, 20, 20)">Seimbang (30/30/20/20)</button>
+          <button type="button" class="vw-preset-btn" :class="{ 'is-active': activePreset === 'budget' }" @click="applyPreset('budget', 45, 25, 15, 15)">Hemat Biaya (45/25/15/15)</button>
+          <button type="button" class="vw-preset-btn" :class="{ 'is-active': activePreset === 'quality' }" @click="applyPreset('quality', 15, 45, 20, 20)">Prioritas Kualitas (15/45/20/20)</button>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="id_weight_facility">Fasilitas (%)</label>
-          <input id="id_weight_facility" type="number" name="weight_facility" class="wp-input tabular-nums" x-model.number="wFacility" min="0" max="100" required>
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label for="id_weight_reputation">Reputasi (%)</label>
-          <input id="id_weight_reputation" type="number" name="weight_reputation" class="wp-input tabular-nums" x-model.number="wReputation" min="0" max="100" required>
-        </div>
-        <div class="form-actions" style="display: flex; gap: 6px;">
-          <button type="submit" class="btn btn-gold btn-sm" :disabled="totalW !== 100" :style="totalW !== 100 ? 'opacity: 0.45; cursor: not-allowed;' : ''"><i data-lucide="check" style="width: 13px; height: 13px;"></i> Terapkan</button>
-        </div>
-      </form>
+
+        <form method="post" action="{% url 'vendors:update_weights' %}"
+              hx-post="{% url 'vendors:update_weights' %}"
+              hx-target=".main-content"
+              hx-select=".main-content"
+              hx-swap="outerHTML show:none"
+              @submit="if(totalW !== 100) $event.preventDefault()">
+          {% csrf_token %}
+
+          <div class="vw-list-head" aria-hidden="true">
+            <span>Kriteria Penilaian</span>
+            <span>Proporsi Bobot</span>
+            <span style="text-align: right;">Bobot (%)</span>
+            <span style="text-align: center;">Kunci</span>
+          </div>
+
+          <!-- Row 1: Harga -->
+          <div class="vw-row" :class="{ 'is-locked': locked.price }">
+            <div class="vw-crit">
+              <div class="vw-crit-name">Harga &amp; Value</div>
+              <div class="vw-crit-sub">Kesesuaian harga dengan anggaran</div>
+            </div>
+            <div class="vw-slider-wrap">
+              <input type="range" class="vw-slider" min="0" max="100" step="1"
+                     :disabled="locked.price"
+                     :value="vals.price"
+                     :style="sliderBg('price')"
+                     @input="onWeightChange('price', parseInt($event.target.value, 10), $event.target)"
+                     aria-label="Slider bobot harga">
+            </div>
+            <div class="vw-input-wrap">
+              <input id="id_weight_price" type="number" name="weight_price" min="0" :max="maxFor('price')"
+                     :readonly="locked.price"
+                     x-model.number="vals.price"
+                     @input="onWeightChange('price', parseInt($event.target.value, 10), $event.target)" required>
+              <span class="vw-affix">%</span>
+            </div>
+            <button type="button" class="vw-lock-btn" :class="{ 'is-locked': locked.price }" @click="toggleLock('price')" title="Kunci bobot Harga" aria-label="Kunci bobot Harga">
+              <svg x-show="locked.price" x-cloak viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg x-show="!locked.price" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+            </button>
+          </div>
+
+          <!-- Row 2: Kualitas -->
+          <div class="vw-row" :class="{ 'is-locked': locked.quality }">
+            <div class="vw-crit">
+              <div class="vw-crit-name">Kualitas &amp; Portfolio</div>
+              <div class="vw-crit-sub">Hasil karya, rasa, atau estetika</div>
+            </div>
+            <div class="vw-slider-wrap">
+              <input type="range" class="vw-slider" min="0" max="100" step="1"
+                     :disabled="locked.quality"
+                     :value="vals.quality"
+                     :style="sliderBg('quality')"
+                     @input="onWeightChange('quality', parseInt($event.target.value, 10), $event.target)"
+                     aria-label="Slider bobot kualitas">
+            </div>
+            <div class="vw-input-wrap">
+              <input id="id_weight_quality" type="number" name="weight_quality" min="0" :max="maxFor('quality')"
+                     :readonly="locked.quality"
+                     x-model.number="vals.quality"
+                     @input="onWeightChange('quality', parseInt($event.target.value, 10), $event.target)" required>
+              <span class="vw-affix">%</span>
+            </div>
+            <button type="button" class="vw-lock-btn" :class="{ 'is-locked': locked.quality }" @click="toggleLock('quality')" title="Kunci bobot Kualitas" aria-label="Kunci bobot Kualitas">
+              <svg x-show="locked.quality" x-cloak viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg x-show="!locked.quality" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+            </button>
+          </div>
+
+          <!-- Row 3: Fasilitas -->
+          <div class="vw-row" :class="{ 'is-locked': locked.facility }">
+            <div class="vw-crit">
+              <div class="vw-crit-name">Fasilitas &amp; Bonus</div>
+              <div class="vw-crit-sub">Kelengkapan paket dan bonus tambahan</div>
+            </div>
+            <div class="vw-slider-wrap">
+              <input type="range" class="vw-slider" min="0" max="100" step="1"
+                     :disabled="locked.facility"
+                     :value="vals.facility"
+                     :style="sliderBg('facility')"
+                     @input="onWeightChange('facility', parseInt($event.target.value, 10), $event.target)"
+                     aria-label="Slider bobot fasilitas">
+            </div>
+            <div class="vw-input-wrap">
+              <input id="id_weight_facility" type="number" name="weight_facility" min="0" :max="maxFor('facility')"
+                     :readonly="locked.facility"
+                     x-model.number="vals.facility"
+                     @input="onWeightChange('facility', parseInt($event.target.value, 10), $event.target)" required>
+              <span class="vw-affix">%</span>
+            </div>
+            <button type="button" class="vw-lock-btn" :class="{ 'is-locked': locked.facility }" @click="toggleLock('facility')" title="Kunci bobot Fasilitas" aria-label="Kunci bobot Fasilitas">
+              <svg x-show="locked.facility" x-cloak viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg x-show="!locked.facility" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+            </button>
+          </div>
+
+          <!-- Row 4: Reputasi -->
+          <div class="vw-row" :class="{ 'is-locked': locked.reputation }">
+            <div class="vw-crit">
+              <div class="vw-crit-name">Fleksibilitas &amp; Reputasi</div>
+              <div class="vw-crit-sub">Responsif, ulasan klien, dan kemudahan koordinasi</div>
+            </div>
+            <div class="vw-slider-wrap">
+              <input type="range" class="vw-slider" min="0" max="100" step="1"
+                     :disabled="locked.reputation"
+                     :value="vals.reputation"
+                     :style="sliderBg('reputation')"
+                     @input="onWeightChange('reputation', parseInt($event.target.value, 10), $event.target)"
+                     aria-label="Slider bobot reputasi">
+            </div>
+            <div class="vw-input-wrap">
+              <input id="id_weight_reputation" type="number" name="weight_reputation" min="0" :max="maxFor('reputation')"
+                     :readonly="locked.reputation"
+                     x-model.number="vals.reputation"
+                     @input="onWeightChange('reputation', parseInt($event.target.value, 10), $event.target)" required>
+              <span class="vw-affix">%</span>
+            </div>
+            <button type="button" class="vw-lock-btn" :class="{ 'is-locked': locked.reputation }" @click="toggleLock('reputation')" title="Kunci bobot Reputasi" aria-label="Kunci bobot Reputasi">
+              <svg x-show="locked.reputation" x-cloak viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg x-show="!locked.reputation" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+            </button>
+          </div>
+
+          <div class="vw-foot">
+            <span style="font-size: 0.78rem; color: var(--muted-foreground);">
+              Menggeser satu kriteria otomatis menyeimbangkan kriteria lain yang tidak dikunci agar total selalu 100%.
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" data-slot="button" data-variant="outline" data-size="sm" @click="showWeights = false">Batal</button>
+              <button type="submit" data-slot="button" data-variant="default" data-size="sm" :disabled="totalW !== 100">
+                <i data-lucide="check"></i> Terapkan Bobot
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <!-- 3. Unified Vendor List Body -->
-    <div class="surface-panel-body" style="display: flex; flex-direction: column; gap: 22px;">
+    <!-- 3. Unified Vendor List Body (Hidden while editing weights) -->
+    <div class="surface-panel-body"
+         x-show="!showWeights"
+         :style="showWeights ? 'display: none;' : 'display: flex; flex-direction: column; gap: 22px;'"
+         style="display: flex; flex-direction: column; gap: 22px;">
       {% for cat_name, cat_vendors in vendor_groups.items %}
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--wp-hairline);">
